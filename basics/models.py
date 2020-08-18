@@ -1,4 +1,3 @@
-
 from django.db import models
 from system.models import AbstractEntity
 from django.utils.translation import ugettext_lazy as _
@@ -6,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 class GlobalCodeType(AbstractEntity):
     """公共代码类型表"""
-    type_no = models.CharField(max_length=64, help_text=_('类型编号'), verbose_name=_('类型编号'))
+    type_no = models.CharField(max_length=64, help_text=_('类型编号'), verbose_name=_('类型编号'), unique=True)
     type_name = models.CharField(max_length=64, help_text='类型名称', verbose_name='类型名称')
     description = models.CharField(max_length=256, blank=True, null=True, help_text='说明', verbose_name='说明')
     used_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用')
@@ -39,7 +38,7 @@ class GlobalCode(AbstractEntity):
 
 class WorkSchedule(AbstractEntity):
     """工作日程"""
-    schedule_no = models.CharField(max_length=64, help_text='编号', verbose_name='编号')
+    schedule_no = models.CharField(max_length=64, help_text='编号', verbose_name='编号', unique=True)
     schedule_name = models.CharField(max_length=64, help_text='名称', verbose_name='名称')
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='说明', verbose_name='说明')
@@ -171,7 +170,6 @@ class WorkSchedulePlan(AbstractEntity):
                               help_text='班组id', verbose_name='班组id', related_name="work_schedule_plan")
     group_name = models.CharField(max_length=64, help_text='班组名称', verbose_name='班组名称')
     rest_flag = models.BooleanField(help_text='是否休息', verbose_name='是否休息')
-    # schedule_group_id = models.IntegerField(help_text='按日期分组', verbose_name='按日期分组')
     plan_schedule = models.ForeignKey(PlanSchedule, models.DO_NOTHING,
                                       help_text='计划时间id', verbose_name='计划时间id', related_name="work_schedule_plan")
 

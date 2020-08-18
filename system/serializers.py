@@ -4,8 +4,9 @@ create_date:
 updater:
 update_time:
 """
+import re
+
 from django.contrib.auth.models import Permission
-from django.db.transaction import atomic
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 
@@ -51,7 +52,10 @@ class UserSerializer(BaseModelSerializer):
         return instance
 
     def create(self, validated_data):
+        partten = r"^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$"
         password = validated_data.get('password')
+        if not re.search(partten, password):
+            raise serializers.ValidationError("请输入6~16位长度包含字母和数字的密码")
         user = super().create(validated_data)
         user.set_password(password)
         user.save()
@@ -123,34 +127,3 @@ class SectionSerializer(BaseModelSerializer):
         model = Section
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
-
-# class FunctionBlockSerializer(BaseModelSerializer):
-#
-#     class Meta:
-#         model = FunctionBlock
-#         fields = '__all__'
-#         read_only_fields = COMMON_READ_ONLY_FIELDS
-#
-#
-# class FunctionPermissionSerializer(BaseModelSerializer):
-#
-#     class Meta:
-#         model = FunctionPermission
-#         fields = '__all__'
-#         read_only_fields = COMMON_READ_ONLY_FIELDS
-#
-#
-# class FunctionSerializer(BaseModelSerializer):
-#
-#     class Meta:
-#         model = Function
-#         fields = '__all__'
-#         read_only_fields = COMMON_READ_ONLY_FIELDS
-#
-#
-# class MenuSerializer(BaseModelSerializer):
-#
-#     class Meta:
-#         model = Menu
-#         fields = '__all__'
-#         read_only_fields = COMMON_READ_ONLY_FIELDS

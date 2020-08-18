@@ -1,21 +1,17 @@
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
-from django.http import HttpResponse
-from django.db.models import Q
-import json
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from basics.filters import EquipFilter, GlobalCodeTypeFilter, WorkScheduleFilter, GlobalCodeFilter, EquipCategoryFilter
 from basics.models import GlobalCodeType, GlobalCode, WorkSchedule, Equip, SysbaseEquipLevel, \
     WorkSchedulePlan, ClassesDetail, PlanSchedule, EquipCategoryAttribute
 from basics.serializers import GlobalCodeTypeSerializer, GlobalCodeSerializer, WorkScheduleSerializer, \
     EquipSerializer, SysbaseEquipLevelSerializer, WorkSchedulePlanSerializer, WorkScheduleUpdateSerializer, \
-    ClassesDetailSerializer, PlanScheduleSerializer, EquipCategoryAttributeSerializer
+    ClassesDetailSerializer, PlanScheduleSerializer, EquipCategoryAttributeSerializer, ClassesSimpleSerializer
 from mes.common_code import return_permission_params, CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.permissions import PermissionClass
@@ -118,71 +114,6 @@ class EquipCategoryViewSet(CommonDeleteMixin, ModelViewSet):
     filter_class = EquipCategoryFilter
 
 
-# @method_decorator([api_recorder], name="dispatch")
-# class EquipCategoryListViewSet(APIView):
-#     def get(self, request):
-#         category_name = request.GET.get("category_name", None)
-#         equip_type = request.GET.get("equip_type", None)
-#
-#         queryset = EquipCategoryAttribute.objects.filter(delete_flag=False)
-#         if category_name:
-#             queryset = queryset.filter(category_name__icontains=category_name)
-#         if equip_type:
-#             queryset = EquipCategoryAttribute.objects.filter(delete_flag=False).filter(
-#                 equip_type__global_name__icontains=equip_type)
-#
-#         result_list = []
-#         for ele in queryset:
-#             result_list.append({
-#                 "id": ele.id,
-#                 "category_no": ele.category_no,
-#                 "category_name": ele.category_name,
-#                 "volume": ele.volume,
-#                 "equip_type_name": ele.equip_type.global_name,
-#                 "global_no": ele.process.global_no,
-#                 "global_name": ele.process.global_name,
-#                 "equip_type": ele.equip_type.id,
-#                 "process": ele.process.id,
-#             })
-#         resp = {"results": result_list}
-#         return HttpResponse(json.dumps(resp), status=200)
-#
-#
-# class EquipListViewSet(APIView):
-#     def get(self, request):
-#         process = request.GET.get("process", None)
-#         equip = request.GET.get("equip", None)
-#
-#         queryset = Equip.objects.filter(delete_flag=False)
-#         if process:
-#             queryset = queryset.filter(Q(category__process__global_no__icontains=process) | Q(
-#                 category__process__global_name__icontains=process))
-#         if equip:
-#             queryset = Equip.objects.filter(delete_flag=False).filter(
-#                 Q(equip_name__icontains=equip) | Q(equip_no__icontains=equip))
-#
-#         result_list = []
-#         for ele in queryset:
-#             result_list.append({
-#                 "id": ele.id,
-#                 "process_no": ele.category.process.global_no,
-#                 "process_name": ele.category.process.global_name,
-#                 "category_no": ele.category.category_no,
-#                 "category_name": ele.category.category_name,
-#                 "equip_no": ele.equip_no,
-#                 "equip_name": ele.equip_name,
-#                 "equip_type": ele.category.equip_type.global_name,
-#                 "equip_level_name": ele.equip_level.global_name,
-#                 "count_flag": ele.count_flag,
-#                 "used_flag": ele.used_flag,
-#                 "description": ele.description,
-#                 "category": ele.category.id,
-#                 "equip_level": ele.equip_level.id
-#             })
-#         resp = {"results": result_list}
-#         return HttpResponse(json.dumps(resp), status=200)
-
-
 @method_decorator([api_recorder], name="dispatch")
 class EquipViewSet(CommonDeleteMixin, ModelViewSet):
     """
@@ -243,22 +174,17 @@ class WorkSchedulePlanViewSet(CommonDeleteMixin, ModelViewSet):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class ClassesDetailViewSet(CommonDeleteMixin, ModelViewSet):
+class ClassesDetailViewSet(mixins.ListModelMixin,
+                           GenericViewSet):
     """
     list:
         班次条目列表
-    create:
-        创建班次条目
-    update:
-        修改班次条目
-    destroy:
-        删除班次条目
     """
     queryset = ClassesDetail.objects.filter(delete_flag=False)
-    serializer_class = ClassesDetailSerializer
+    serializer_class = ClassesSimpleSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          PermissionClass(permission_required=return_permission_params(model_name)))
+    pagination_class = None
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 @method_decorator([api_recorder], name="dispatch")
