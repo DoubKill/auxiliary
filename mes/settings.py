@@ -10,7 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os, datetime
+import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.utils.translation import ugettext_lazy
@@ -45,7 +46,6 @@ INSTALLED_APPS = [
     'basics.apps.BasicsConfig',
     'system.apps.SystemConfig',
     'recipe.apps.RecipeConfig',
-    'gui.apps.GuiConfig',
     'docs.apps.DocsConfig',
 ]
 
@@ -68,7 +68,7 @@ AUTH_USER_MODEL = 'system.User'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
