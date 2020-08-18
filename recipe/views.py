@@ -20,8 +20,9 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductRecipeFilte
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, ProductInfoCreateSerializer, \
     ProductInfoUpdateSerializer, ProductInfoPartialUpdateSerializer, ProductInfoCopySerializer, \
     ProductRecipeListSerializer, ProductBatchingListSerializer, ProductBatchingCreateSerializer, \
-    MaterialAttributeSerializer, ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer
-from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, MaterialAttribute
+    MaterialAttributeSerializer, ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
+    ProductProcessSerializer
+from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, MaterialAttribute, ProductProcess
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -36,7 +37,7 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除原材料
     """
-    queryset = Material.objects.filter(delete_flag=False)
+    queryset = Material.objects.filter(delete_flag=False).order_by('-created_date')
     serializer_class = MaterialSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -62,7 +63,7 @@ class MaterialAttributeViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除原材料属性
     """
-    queryset = MaterialAttribute.objects.filter(delete_flag=False)
+    queryset = MaterialAttribute.objects.filter(delete_flag=False).order_by('-created_date')
     serializer_class = MaterialAttributeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -83,7 +84,8 @@ class ValidateProductVersionsView(APIView):
             factory = int(factory)
         except Exception:
             raise ValidationError('参数错误')
-        product_info = ProductInfo.objects.filter(factory_id=factory, product_no=product_no).order_by('-versions').first()
+        product_info = ProductInfo.objects.filter(factory_id=factory,
+                                                  product_no=product_no).order_by('-versions').first()
         if product_info:
             if product_info.versions >= versions:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
                 return Response({'code': -1, 'message': '版本号不得小于现有版本号'})
@@ -108,7 +110,7 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
     partial_update:
         胶料应用和废弃操作
     """
-    queryset = ProductInfo.objects.filter(delete_flag=False)
+    queryset = ProductInfo.objects.filter(delete_flag=False).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductInfoFilter
 
@@ -146,20 +148,23 @@ class ProductStageInfoView(APIView):
         if not factory_id:
             raise ValidationError('缺少必填参数')
         try:
-            factory = GlobalCode.objects.get(id=factory_id, used_flag=True, delete_flag=False)
+            factory = GlobalCode.objects.get(id=factory_id, used_flag=0, delete_flag=False)
         except Exception:
             raise ValidationError('产地不存在')
         ret = []
         products = ProductInfo.objects.filter(factory=factory).prefetch_related('productrecipe_set')
         for product in products:
+            # TODO 要做distinct stage，sqlite数据库暂时不支持
             stages = product.productrecipe_set.values('stage', 'stage__global_name')
-            ret.append({'product_info': product.id, 'product_no': product.product_no, 'stages': stages})
+            ret.append({'product_info': product.id, 'versions': product.versions,
+                        'product_no': product.product_no, 'stages': stages,
+                        'product_name': product.product_name, 'used_type': product.get_used_type_display()})
         return Response(data=ret)
 
 
 class ProductRecipeListView(ListAPIView):
     """根据胶料工艺和段次获取胶料段次配方原材料信息"""
-    queryset = ProductRecipe.objects.filter(delete_flag=False).order_by('num')
+    queryset = ProductRecipe.objects.filter(delete_flag=False).order_by('sn')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductRecipeFilter
@@ -180,7 +185,7 @@ class ProductBatchingViewSet(ModelViewSet):
     partial_update:
         修改胶料配料标准
     """
-    queryset = ProductBatching.objects.filter(delete_flag=False)
+    queryset = ProductBatching.objects.filter(delete_flag=False).order_by('-created_date')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
@@ -216,12 +221,13 @@ class PreProductBatchView(APIView):
         except Exception:
             raise ValidationError('参数错误')
         recipe = ProductRecipe.objects.filter(product_info_id=product_info_id,
-                                              stage_id=stage_id).order_by('-num').first()
+                                              stage_id=stage_id).order_by('-sn').first()
         if not recipe:
             raise ValidationError('当前段次配方不存在')
 
-        pre_recipe = ProductRecipe.objects.filter(product_info_id=product_info_id,
-                                                  num__lt=recipe.num).order_by('-num').first()
+        pre_recipe = ProductRecipe.objects.exclude(stage_id=stage_id).filter(product_info_id=product_info_id,
+                                                                             sn__lt=recipe.sn
+                                                                             ).order_by('-sn').first()
         pre_recipe_data = {}
         if pre_recipe:
             pre_batch = ProductBatching.objects.filter(product_info_id=product_info_id,
@@ -230,7 +236,7 @@ class PreProductBatchView(APIView):
                 raise ValidationError('请先配置上段位的配料')
             else:
                 ratio = ProductRecipe.objects.filter(product_info_id=product_info_id,
-                                                     num__lte=recipe.num
+                                                     sn__lte=recipe.sn
                                                      ).aggregate(ratio=Sum('ratio'))['ratio']
                 pre_recipe_data = OrderedDict()
                 pre_recipe_data['material_type'] = pre_batch.stage.global_name
@@ -239,3 +245,21 @@ class PreProductBatchView(APIView):
                 pre_recipe_data['material_name'] = pre_batch.stage_product_batch_no
                 pre_recipe_data['previous_product_batching'] = pre_batch.id
         return Response(pre_recipe_data)
+
+
+class ProcessStepsViewSet(ModelViewSet):
+    """
+    list:
+        胶料配料步序列表
+    retrieve:
+        胶料配料步序详情
+    create:
+        新建胶料配料步序
+    update:
+        修改胶料配料步序
+    partial_update:
+        修改胶料配料步序
+    """
+    queryset = ProductProcess.objects.filter(delete_flag=False).order_by('-created_date')
+    filter_backends = (DjangoFilterBackend,)
+    serializer_class = ProductProcessSerializer
