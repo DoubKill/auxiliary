@@ -33,7 +33,7 @@ class IssueWorkStation(object):
         """
         id = self.data.get("id")
         if id:
-            instance = self.model.objects.filter(id=id)
+            instance = self.model.objects.filter(id=id).first()
             serializer = self.model_serializer(instance, data=self.data, partial="partial")
         else:
             serializer = self.model_serializer(data=self.data)

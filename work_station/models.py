@@ -68,7 +68,7 @@ class IfdownPmtRecipe2(models.Model):
 
 class IfdownRecipeCb1(models.Model):
     """1号机台配方炭黑表"""
-    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.AutoField(db_column='ID', primary_key=True, )  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 炭黑名
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  #
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)

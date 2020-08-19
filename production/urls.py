@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, EquipStatusViewSet, PlanStatusViewSet, \
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
-    ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet
+    ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
+    WeighParameterFuelViewSet
 
 router = DefaultRouter()
 
@@ -36,6 +37,12 @@ router.register(r'plan-reality', PlanRealityViewSet, basename="plan-reality")
 
 # 密炼机台别计划对比
 router.register(r'product-actual', ProductActualViewSet, basename="product-actual")
+
+# 称量参数
+router.register(r'weigh-cb', WeighParameterCarbonViewSet, basename="weigh-cb")
+
+router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
+
 
 urlpatterns = [
     path('', include(router.urls)),
