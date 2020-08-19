@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'system.apps.SystemConfig',
     'recipe.apps.RecipeConfig',
     'docs.apps.DocsConfig',
+    'work_station.apps.WorkStationConfig'
 ]
 
 MIDDLEWARE = [
@@ -205,7 +206,6 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
