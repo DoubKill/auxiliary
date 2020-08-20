@@ -7,18 +7,20 @@ name:
 """
 
 from work_station import serializers as sz
+from work_station import models as md
 
 
 class IssueWorkStation(object):
 
-    def __init__(self, model, data):
+    def __init__(self, model_name, data):
         """
         传入对应的模型类与数据
         data 传入带id数据为修改中间表数据，
              不传入则为新增
         """
-        self.model = model
-        self.model_name = model.__name__
+        #TODO 增加机台号
+        self.model = getattr(md, model_name)
+        self.model_name = model_name
         self.data = data
 
     @property
@@ -31,6 +33,7 @@ class IssueWorkStation(object):
         对接万隆中间表
         将数据存入到中间表
         """
+        # TODO 判断recstatus进行分支处理
         id = self.data.get("id")
         if id:
             instance = self.model.objects.filter(id=id)
