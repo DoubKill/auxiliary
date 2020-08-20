@@ -13,7 +13,7 @@ from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBa
     PalletFeedbacksFilter
 from plan.serializers import ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, \
     ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
-    PalletFeedbacksSerializer
+    PalletFeedbacksSerializer, UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
 from plan.paginations import LimitOffsetPagination
@@ -208,6 +208,23 @@ class ProductBatchingDayPlanCopyView(CreateAPIView):
 
 
 @method_decorator([api_recorder], name="dispatch")
+class ProductDayPlanManyCreate(APIView):
+    """胶料计划群增接口"""
+
+    def post(self, request, *args, **kwargs):
+        if isinstance(request.data, dict):
+            many = False
+        elif isinstance(request.data, list):
+            many = True
+        else:
+            return Response(data={'detail': '数据有误'}, status=400)
+        pbdp_ser = ProductDayPlanSerializer(data=request.data, many=many, context={'request': request})
+        pbdp_ser.is_valid(raise_exception=True)
+        book_obj_or_list = pbdp_ser.save()
+        return Response(ProductDayPlanSerializer(book_obj_or_list, many=many).data)
+
+
+@method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.ListModelMixin,
                              GenericViewSet, CommonDeleteMixin):
     """
@@ -216,8 +233,32 @@ class PalletFeedbacksViewSet(mixins.ListModelMixin,
     delete:
         计划管路删除
     """
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False)
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
     serializer_class = PalletFeedbacksSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter
+
+
+class UpRegulation(GenericViewSet, mixins.UpdateModelMixin):
+    """上调"""
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False)
+    serializer_class = UpRegulationSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+
+
+class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
+    """下调"""
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False)
+    serializer_class = DownRegulationSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+
+
+class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
+    """下调"""
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False)
+    serializer_class = UpdateTrainsSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter)

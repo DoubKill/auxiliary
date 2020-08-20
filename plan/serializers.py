@@ -584,12 +584,14 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductClassesPlan
-        fields = ('equip_name', 'plan_classes_uid', 'sn', 'stage_product_batch_no', 'begin_time', 'end_time', 'classes',
-                  'plan_trains', 'actual_trains', 'operation_user', 'status')
+        fields = (
+            'id', 'equip_name', 'plan_classes_uid', 'sn', 'stage_product_batch_no', 'begin_time', 'end_time', 'classes',
+            'plan_trains', 'actual_trains', 'operation_user', 'status')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
 class UpRegulationSerializer(BaseModelSerializer):
+    """上调"""
     equip_name = serializers.CharField(write_only=True, help_text='机台名', required=False)
     classes = serializers.CharField(write_only=True, help_text='班次', required=False)
     product_batching = serializers.CharField(write_only=True, help_text='配方', required=False)
@@ -601,14 +603,110 @@ class UpRegulationSerializer(BaseModelSerializer):
         fields = ('equip_name', 'classes', 'product_batching', 'begin_times', 'end_times')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
+    @atomic()
     def update(self, instance, validated_data):
-        update_dict = {}
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
+        for p_obj in p_status:
+            if p_obj.status != '等待':
+                raise serializers.ValidationError('只有等待中的计划才能上调')
+        update_dict = {'delete_flag': False}
         equip_name = validated_data.get('equip_name', None)
         if equip_name:
             update_dict['product_day_plan__equip__equip_name'] = equip_name
         classes = validated_data.get('classes', None)
         if classes:
-            update_dict['classes_detail__classes__global_name'] =classes
-        product_batching=validated_data.get('product_batching',None)
+            update_dict['classes_detail__classes__global_name'] = classes
+        product_batching = validated_data.get('product_batching', None)
         if product_batching:
-            update_dict['product_day_plan__product_batching__stage_product_batch_no']
+            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
+        begin_times = validated_data.get('begin_times', None)
+        end_times = validated_data.get('end_times', None)
+        if begin_times and end_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, begin_time__gte=begin_times,
+                                                             end_time__lte=end_times)
+        elif begin_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, begin_time__gte=begin_times)
+        elif end_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, end_time__lte=end_times)
+        else:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
+        last_obj = pcp_queryset.filter(sn__lt=instance.sn).last()
+
+        snsn = last_obj.sn
+        last_obj.sn = instance.sn
+        last_obj.save()
+
+        instance.sn = snsn
+        instance.save()
+        return instance
+
+
+class DownRegulationSerializer(BaseModelSerializer):
+    """下调"""
+    equip_name = serializers.CharField(write_only=True, help_text='机台名', required=False)
+    classes = serializers.CharField(write_only=True, help_text='班次', required=False)
+    product_batching = serializers.CharField(write_only=True, help_text='配方', required=False)
+    begin_times = serializers.DateTimeField(write_only=True, help_text='开始时间', required=False)
+    end_times = serializers.DateTimeField(write_only=True, help_text='结束时间', required=False)
+
+    class Meta:
+        model = ProductClassesPlan
+        fields = ('equip_name', 'classes', 'product_batching', 'begin_times', 'end_times')
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    @atomic()
+    def update(self, instance, validated_data):
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
+        for p_obj in p_status:
+            if p_obj.status != '等待':
+                raise serializers.ValidationError('只有等待中的计划才能下调')
+        update_dict = {'delete_flag': False}
+        equip_name = validated_data.get('equip_name', None)
+        if equip_name:
+            update_dict['product_day_plan__equip__equip_name'] = equip_name
+        classes = validated_data.get('classes', None)
+        if classes:
+            update_dict['classes_detail__classes__global_name'] = classes
+        product_batching = validated_data.get('product_batching', None)
+        if product_batching:
+            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
+        begin_times = validated_data.get('begin_times', None)
+        end_times = validated_data.get('end_times', None)
+        if begin_times and end_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, begin_time__gte=begin_times,
+                                                             end_time__lte=end_times)
+        elif begin_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, begin_time__gte=begin_times)
+        elif end_times:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, end_time__lte=end_times)
+        else:
+            pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
+        last_obj = pcp_queryset.filter(sn__gt=instance.sn).first()
+
+        snsn = last_obj.sn
+        last_obj.sn = instance.sn
+        last_obj.save()
+
+        instance.sn = snsn
+        instance.save()
+        return instance
+
+
+class UpdateTrainsSerializer(BaseModelSerializer):
+    '''修改车次'''
+    trains = serializers.IntegerField(write_only=True, help_text='修改车次')
+
+    class Meta:
+        model = ProductClassesPlan
+        fields = ('trains',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    def update(self, instance, validated_data):
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
+        for p_obj in p_status:
+            if p_obj.status != '运行':
+                raise serializers.ValidationError('只有运行中的计划才可以修改车次')
+        trains = validated_data.get('trains')
+        instance.plan_trains = trains
+        instance.save()
+        return instance
