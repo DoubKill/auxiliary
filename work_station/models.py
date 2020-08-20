@@ -169,10 +169,10 @@ class IfdownRecipePloy1(models.Model):
     """1号机台配方胶料表"""
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 胶料名称
-    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量 ProductBatchingDetail.actual_weight
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # 防错？
     recipe_name = models.CharField(max_length=20)  # 配方名称
-    act_code = models.IntegerField(blank=True, null=True) # 动作代码
+    act_code = models.IntegerField(blank=True, null=True) # 动作代码  recipe.BaseAction
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
     recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # 同步状态
 
@@ -242,12 +242,13 @@ class IfdownShengchanjihua2(models.Model):
 
 
 class IfupMachineStatus(models.Model):
+    """设备状态表"""
     序号 = models.AutoField(primary_key=True)
-    存盘时间 = models.CharField(max_length=20)
-    计划号 = models.CharField(max_length=20, blank=True, null=True)
-    配方号 = models.CharField(max_length=20, blank=True, null=True)
+    存盘时间 = models.CharField(max_length=20) # 上辅机或者mes是否需要
+    计划号 = models.CharField(max_length=20, blank=True, null=True)  # plan_no?
+    配方号 = models.CharField(max_length=20, blank=True, null=True)  # recipe no
     运行状态 = models.IntegerField()
-    机台号 = models.IntegerField()
+    机台号 = models.IntegerField()  # equip_no
     recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
@@ -256,6 +257,7 @@ class IfupMachineStatus(models.Model):
 
 
 class IfupReportBasis(models.Model):
+    """车次报表主信息"""
     序号 = models.AutoField(primary_key=True)
     车次号 = models.IntegerField(blank=True, null=True)
     开始时间 = models.CharField(max_length=20, blank=True, null=True)
@@ -289,6 +291,7 @@ class IfupReportBasis(models.Model):
 
 
 class IfupReportCurve(models.Model):
+    """车次报表工艺曲线数据表"""
     序号 = models.AutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
     配方号 = models.CharField(max_length=20, blank=True, null=True)
@@ -307,6 +310,7 @@ class IfupReportCurve(models.Model):
 
 
 class IfupReportMix(models.Model):
+    """车次报表步序表"""
     序号 = models.AutoField(primary_key=True)
     步骤号 = models.IntegerField(blank=True, null=True)
     条件 = models.CharField(max_length=20, blank=True, null=True)
@@ -330,6 +334,7 @@ class IfupReportMix(models.Model):
 
 
 class IfupReportWeight(models.Model):
+    """车次报表材料重量表"""
     序号 = models.AutoField(primary_key=True)
     车次号 = models.IntegerField(blank=True, null=True)
     物料名称 = models.CharField(max_length=19, blank=True, null=True)
