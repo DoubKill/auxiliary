@@ -2,13 +2,14 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from plan.views import ProductDayPlanViewSet, MaterialDemandedViewSet, ProductBatchingDayPlanViewSet, \
     ProductDayPlanCopyView, ProductBatchingDayPlanCopyView, MaterialRequisitionClassesViewSet, MaterialDemandedAPIView, \
-    ProductBatchingDayPlanManyCreate
+    ProductBatchingDayPlanManyCreate, PalletFeedbacksViewSet
 
 router = DefaultRouter()
 
 router.register(r'product-day-plans', ProductDayPlanViewSet)
 router.register(r'product-batching-day-plans', ProductBatchingDayPlanViewSet)
 router.register(r'material-requisition-classes', MaterialRequisitionClassesViewSet)
+router.register(r'pallet-feed-backs', PalletFeedbacksViewSet)
 # router.register(r'material-requisitions', MaterialRequisitionViewSet)
 
 urlpatterns = [

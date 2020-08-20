@@ -1,5 +1,5 @@
 import django_filters
-from plan.models import ProductDayPlan, MaterialDemanded, ProductBatchingDayPlan
+from plan.models import ProductDayPlan, MaterialDemanded, ProductBatchingDayPlan, ProductClassesPlan
 
 
 class ProductDayPlanFilter(django_filters.rest_framework.FilterSet):
@@ -34,6 +34,19 @@ class ProductBatchingDayPlanFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = ProductBatchingDayPlan
         fields = ('plan_date', 'equip_no', 'product_no')
+
+
+class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
+    """计划管理"""
+    classes = django_filters.CharFilter(field_name='classes_detail__classes__global_name', help_text='班次')
+    product_no = django_filters.CharFilter(field_name='product_day_plan__product_batching__stage_product_batch_no',
+                                           help_text='胶料编码')
+    begin_time = django_filters.DateTimeFilter(field_name='begin_time', lookup_expr="gte", help_text='开始时间')
+    end_time = django_filters.DateTimeFilter(field_name='end_time', lookup_expr="lte", help_text='结束时间')
+
+    class Meta:
+        model = ProductClassesPlan
+        fields = ('classes', 'product_no', 'begin_time', 'end_time')
 
 
 '''

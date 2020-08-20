@@ -6,12 +6,14 @@ from rest_framework import mixins, status
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from basics.views import CommonDeleteMixin
 from mes.derorators import api_recorder
-from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBatchingDayPlanFilter
+from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBatchingDayPlanFilter, \
+    PalletFeedbacksFilter
 from plan.serializers import ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, \
-    ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer
+    ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
+    PalletFeedbacksSerializer
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
 from plan.paginations import LimitOffsetPagination
@@ -20,6 +22,7 @@ from basics.models import Equip, PlanSchedule
 
 # Create your views here.
 from plan.uuidfield import UUidTools
+from production.models import PalletFeedbacks
 from recipe.models import Material
 
 
@@ -204,34 +207,17 @@ class ProductBatchingDayPlanCopyView(CreateAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-'''
 @method_decorator([api_recorder], name="dispatch")
-class MaterialRequisitionViewSet(CommonDeleteMixin, ModelViewSet):
+class PalletFeedbacksViewSet(mixins.ListModelMixin,
+                             GenericViewSet, CommonDeleteMixin):
     """
     list:
-        领料日计划列表
-    create:
-        新建领料日计划
-    update:
-        修改领料日计划
-    destroy:
-        删除领料日计划
+        计划管理展示
+    delete:
+        计划管路删除
     """
-    queryset = MaterialRequisition.objects.filter(delete_flag=False)
-    serializer_class = MaterialRequisitionSerializer
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False)
+    serializer_class = PalletFeedbacksSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filter_class = MaterialRequisitionFilter
-    ordering_fields = ['id']
-
-    # pagination_class = LimitOffsetPagination
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        MaterialRequisitionClasses.objects.filter(material_requisition=instance).update(delete_flag=True,
-                                                                                        delete_user=request.user)
-        instance.delete_flag = True
-        instance.delete_user = request.user
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-'''
+    filter_class = PalletFeedbacksFilter
