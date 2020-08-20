@@ -3,7 +3,7 @@ from django.urls import path, include
 from plan.views import ProductDayPlanViewSet, MaterialDemandedViewSet, ProductBatchingDayPlanViewSet, \
     ProductDayPlanCopyView, ProductBatchingDayPlanCopyView, MaterialRequisitionClassesViewSet, MaterialDemandedAPIView, \
     ProductBatchingDayPlanManyCreate, PalletFeedbacksViewSet, ProductDayPlanManyCreate, UpRegulation, DownRegulation, \
-    UpdateTrains
+    UpdateTrains, StopPlan, IssuedPlan, RetransmissionPlan
 
 router = DefaultRouter()
 # 胶料日计划
@@ -29,4 +29,8 @@ urlpatterns = [
     path('material-demanded-apiview/', MaterialDemandedAPIView.as_view()),  # 原材料需求量展示
     path('product-batching-day-plan-manycreate/', ProductBatchingDayPlanManyCreate.as_view()),  # 群增小料日计划
     path('product-day-plan-manycreate/', ProductDayPlanManyCreate.as_view()),  # 群增胶料日计划
+    path('stop-plan/', StopPlan.as_view()),  # 计划停止
+    path('issued-plan/', IssuedPlan.as_view()),  # 计划下达
+    path('retransmission-plan/', RetransmissionPlan.as_view()),  # 计划重传
+
 ]

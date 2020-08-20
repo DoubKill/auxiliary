@@ -1,3 +1,4 @@
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -22,8 +23,10 @@ from basics.models import Equip, PlanSchedule
 
 # Create your views here.
 from plan.uuidfield import UUidTools
-from production.models import PalletFeedbacks
+from production.models import PalletFeedbacks, PlanStatus
 from recipe.models import Material
+from work_station.api import IssueWorkStation
+from work_station.models import IfdownShengchanjihua1
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -257,8 +260,103 @@ class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
 
 
 class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
-    """下调"""
+    """修改车次"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
     serializer_class = UpdateTrainsSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
+
+
+class StopPlan(APIView):
+    """计划停止"""
+
+    @atomic()
+    def get(self, request):
+        params = request.query_params
+        plan_id = params.get("id")
+        equip_name = params.get("equip_name")
+        pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        if not ps_obj:
+            return Response("计划状态变更没有数据", status=400)
+        if ps_obj.status != '运行中':
+            return Response("只有运行中的计划才能停止！", status=400)
+        ps_obj.status = '等待'
+        ps_obj.save()
+
+        temp_data = {
+            'id': params.get("id", None),  # id
+            'state': '等待',  # 计划状态：等待，运行中，完成
+        }
+        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp.issue_to_db()
+
+        return Response('修改成功', status=200)
+
+
+class IssuedPlan(APIView):
+    """下达计划"""
+
+    @atomic()
+    def get(self, request):
+        params = request.query_params
+        plan_id = params.get("id")
+        equip_name = params.get("equip_name")
+        pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        if not ps_obj:
+            return Response("计划状态变更没有数据", status=400)
+        if ps_obj.status != '等待':
+            return Response("只有等待中的计划才能运行！", status=400)
+        ps_obj.status = '运行'
+        ps_obj.save()
+
+        temp_data = {
+            # 'id': params.get("id", None),  # id
+            'recipe': params.get("stage_product_batch_no", None),  # 配方名
+            'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
+            'lasttime': params.get("day_time", None),  # 班日期
+            'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
+            'startime': params.get("begin_time", None),  # 开始时间
+            'stoptime': params.get("end_time", None),  # 结束时间
+            'grouptime': params.get("classes", None),  # 班次
+            'groupoper': params.get("group", None),  # 班组????
+            'setno': params.get("plan_trains", None),  # 设定车次
+            'actno': params.get("actual_trains", None),  # 当前车次
+            'oper': params.get("operation_user", None),  # 操作员角色
+            'state': '运行中',  # 计划状态：等待，运行中，完成
+            'remark': params.get("plan_classes_uid", None),
+            'recstatus': params.get("plan_classes_uid", None),
+        }
+        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp.issue_to_db()
+
+        return Response('修改成功', status=200)
+
+
+class RetransmissionPlan(APIView):
+    """重传计划"""
+
+    @atomic()
+    def get(self, request):
+        params = request.query_params
+        plan_id = params.get("id")
+        equip_name = params.get("equip_name")
+        pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        if not ps_obj:
+            return Response("计划状态变更没有数据", status=400)
+        if ps_obj.status != '等待':
+            return Response("只有等待中的计划才能运行！", status=400)
+        ps_obj.status = '运行'
+        ps_obj.save()
+
+        temp_data = {
+            'id': params.get("id", None),  # id
+            'setno': params.get("plan_trains", None),  # 设定车次
+            'state': '等待',  # 计划状态：等待，运行中，完成
+        }
+        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp.issue_to_db()
+
+        return Response('修改成功', status=200)

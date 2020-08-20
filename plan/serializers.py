@@ -6,7 +6,7 @@ from django.db.transaction import atomic
 from rest_framework import serializers
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
-from basics.models import PlanSchedule, WorkSchedule, ClassesDetail
+from basics.models import PlanSchedule, WorkSchedule, ClassesDetail, WorkSchedulePlan
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from mes.base_serializer import BaseModelSerializer
 from plan.uuidfield import UUidTools
@@ -540,26 +540,21 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_name', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
-    # begin_time = serializers.SerializerMethodField(read_only=True, help_text='开始时间')
-    # end_time = serializers.SerializerMethodField(read_only=True, help_text='结束时间')
     classes = serializers.CharField(source='classes_detail.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
     operation_user = serializers.SerializerMethodField(read_only=True, help_text='操作员')
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
+    day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time',read_only=True)
+    group = serializers.SerializerMethodField(read_only=True, help_text='班组')
 
-    # def get_begin_time(self, object):
-    #     pfb_obj = PalletFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
-    #     if pfb_obj:
-    #         return pfb_obj.begin_time
-    #     else:
-    #         return None
-    #
-    # def get_end_time(self, object):
-    #     pfb_obj = PalletFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
-    #     if pfb_obj:
-    #         return pfb_obj.end_time
-    #     else:
-    #         return None
+    def get_group(self, object):
+        classes_detail = object.classes_detail
+        plan_schedule = object.product_day_plan.plan_schedule
+        wsp_obj = WorkSchedulePlan.objects.filter(classes_detail=classes_detail, plan_schedule=plan_schedule).first()
+        if wsp_obj:
+            return wsp_obj.group_name
+        else:
+            return None
 
     def get_actual_trains(self, object):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
@@ -586,7 +581,7 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
         model = ProductClassesPlan
         fields = (
             'id', 'equip_name', 'plan_classes_uid', 'sn', 'stage_product_batch_no', 'begin_time', 'end_time', 'classes',
-            'plan_trains', 'actual_trains', 'operation_user', 'status')
+            'plan_trains', 'actual_trains', 'operation_user', 'status', 'day_time', 'group')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
