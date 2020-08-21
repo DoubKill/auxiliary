@@ -33,7 +33,7 @@ class IfdownPmtRecipe1(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)     # 侧壁水温
     tempuse = models.IntegerField(blank=True, null=True)     # 三区水温启用/停用
     usenot = models.IntegerField(blank=True, null=True)      # 配方停用
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # 同步状态
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # 同步状态
 
     class Meta:
         managed = False
@@ -59,7 +59,7 @@ class IfdownPmtRecipe2(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -75,7 +75,7 @@ class IfdownRecipeCb1(models.Model):
     recipe_name = models.CharField(max_length=20)   # 防错
     act_code = models.IntegerField(blank=True, null=True) # 动作编码
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -90,7 +90,7 @@ class IfdownRecipeCb2(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -109,7 +109,7 @@ class IfdownRecipeMix1(models.Model):
     set_pres = models.IntegerField(blank=True, null=True) # 压力
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True) # 转速
     recipe_name = models.CharField(max_length=20, blank=True, null=True)  # 配方名
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # 同步状态
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # 同步状态
 
     class Meta:
         managed = False
@@ -127,7 +127,7 @@ class IfdownRecipeMix2(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -143,7 +143,7 @@ class IfdownRecipeOil11(models.Model):
     recipe_name = models.CharField(max_length=20) # 配方名称
     act_code = models.IntegerField(blank=True, null=True) # 动作代码
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -158,7 +158,7 @@ class IfdownRecipeOil12(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -174,7 +174,7 @@ class IfdownRecipePloy1(models.Model):
     recipe_name = models.CharField(max_length=20)  # 配方名称
     act_code = models.IntegerField(blank=True, null=True) # 动作代码  recipe.BaseAction
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # 同步状态
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # 同步状态
 
     class Meta:
         managed = False
@@ -189,7 +189,7 @@ class IfdownRecipePloy2(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -212,7 +212,7 @@ class IfdownShengchanjihua1(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True) # 操作员角色
     state = models.CharField(max_length=8, blank=True, null=True) # 计划状态：等待，运行中，完成
     remark = models.CharField(max_length=4)
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # 同步状态字段
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # 同步状态字段
 
     class Meta:
         managed = False
@@ -234,7 +234,7 @@ class IfdownShengchanjihua2(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.IntegerField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -249,7 +249,7 @@ class IfupMachineStatus(models.Model):
     配方号 = models.CharField(max_length=20, blank=True, null=True)  # recipe no
     运行状态 = models.IntegerField()
     机台号 = models.IntegerField()  # equip_no
-    recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -283,7 +283,7 @@ class IfupReportBasis(models.Model):
     加油2时间 = models.IntegerField(blank=True, null=True)
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -302,7 +302,7 @@ class IfupReportCurve(models.Model):
     转速 = models.IntegerField(blank=True, null=True)
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -326,7 +326,7 @@ class IfupReportMix(models.Model):
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     密炼车次 = models.IntegerField(blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -347,7 +347,7 @@ class IfupReportWeight(models.Model):
     物料类型 = models.CharField(max_length=1, blank=True, null=True)
     存盘时间 = models.CharField(max_length=19, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.IntegerField(db_column='RecStatus')  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus')  # Field name made lowercase.
 
     class Meta:
         managed = False
