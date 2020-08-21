@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'drf_yasg',  # swagger文档插件    /api/v1/docs/swagger
     'django_filters',
     'production.apps.ProductionConfig',
@@ -199,7 +200,7 @@ DATABASES = {
         'NAME': os.getenv('DATABASE_NAME', 'GZSFJ'),  # 数据库名称
         'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
-        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.11.178'),  # HOST
+        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
         'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
     }
 }
@@ -248,3 +249,39 @@ LANGUAGES = (
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'locale'),
 )
+
+
+# 跨域允许的请求方式，可以使用默认值，默认的请求方式为:
+# from corsheaders.defaults import default_methods
+CORS_ALLOW_METHODS = (
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+)
+
+# 允许跨域的请求头，可以使用默认值，默认的请求头为:
+# from corsheaders.defaults import default_headers
+# CORS_ALLOW_HEADERS = default_headers
+
+CORS_ALLOW_HEADERS = (
+    'XMLHttpRequest',
+    'X_FILENAME',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'Pragma',
+)
+
+# 跨域请求时，是否运行携带cookie，默认为False
+CORS_ALLOW_CREDENTIALS = True
+# 允许所有主机执行跨站点请求，默认为False
+# 如果没设置该参数，则必须设置白名单，运行部分白名单的主机才能执行跨站点请求
+CORS_ORIGIN_ALLOW_ALL = True
