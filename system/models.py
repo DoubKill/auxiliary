@@ -93,3 +93,31 @@ class GroupExtension(Group):
     class Meta:
         db_table = 'group_extension'
         verbose_name_plural = verbose_name = '组织拓展信息'
+
+
+class ChildSystemInfo(AbstractEntity):
+    path = models.CharField(max_length=64, help_text='连接地址', verbose_name='连接地址')
+    system_type = models.CharField(max_length=64, help_text='系统类型', verbose_name='系统地址')
+    system_name = models.CharField(max_length=64, help_text='系统名称', verbose_name='系统名称')
+    status = models.CharField(max_length=64, help_text='子系统状态', verbose_name='子系统状态')
+
+    def __str__(self):
+        return f"{self.system_type}|{self.system_name}|{self.path}"
+
+    class Meta:
+        db_table = 'child_system_info'
+        verbose_name_plural = verbose_name = '子系统信息'
+
+
+class SystemConfig(AbstractEntity):
+    category = models.CharField(max_length=64, help_text='种类', verbose_name='种类')
+    config_name = models.CharField(max_length=64, help_text='配置名称', verbose_name='配置名称')
+    config_value = models.CharField(max_length=64, help_text='配置值', verbose_name='配置值')
+    description = models.CharField(max_length=64, help_text='描述', verbose_name='描述')
+
+    def __str__(self):
+        return f"{self.category}|{self.config_name}|{self.config_value}"
+
+    class Meta:
+        db_table = 'child_system_info'
+        verbose_name_plural = verbose_name = '系统配置表'
