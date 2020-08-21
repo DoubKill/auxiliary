@@ -3,18 +3,19 @@ from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
 from rest_framework import mixins, status
 from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
-from mes.common_code import menu
+from mes.common_code import menu, CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from system.models import GroupExtension, User, Section
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
-    UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer
+    UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
+    ChildSystemInfoSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from system.filters import UserFilter, GroupExtensionFilter
 
@@ -39,7 +40,7 @@ class PermissionViewSet(ReadOnlyModelViewSet):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class UserViewSet(ModelViewSet):
+class UserViewSet(CommonDeleteMixin, ModelViewSet):
     """
     list:
         用户列表
@@ -80,6 +81,7 @@ class UserViewSet(ModelViewSet):
 
 
 class UserGroupsViewSet(mixins.ListModelMixin,
+                        CommonDeleteMixin,
                         GenericViewSet):
     queryset = User.objects.filter(delete_flag=False)
 
@@ -91,7 +93,7 @@ class UserGroupsViewSet(mixins.ListModelMixin,
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(ModelViewSet):
+class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     list:
         角色列表
@@ -129,7 +131,7 @@ class GroupAddUserViewSet(UpdateAPIView):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class SectionViewSet(ModelViewSet):
+class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     list:
         角色列表
@@ -227,3 +229,35 @@ class ImportExcel(APIView):
         :return:
         """
         return sheet.merged_cells
+
+
+class SystemConfigViewSet(CommonDeleteMixin, ModelViewSet):
+    """
+        list:
+            系统配置列表
+        create:
+            创建系统配置
+        update:
+            修改系统配置
+        destroy:
+            删除系统配置
+    """
+    queryset = SystemConfig.objects.filter(delete_flag=False)
+    serializer_class = SystemConfigSerializer
+    permission_classes = (IsAdminUser,)
+
+
+class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
+    """
+        list:
+            子系统信息列表
+        create:
+            创建子系统信息
+        update:
+            修改子系统信息
+        destroy:
+            删除子系统信息
+    """
+    queryset = ChildSystemInfo.objects.filter(delete_flag=False)
+    serializer_class = ChildSystemInfoSerializer
+    permission_classes = (IsAdminUser,)

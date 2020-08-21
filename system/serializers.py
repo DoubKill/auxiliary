@@ -12,7 +12,7 @@ from django.contrib.auth.hashers import make_password
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
-from system.models import GroupExtension, Group, User, Section
+from system.models import GroupExtension, Group, User, Section, SystemConfig, ChildSystemInfo
 
 
 class PermissionSerializer(BaseModelSerializer):
@@ -125,5 +125,21 @@ class GroupUserUpdateSerializer(BaseModelSerializer):
 class SectionSerializer(BaseModelSerializer):
     class Meta:
         model = Section
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class SystemConfigSerializer(BaseModelSerializer):
+
+    class Meta:
+        model = SystemConfig
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class ChildSystemInfoSerializer(BaseModelSerializer):
+
+    class Meta:
+        model = ChildSystemInfo
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
