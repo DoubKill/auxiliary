@@ -200,7 +200,7 @@ DATABASES = {
         'NAME': os.getenv('DATABASE_NAME', 'GZSFJ'),  # 数据库名称
         'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
-        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.11.178'),  # HOST
+        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
         'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
     }
 }

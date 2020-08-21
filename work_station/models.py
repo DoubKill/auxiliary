@@ -273,7 +273,7 @@ class IfupReportBasis(models.Model):
     总重量 = models.IntegerField(blank=True, null=True)
     胶料重量 = models.IntegerField(blank=True, null=True)
     炭黑重量 = models.IntegerField(blank=True, null=True)
-    油1重量= models.IntegerField(blank=True, null=True)
+    油1重量 = models.IntegerField(blank=True, null=True)
     油2重量 = models.IntegerField(blank=True, null=True)
     计划号 = models.CharField(max_length=50, blank=True, null=True)
     配方号 = models.CharField(max_length=50, blank=True, null=True)
