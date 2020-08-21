@@ -119,5 +119,5 @@ class SystemConfig(AbstractEntity):
         return f"{self.category}|{self.config_name}|{self.config_value}"
 
     class Meta:
-        db_table = 'child_system_info'
+        db_table = 'system_config'
         verbose_name_plural = verbose_name = '系统配置表'
