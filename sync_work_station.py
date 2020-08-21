@@ -7,6 +7,8 @@ name:
 import datetime
 import os
 import time
+import socket
+import functools
 
 import django
 import logging
@@ -103,6 +105,26 @@ field_map = {
 }
 
 
+
+def one_instance(func):
+    '''
+    如果已经有实例在跑则退出
+    '''
+    @functools.wraps(func)
+    def f(*args,**kwargs):
+        try:
+        # 全局属性，否则变量会在方法退出后被销毁
+            global s
+            s = socket.socket()
+            host = socket.gethostname()
+            s.bind((host, 60123))
+        except:
+            print('already has an instance, this script will not be excuted')
+            return
+        return func(*args,**kwargs)
+    return f
+
+@one_instance
 def main():
     # temp_list = dir(md)  # 原计划动态导入中间表，改为写死
     # 手动对中间表模型进行排序确保业务逻辑正确
@@ -202,10 +224,10 @@ def main():
             # sync_model, data = mid_model_map.get(m)
             # sync_model.objects.create(**data)
 
+@one_instance
 def run():
     while True:
         main()
-
 
 if __name__ == "__main__":
     # 问题1 recstatus字段是否要修改 文档1中是字符，sql建的表是整型
