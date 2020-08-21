@@ -15,10 +15,12 @@ from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl
+    QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer
+from work_station.api import IssueWorkStation
+from work_station.models import IfdownRecipeCb1
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -45,7 +47,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
             train_list = actual_trains.split(",")
             queryset = self.filter_queryset(self.get_queryset().filter(actual_trains__in=train_list))
         else:
-            queryset = self.filter_queryset(self.get_queryset() )
+            queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -99,7 +101,7 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
             train_list = actual_trains.split(",")
             queryset = self.filter_queryset(self.get_queryset().filter(current_trains__in=train_list))
         else:
-            queryset = self.filter_queryset(self.get_queryset() )
+            queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -187,7 +189,7 @@ class QualityControlViewSet(mixins.CreateModelMixin,
 
 
 class PlanRealityViewSet(mixins.ListModelMixin,
-                      GenericViewSet):
+                         GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -253,7 +255,7 @@ class PlanRealityViewSet(mixins.ListModelMixin,
                     actual_time = 0
                     begin_time = None
             if plan_weight:
-                ach_rate = actual_weight/plan_weight*100
+                ach_rate = actual_weight / plan_weight * 100
             else:
                 ach_rate = 0
             instance.update(equip_no=equip_no, product_no=product_no,
@@ -265,7 +267,7 @@ class PlanRealityViewSet(mixins.ListModelMixin,
             if equip_no in temp_data:
                 temp_data[equip_no].append(instance)
         for equip_data in temp_data.values():
-            equip_data.sort(key=lambda x:(x.get("equip_no"), x.get("begin_time")))
+            equip_data.sort(key=lambda x: (x.get("equip_no"), x.get("begin_time")))
             new_equip_data = []
             for _ in equip_data:
                 _.update(sn=equip_data.index(_) + 1)
@@ -276,7 +278,7 @@ class PlanRealityViewSet(mixins.ListModelMixin,
 
 
 class ProductActualViewSet(mixins.ListModelMixin,
-                      GenericViewSet):
+                           GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -324,10 +326,10 @@ class ProductActualViewSet(mixins.ListModelMixin,
                 if temp_ret_set:
                     actual = temp_ret_set.order_by("-created_date").first()
                     temp_class_actual = {
-                            "plan_trains": plan_trains,
-                            "actual_trains": actual.actual_trains,
-                            "classes": class_name
-                        }
+                        "plan_trains": plan_trains,
+                        "actual_trains": actual.actual_trains,
+                        "classes": class_name
+                    }
                     if class_name == "早班":
                         day_plan_actual[0] = temp_class_actual
                     elif class_name == "中班":
@@ -359,8 +361,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
 
 
 class ProductionRecordViewSet(mixins.ListModelMixin,
-                            GenericViewSet):
-
+                              GenericViewSet):
     queryset = PalletFeedbacks.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ProductionRecordSerializer
@@ -383,3 +384,55 @@ class PlanRelease(APIView):
         url = "http://xxxxx"
         ret = requests.post(url, data=plan_data)
         # TODO
+
+
+class WeighParameterCarbonViewSet(mixins.CreateModelMixin,
+                                  mixins.UpdateModelMixin,
+                                  mixins.ListModelMixin,
+                                  GenericViewSet):
+    queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = MaterialTankStatusSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ('id',)
+
+    def create(self, request, *args, **kwargs):
+        params = request.data
+        temp_data = {
+             # "id": 1,
+            "mname": params.get("masterial_name"),
+            "set_weight": None,
+            "error_allow": None,
+            "recipe_name": "配方1",
+            "type": params.get("tank_type"),
+            "recstatus": None,
+        }
+        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
+        temp.issue_to_db()
+        return super().create(request, *args, **kwargs)
+
+
+class WeighParameterFuelViewSet(mixins.CreateModelMixin,
+                                mixins.UpdateModelMixin,
+                                mixins.ListModelMixin,
+                                GenericViewSet):
+    queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="2")
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = MaterialTankStatusSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ('id',)
+
+    def create(self, request, *args, **kwargs):
+        params = request.data
+        temp_data = {
+             # "id": 1,
+            "mname": params.get("masterial_name"),
+            "set_weight": None,
+            "error_allow": None,
+            "recipe_name": "配方1",
+            "type": params.get("tank_type"),
+            "recstatus": None,
+        }
+        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
+        temp.issue_to_db()
+        return super().create(request, *args, **kwargs)
