@@ -16,7 +16,7 @@ class TrainsFeedbacksFilter(django_filters.rest_framework.FilterSet):
 class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
     """托盘产出反馈过滤器"""
     plan_classes_uid = django_filters.CharFilter(field_name='plan_classes_uid', help_text='班次计划唯一码')
-    equip_no= django_filters.CharFilter(field_name='equip_no', help_text='机号')
+    equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料编号')
     st = django_filters.DateTimeFilter(field_name="end_time", help_text='生产时间', lookup_expr="gte")
     et = django_filters.DateTimeFilter(field_name="end_time", help_text='生产时间', lookup_expr="lte")
@@ -31,6 +31,7 @@ class EquipStatusFilter(django_filters.rest_framework.FilterSet):
     """机台状态反馈过滤器"""
     plan_classes_uid = django_filters.CharFilter(field_name='plan_classes_uid', help_text='班次计划唯一码')
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机号')
+
     # product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料编号')
 
     class Meta:
@@ -67,3 +68,12 @@ class QualityControlFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = QualityControl
         fields = ('barcode',)
+
+
+class WeighParameterCarbonFilter(django_filters.rest_framework.FilterSet):
+    """称量过滤器"""
+    equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
+
+    class Meta:
+        model = MaterialTankStatus
+        fields = ('equip_no',)

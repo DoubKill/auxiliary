@@ -13,14 +13,14 @@ from rest_framework.viewsets import GenericViewSet
 from basics.models import PlanSchedule
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
-    PlanStatusFilter, ExpendMaterialFilter
+    PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer
 from work_station.api import IssueWorkStation
-from work_station.models import IfdownRecipeCb1
+from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -395,6 +395,8 @@ class WeighParameterCarbonViewSet(mixins.CreateModelMixin,
     serializer_class = MaterialTankStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
+    filter_class = WeighParameterCarbonFilter
+
 
     def create(self, request, *args, **kwargs):
         params = request.data
@@ -421,6 +423,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     serializer_class = MaterialTankStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
+    filter_class = WeighParameterCarbonFilter
 
     def create(self, request, *args, **kwargs):
         params = request.data
@@ -433,6 +436,6 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             "type": params.get("tank_type"),
             "recstatus": None,
         }
-        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
+        temp = IssueWorkStation(IfdownRecipeOil11, temp_data)
         temp.issue_to_db()
         return super().create(request, *args, **kwargs)

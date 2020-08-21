@@ -128,7 +128,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = MaterialTankStatus
-        fields = ("tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value", "dot_time",
+        fields = ("equip_no", "tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value", "dot_time",
                   "fast_speed",
                   "low_speed", "used_flag")
         read_only_fields = COMMON_READ_ONLY_FIELDS
