@@ -2,21 +2,25 @@
 """项目初始化脚本"""
 import datetime
 import os
-import random
 import string
+import traceback
+
+import time
+import random
 import uuid
 
 import django
 
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
-from plan.models import ProductClassesPlan, ProductDayPlan
-from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
-from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail  # ,ProductRecipe
+from recipe.models import Material, ProductInfo, ProductBatching
 from system.models import GroupExtension, User, Section
+from plan.models import ProductDayPlan, ProductClassesPlan
+from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
               '何', '吕', '施', '张', '孔', '曹', '严', '华', '金', '魏', '陶', '姜', '戚', '谢', '邹', '喻', '柏', '水', '窦', '章',
@@ -80,7 +84,8 @@ first_names = ['的', '一', '是', '了', '我', '不', '人', '在', '他', '�
 
 
 def add_global_codes():
-    names = ['胶料状态', '产地', '包装单位', '原材料类别', '胶料段次', '班组', '班次', '设备类型', '工序', '炼胶机类型', '设备层次']
+    names = ['胶料状态', '产地', '包装单位', '原材料类别', '胶料段次', '班组', '班次', '设备类型', '工序', '炼胶机类型', '设备层次',
+             'SITE']
     for i, name in enumerate(names):
         instance, _ = GlobalCodeType.objects.get_or_create(type_no=str(i + 1), type_name=name, used_flag=1)
         items = []
@@ -93,7 +98,7 @@ def add_global_codes():
                      '其他化工类', 'CMB', '待处料', 'FM', 'HMB', 'NF', 'RE', 'RFM', 'RMB', '1MB', '2MB', '3MB', '胎圈钢丝',
                      '纤维帘丝', '钢丝类', '帘布', '钢丝帘线']
         elif i == 4:
-            items = ['MB1', 'MB2', 'FM']
+            items = ['1MB', '2MB', 'FM']
         elif i == 5:
             items = ["a班", "b班", "c班"]
         elif i == 6:
@@ -106,13 +111,16 @@ def add_global_codes():
             items = ['400', '500', '600']
         elif i == 10:
             items = ['1', '2', '3']
+        elif i == 11:
+            items = ['c', 'l', 'k']
         for item in items:
             GlobalCode.objects.get_or_create(global_no=str(i + 1), global_name=item, global_type=instance)
 
 
 def add_materials():
     """原材料信息"""
-    data = [['', '', 'A008', 'RE', 'A008', 'A008', '外部', '分段胶', '基于生产日', 15.0, '', '', '', '', 0.0, 0.0, 0.0, 0.0, 'Y',
+    data = [
+        ['', '', 'A008', 'RE', 'A008', 'A008', '外部', '分段胶', '基于生产日', 15.0, '', '', '', '', 0.0, 0.0, 0.0, 0.0, 'Y',
              '蔡葵', '2017-10-19', '14:04'],
             ['', '', 'A011-D', 'RE', 'A011-D', 'A011-D', '外部', '分段胶', '基于生产日', 15.0, '', '', '', '', 0.0, 0.0, 0.0, 0.0,
              'Y', '蔡葵', '2017-10-19', '13:31'],
@@ -955,7 +963,6 @@ def add_materials():
         data['material_no'] = x[2]
         data['material_name'] = x[4]
         data['material_type'] = GlobalCode.objects.filter(global_name=x[3]).first()
-        data['density'] = 1
         data['used_flag'] = 1
         try:
             Material.objects.create(**data)
@@ -1108,19 +1115,19 @@ def add_sections():
 def add_users():
     section_ids = list(Section.objects.values_list('id', flat=True))
     group_ids = list(GroupExtension.objects.values_list('id', flat=True))
-    for i in range(500):
+    for i in range(100):
         name = getRandomName()
         try:
-            user = User.objects.create(
+            user = User.objects.create_user(
                 username=name,
                 password='123456',
-                sn=i,
+                num=i,
                 is_leave=False,
                 section_id=random.choice(section_ids),
             )
             user.groups.add(random.choice(group_ids))
         except Exception:
-            pass
+            print(traceback.print_exc())
 
 
 def randomtimes(start, end, n, frmt="%Y-%m-%d"):
@@ -1137,8 +1144,8 @@ def add_schedules():
                 schedule_no=str(random.randint(100, 999)),
                 schedule_name=name
             )
-            times = ['2020-06-01 00:00:01', '2020-06-01 08:00:00',
-                     '2020-06-01 16:00:00', '2020-06-01 23:00:59']
+            times = ['00:00:01', '08:00:00',
+                     '16:00:00', '23:00:59']
             for i in range(3):
                 ClassesDetail.objects.create(
                     work_schedule=schedule,
@@ -1218,11 +1225,19 @@ def add_equips():
             pass
 
 
+def get_date(start_time, interval):
+    from datetime import datetime
+    from datetime import timedelta
+    c = []
+    for i in range(interval):
+        c.append((datetime.strptime(start_time, '%Y-%m-%d') + timedelta(days=i)).strftime("%Y-%m-%d"))
+    print(c)
+    return c
+
+
 def add_plan_schedule():
     ids = list(WorkSchedule.objects.values_list('id', flat=True))
-    times = ['2020-01-01', '2020-01-02', '2020-01-03',
-             '2020-01-04', '2020-01-05', '2020-01-06',
-             '2020-01-07', '2020-09-11']
+    times = get_date("2020-8-1", 365)
     group_ids = list(GlobalCode.objects.filter(global_type__type_name='班组').values_list('id', flat=True))
 
     detail_ids = list(ClassesDetail.objects.values_list('id', flat=True))
@@ -1230,7 +1245,6 @@ def add_plan_schedule():
         try:
             instance = PlanSchedule.objects.create(
                 day_time=time,
-                week_time=PlanSchedule.TYPE_CHOICE_WEEK[i][0],
                 work_schedule_id=random.choice(ids)
             )
             for j in range(3):
@@ -1246,74 +1260,78 @@ def add_plan_schedule():
             pass
 
 
-# def add_product():
-#     products = (
-#         'J260', 'A019', 'A403', 'B166', 'B568', 'B635', 'C101', 'C110', 'C120', 'C140', 'C150', 'C155', 'C160', 'C180',
-#         'C190', 'C195', 'EUC121')
-#     factory_ids = list(GlobalCode.objects.filter(global_type__type_name='产地').values_list('id', flat=True))
-#     stages = GlobalCode.objects.filter(global_type__type_name='胶料段次')
-#     materials = list(Material.objects.values_list('id', flat=True))
-#     for i in products:
-#         try:
-#             product = ProductInfo.objects.create(
-#                 product_no=i,
-#                 product_name=i,
-#                 versions='01',
-#                 factory_id=random.choice(factory_ids),
-#                 used_type=1,
-#                 recipe_weight=0
-#             )
-#             i = 1
-#             weight = 0
-#             for stage in stages:
-#                 for k in range(random.randint(1, 4)):
-#                     recipe = ProductRecipe.objects.create(
-#                         product_recipe_no=product.product_no + '-' + stage.global_name,
-#                         sn=i,
-#                         product_info=product,
-#                         material_id=random.choice(materials),
-#                         stage=stage,
-#                         ratio=random.randint(10, 100)
-#                     )
-#                     weight += recipe.ratio
-#                     i += 1
-#             product.recipe_weight = weight
-#             product.save()
-#         except Exception:
-#             pass
+def add_product():
+    products = ['J260', 'A019', 'A403', 'B166', 'B568', 'B635', 'C101', 'C110', 'C120', 'C140', 'C150', 'C155', 'C160', 'C180', 'C190', 'C195', 'EUC121', 'C270', 'C280', 'C320', 'C510', 'C520', 'C530', 'C570', 'C580', 'C590', 'C610', 'C911', 'C920', 'C930', 'CEJ157', 'CJ567', 'E401', 'E503', 'E504', 'E709', 'EJ157', 'EJ167', 'EUC120', 'EUC140', 'EUC145', 'EUC170', 'EUC176', 'EUC560', 'EUC910', 'F140', 'F150', 'F970', 'F980', 'J067', 'J069', 'J155', 'J156', 'J158', 'J159', 'J160', 'J161', 'J165', 'J167', 'J168', 'J169', 'J176ST', 'J196LT', 'J265', 'J266', 'J267', 'J360', 'J367', 'J467', 'J468', 'J567', 'J667', 'J668', 'J767', 'J867', 'J868', 'J966', 'J967', 'J968', 'K101', 'K102', 'K104', 'K105', 'K106', 'K107', 'K108', 'K109', 'K111', 'K115', 'K116', 'K151', 'K201', 'K202', 'K203', 'K301', 'K302', 'K303', 'K401', 'K501', 'K502', 'K503', 'K504', 'K601', 'K602D', 'K701', 'K702', 'K703', 'K709', 'K712', 'K801', 'K902', 'K903', 'K905', 'K906', 'K907', 'K999', 'TUC516', 'U105', 'U108', 'U110', 'U115', 'U201', 'U301', 'U401', 'U501', 'U502', 'U702', 'U709', 'U712', 'Y705', 'Y722', 'Y731', 'Y746', 'Y910', 'Y918', 'Y926', 'Y927', 'Y928', 'Y935', 'Y940', 'Y947', 'Y949', 'A099', 'EUC128', 'EUC270', 'EUC280', 'C153', 'U111', 'J150', 'J152', 'J153', 'J157', 'J161ST', 'J163', 'J171', 'J173', 'J175', 'J176', 'J179', 'J261', 'J463', 'J669', 'J687', 'EUC568', 'F978', 'EUC178', 'EUC177', 'C441', 'K602', 'Z888', 'Z889', 'C102', 'C172', 'C191', 'C227', 'EUC132', 'EUC151', 'EUC161', 'EUC225', 'EUC250', 'EUC255', 'EUC711', 'EUC733', 'EUC736', 'E303', 'K103', 'K112', 'K113', 'K117', 'K305', 'K306', 'EUT181', 'EUT182', 'EUT560', 'TUT168', 'C310', 'C736', 'EUC734', 'K603', 'EUT183', 'C220', 'E101', 'K917', 'C970', 'C106', 'EUC188', 'C603', 'K713', 'K809', 'EUC169', 'EUC103', 'EUC104', 'EUC107', 'EUC108', 'EUC165', 'C442', 'K807', 'H907', 'C178', 'EUC162', 'EUC511', 'EUC166', 'K915', 'D05', 'K307', 'K308', 'E902', 'UC103', 'UC104', 'UC107', 'UC108', 'UC128', 'UC165', 'UC166', 'RC168', 'UC169', 'UC170', 'UC161', 'UC171', 'UC225', 'UC250', 'UC270', 'UC280', 'UC511', 'RC516', 'UC521', 'UC560', 'UC561', 'UC568', 'UC177', 'UC178', 'UC181', 'UC182', 'UC111', 'UC112', 'UC121', 'UC123', 'UC124', 'UC125', 'UC126', 'UC127', 'UC131', 'UC132', 'UC141', 'UC151', 'UC156', 'UC661', 'UC733', 'UC734', 'UC735', 'UC736', 'UC711', 'UC731', 'UC751', 'UC761', 'UC910', 'UC176', 'Y719', 'K121', 'C193', 'K402', 'TC190', 'C175', 'C228', 'TRC168', 'TC173', 'UC162', 'TC510', 'Y738', 'TC101', 'TC102', 'TC106', 'C173', 'TC220', 'TC228', 'TC590', 'K119', 'TUC560', 'TC193', 'TUC170', 'TC330', 'Y728', 'TC155', 'TC320', 'TC550', 'TC108', 'TUC181', 'TC180', 'WC320', 'WC101', 'WK905', 'WC510', 'U106', 'WC603', 'WK115', 'WK116', 'TUC192', 'TC603', 'TUC128', 'TUC178', 'U402', 'TC110', 'TK104', 'U915', 'TK305', 'TK307', 'TK308', 'TK402', 'TK602', 'U116', 'U203', 'X709', 'TK702', 'TK807', 'TK701', 'TE117', 'TUC182', 'TU203', 'TF160', 'TC442', 'TC610', 'Y948', 'TF221', 'TC980', 'TC227', 'TRC170', 'TC518', 'TF152', 'C905', 'EA033', 'EA035', 'TUC188', 'EA031', 'L04', 'D057', 'D071', 'TJ767', 'UC122', 'UC175', 'F160', 'E711', 'TK109', 'TK119', 'TK301', 'TK767', 'UC198', 'TJ180', 'TK504', 'K711', 'UC196', 'TUC196', 'TK110', 'TZ888', 'TK801', 'TK118', 'Z156', 'TU915', 'TU502', 'TC120', 'TK131', 'C512', 'TUC103', 'UK187', 'TUK915', 'TK713', 'UK915', 'F192', 'UK185', 'TK905', 'UK708', 'TC172', 'E501', 'TUC197', 'K122', 'TK201', 'K000', 'K001', 'HP', 'TK603', 'UK501', 'UC197', 'UC105', 'TK107', 'C330', 'TUC199', 'WRC168', 'UC199', 'UK126', 'UK118', 'J263', 'K310', 'UK111', 'UK301', 'UK402', 'UK502', 'UK702', 'TUC198', '001', 'TUK708', 'WUC178', 'WUC197', 'TUK502', 'UK767', 'WMJ000', 'TUC165', 'TUK118', 'C192', 'TK127', 'TUK301', 'TK115', 'TY728', 'TJ170', 'TJ176', 'TJ868', 'TJ182', 'TJ467', 'TK102', 'TUC169', 'UC188', 'K128', 'TUC107', 'TUC109', 'UC109']
+    for i in products:
+        try:
+            ProductInfo.objects.create(
+                product_no=i,
+                product_name=i,
+            )
+        except Exception:
+            pass
 
 
-# def add_batch():
-#     dev_ids = list(GlobalCode.objects.filter(global_type__type_name='炼胶机类型').values_list('id', flat=True))
-#     time_choice = ('00:02:12', '00:01:42', '00:03:44')
-#     for product in ProductInfo.objects.all():
-#         try:
-#             for stage in product.productrecipe_set.all().values('stage__global_name', 'stage'):
-#                 instance = ProductBatching.objects.create(
-#                     product_info=product,
-#                     stage_product_batch_no=product.factory.global_no + '-' + product.product_no + '-' + stage[
-#                         'stage__global_name'] + '-' + product.versions,
-#                     stage_id=stage['stage'],
-#                     dev_type_id=random.choice(dev_ids),
-#                     batching_weight=random.randint(200, 500),
-#                     manual_material_weight=random.randint(100, 300),
-#                     volume=0,
-#                     batching_time_interval=random.choice(time_choice),
-#                     rm_flag=0,
-#                     batching_proportion=0,
-#                     production_time_interval=random.choice(time_choice)
-#                 )
-#                 mat_ids = ProductRecipe.objects.filter(product_info=product,
-#                                                        stage_id=stage['stage']).values_list('material', flat=True)
-#                 i = 0
-#                 for mat in mat_ids:
-#                     ProductBatchingDetail.objects.create(
-#                         product_batching=instance,
-#                         sn=i,
-#                         material_id=mat
-#                     )
-#         except Exception:
-#             pass
+def add_product_batching():
+    factories = list(GlobalCode.objects.filter(global_type__type_name='产地').values_list('id', flat=True))
+    sites = list(GlobalCode.objects.filter(global_type__type_name='SITE').values_list('id', flat=True))
+    product_infos = list(ProductInfo.objects.values_list('id', flat=True))[:20]
+    dev_types = list(GlobalCode.objects.filter(global_type__type_name='炼胶机类型').values_list('id', flat=True))
+    stages = list(GlobalCode.objects.filter(global_type__type_name='胶料段次').values_list('id', flat=True))
+
+    for product_info in product_infos:
+        for stage in stages:
+            pb = ProductBatching.objects.create(
+                factory_id=random.choice(factories),
+                site_id=random.choice(sites),
+                product_info_id=product_info,
+                stage_product_batch_no='1',
+                dev_type_id=random.choice(dev_types),
+                stage_id=stage,
+                versions='01'
+            )
+            pb.stage_product_batch_no = pb.site.global_name + '-' + pb.stage.global_name + '+' +\
+                                            pb.product_info.product_name + '-' '01'
+            pb.save()
+
+
+def random_str():
+    a1 = (2020, 4, 12, 0, 0, 0, 0, 0, 0)  # 设置开始日期时间元组（2020-04-12 00：00：00）
+    a2 = (2020, 4, 13, 0, 0, 0, 0, 0, 0)  # 设置结束日期时间元组（2020-04-13 00：00：00）
+    start = time.mktime(a1)  # 生成开始时间戳
+    end = time.mktime(a2)  # 生成结束时间戳
+    t = random.randint(start, end)  # 在开始和结束时间戳中随机取出一个
+    date_touple = time.localtime(t)  # 将时间戳生成时间元组
+    date_str = time.strftime("%H:%M:%S", date_touple)  # 将时间元组转成格式化字符串（1976-05-21）
+    return date_str
+
+
+def add_plan():
+    equips = list(Equip.objects.values_list('id', flat=True))
+    product_batchings = list(ProductBatching.objects.values_list('id', flat=True))[:10]
+    plan_schedules = list(PlanSchedule.objects.values_list('id', flat=True))
+    classes_details = list(ClassesDetail.objects.values_list('id', flat=True))
+    i = 1
+    time_str = random_str()
+    for equip in equips:
+        for product_batching in product_batchings:
+            for plan_schedule in plan_schedules:
+                pp = ProductDayPlan.objects.create(
+                    equip_id=equip,
+                    product_batching_id=product_batching,
+                    plan_schedule_id=plan_schedule
+                )
+                ProductClassesPlan.objects.create(
+                    product_day_plan=pp,
+                    sn=i,
+                    plan_trains=random.randint(1, 20),
+                    time=time_str,
+                    weight=random.randint(100, 500),
+                    unit='kg',
+                    classes_detail_id=random.choice(classes_details),
+                    plan_classes_uid=None
+                )
+                i += 1
 
 
 def add_material_day_classes_plan():
@@ -1321,8 +1339,8 @@ def add_material_day_classes_plan():
     根据已有信息生成胶料日计划，班次计划
     :return: None
     """
-    ProductDayPlan.objects.filter().delete()
     ProductClassesPlan.objects.filter().delete()
+    ProductDayPlan.objects.filter().delete()
     actual_feedback = 3
     equip_set = Equip.objects.filter(equip_name__icontains="混炼")
     equip_count = equip_set.count()
@@ -1363,7 +1381,7 @@ def add_material_day_classes_plan():
                     continue
                 ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan, plan_classes_uid=uid,
                                                   classes_detail=cs, unit="kg", plan_trains=50, weight=250,
-                                                  time=datetime.datetime.now())
+                                                  time=45)
 
 
 def add_product_demo_data():
@@ -1379,15 +1397,18 @@ def add_product_demo_data():
     #         continue
     day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
     for day_plan in list(day_plan_set):
+        date = day_plan.plan_schedule.day_time
         class_plan_set = ProductClassesPlan.objects.filter(product_day_plan=day_plan.id)
         bath_no = 1
         for class_plan in list(class_plan_set):
             plan_trains = class_plan.plan_trains
-            start_time = class_plan.classes_detail.start_time
+            temp_start_time = class_plan.classes_detail.start_time
+            start_time = f"{date} {temp_start_time}"
+            start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
             for m in range(1, int(plan_trains) + 1):
                 class_name = class_plan.classes_detail.classes.global_name
                 equip_no = day_plan.equip.equip_no
-                product_no = day_plan.product_batching.product_info.product_name
+                product_no = day_plan.product_batching.product_info.product_no
                 plan_weight = class_plan.weight
                 # time_str = '2020-08-01 08:00:00'
                 # time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
@@ -1448,19 +1469,35 @@ def add_product_demo_data():
                         "current_trains": m,
                     }
                     EquipStatus.objects.create(**equip_status_data)
+                    time.sleep(0.001)
 
 
 if __name__ == '__main__':
     add_global_codes()
+    print("global_codes is ok")
     add_materials()
+    print("materials is ok")
     add_groups()
+    print("groups is ok")
     add_sections()
+    print("sections is ok")
     add_users()
+    print("users is ok")
     add_schedules()
+    print("schedules is ok")
     add_equip_attribute()
+    print("equip_attribute is ok")
     add_equips()
+    print("equips is ok")
     add_plan_schedule()
-    # add_product()
-    # add_batch()
-    # add_material_day_classes_plan()
+    print("plan_schedule is ok")
+    add_product()
+    print("product is ok")
+    add_product_batching()
+    print("product_batching is ok")
+    # add_plan()
+    # print("plan is ok")
+    add_material_day_classes_plan()
+    print("material_day_classes_plan is ok")
     # add_product_demo_data()
+    print("product_demo_data is ok")

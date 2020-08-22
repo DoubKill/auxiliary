@@ -230,6 +230,8 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
+    condition_name = serializers.CharField(source='condition.condition')
+    action_name = serializers.CharField(source='action.action')
 
     class Meta:
         model = ProductProcessDetail
@@ -247,6 +249,11 @@ class ProcessDetailSerializer(BaseModelSerializer):
 
 class ProductProcessSerializer(BaseModelSerializer):
     process_details = ProductProcessDetailSerializer(many=True, required=False)
+
+    def validate(self, attrs):
+        if ProductProcess.objects.filter(equip=attrs['equip'], product_batching=attrs['product_batching']).exists():
+            raise serializers.ValidationError('该机台已被其他配方使用')
+        return attrs
 
     @atomic()
     def create(self, validated_data):

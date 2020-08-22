@@ -12,7 +12,7 @@ from basics.views import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.permissions import ProductBatchingPermissions
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter
+    MaterialAttributeFilter, ProcessStepsFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
@@ -195,6 +195,7 @@ class ProcessStepsViewSet(ModelViewSet):
                                              ).select_related("equip", "product_batching").order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProductProcessSerializer
+    filter_class = ProcessStepsFilter
 
 
 class ProductProcessDetailViewSet(ModelViewSet):

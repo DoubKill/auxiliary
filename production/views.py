@@ -8,17 +8,22 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from basics.models import PlanSchedule
+from mes.common_code import CommonDeleteMixin
 from basics.models import PlanSchedule, Equip
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
-    PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter
+    PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer, MaterialStatisticsSerializer, EquipStatusPlanSerializer, \
+    EquipDetailedSerializer
+
+ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 
@@ -386,17 +391,13 @@ class PlanRelease(APIView):
         # TODO
 
 
-class WeighParameterCarbonViewSet(mixins.CreateModelMixin,
-                                  mixins.UpdateModelMixin,
-                                  mixins.ListModelMixin,
-                                  GenericViewSet):
+class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialTankStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
-
 
     def create(self, request, *args, **kwargs):
         params = request.data
@@ -413,9 +414,26 @@ class WeighParameterCarbonViewSet(mixins.CreateModelMixin,
         temp.issue_to_db()
         return super().create(request, *args, **kwargs)
 
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        for i in data:
+            obj = MaterialTankStatus.objects.get(pk=i.get("id"))
+            obj.tank_name = i.get("tank_name")
+            obj.masterial_name = i.get("masterial_name")
+            obj.used_flag = i.get("used_flag")
+            obj.low_value = i.get("low_value")
+            obj.advance_value = i.get("advance_value")
+            obj.adjust_value = i.get("adjust_value")
+            obj.dot_time = i.get("dot_time")
+            obj.fast_speed = i.get("fast_speed")
+            obj.low_speed = i.get("low_speed")
+            obj.save()
+        return Response("ok")
+
 
 class WeighParameterFuelViewSet(mixins.CreateModelMixin,
                                 mixins.UpdateModelMixin,
+                                mixins.RetrieveModelMixin,
                                 mixins.ListModelMixin,
                                 GenericViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="2")
@@ -439,6 +457,33 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         temp = IssueWorkStation(IfdownRecipeOil11, temp_data)
         temp.issue_to_db()
         return super().create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        for i in data:
+            obj = MaterialTankStatus.objects.get(pk=i.get("id"))
+            obj.tank_name = i.get("tank_name")
+            obj.masterial_name = i.get("masterial_name")
+            obj.used_flag = i.get("used_flag")
+            obj.low_value = i.get("low_value")
+            obj.advance_value = i.get("advance_value")
+            obj.adjust_value = i.get("adjust_value")
+            obj.dot_time = i.get("dot_time")
+            obj.fast_speed = i.get("fast_speed")
+            obj.low_speed = i.get("low_speed")
+            obj.save()
+        return Response("ok")
+
+
+class MaterialStatisticsViewSet(mixins.ListModelMixin,
+                                GenericViewSet):
+
+    queryset = ExpendMaterial.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = MaterialStatisticsSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ('id',)
+    filter_class = MaterialStatisticsFilter
 
 
 class EquipStatusPlanList(mixins.ListModelMixin,
