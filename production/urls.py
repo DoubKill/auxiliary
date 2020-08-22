@@ -5,7 +5,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
-    CurveInformationList
+    CurveInformationList, MaterialStatisticsViewSet
 
 router = DefaultRouter()
 
@@ -43,6 +43,10 @@ router.register(r'product-actual', ProductActualViewSet, basename="product-actua
 router.register(r'weigh-cb', WeighParameterCarbonViewSet, basename="weigh-cb")
 
 router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
+
+# 物料统计
+router.register(r'material-statistics', MaterialStatisticsViewSet, basename="material-statistics")
+
 # 主页面展示
 router.register(r'equip-status-plan-list', EquipStatusPlanList, basename="equip-status-plan-list")
 # 主页面详情展示
@@ -53,6 +57,7 @@ router.register(r'weigh-information-list', WeighInformationList, basename="weigh
 router.register(r'mixer-information-list', MixerInformationList, basename="mixer-information-list")
 # 工艺曲线信息展示
 router.register(r'curve-information-list', CurveInformationList, basename="curve-information-list")
+
 
 urlpatterns = [
     path('', include(router.urls)),
