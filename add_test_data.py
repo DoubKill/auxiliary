@@ -15,7 +15,7 @@ from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
-from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, ProductBatchingDetail
+from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail  # ,ProductRecipe
 from system.models import GroupExtension, User, Section
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
@@ -1246,74 +1246,74 @@ def add_plan_schedule():
             pass
 
 
-def add_product():
-    products = (
-        'J260', 'A019', 'A403', 'B166', 'B568', 'B635', 'C101', 'C110', 'C120', 'C140', 'C150', 'C155', 'C160', 'C180',
-        'C190', 'C195', 'EUC121')
-    factory_ids = list(GlobalCode.objects.filter(global_type__type_name='产地').values_list('id', flat=True))
-    stages = GlobalCode.objects.filter(global_type__type_name='胶料段次')
-    materials = list(Material.objects.values_list('id', flat=True))
-    for i in products:
-        try:
-            product = ProductInfo.objects.create(
-                product_no=i,
-                product_name=i,
-                versions='01',
-                factory_id=random.choice(factory_ids),
-                used_type=1,
-                recipe_weight=0
-            )
-            i = 1
-            weight = 0
-            for stage in stages:
-                for k in range(random.randint(1, 4)):
-                    recipe = ProductRecipe.objects.create(
-                        product_recipe_no=product.product_no + '-' + stage.global_name,
-                        sn=i,
-                        product_info=product,
-                        material_id=random.choice(materials),
-                        stage=stage,
-                        ratio=random.randint(10, 100)
-                    )
-                    weight += recipe.ratio
-                    i += 1
-            product.recipe_weight = weight
-            product.save()
-        except Exception:
-            pass
+# def add_product():
+#     products = (
+#         'J260', 'A019', 'A403', 'B166', 'B568', 'B635', 'C101', 'C110', 'C120', 'C140', 'C150', 'C155', 'C160', 'C180',
+#         'C190', 'C195', 'EUC121')
+#     factory_ids = list(GlobalCode.objects.filter(global_type__type_name='产地').values_list('id', flat=True))
+#     stages = GlobalCode.objects.filter(global_type__type_name='胶料段次')
+#     materials = list(Material.objects.values_list('id', flat=True))
+#     for i in products:
+#         try:
+#             product = ProductInfo.objects.create(
+#                 product_no=i,
+#                 product_name=i,
+#                 versions='01',
+#                 factory_id=random.choice(factory_ids),
+#                 used_type=1,
+#                 recipe_weight=0
+#             )
+#             i = 1
+#             weight = 0
+#             for stage in stages:
+#                 for k in range(random.randint(1, 4)):
+#                     recipe = ProductRecipe.objects.create(
+#                         product_recipe_no=product.product_no + '-' + stage.global_name,
+#                         sn=i,
+#                         product_info=product,
+#                         material_id=random.choice(materials),
+#                         stage=stage,
+#                         ratio=random.randint(10, 100)
+#                     )
+#                     weight += recipe.ratio
+#                     i += 1
+#             product.recipe_weight = weight
+#             product.save()
+#         except Exception:
+#             pass
 
 
-def add_batch():
-    dev_ids = list(GlobalCode.objects.filter(global_type__type_name='炼胶机类型').values_list('id', flat=True))
-    time_choice = ('00:02:12', '00:01:42', '00:03:44')
-    for product in ProductInfo.objects.all():
-        try:
-            for stage in product.productrecipe_set.all().values('stage__global_name', 'stage'):
-                instance = ProductBatching.objects.create(
-                    product_info=product,
-                    stage_product_batch_no=product.factory.global_no + '-' + product.product_no + '-' + stage[
-                        'stage__global_name'] + '-' + product.versions,
-                    stage_id=stage['stage'],
-                    dev_type_id=random.choice(dev_ids),
-                    batching_weight=random.randint(200, 500),
-                    manual_material_weight=random.randint(100, 300),
-                    volume=0,
-                    batching_time_interval=random.choice(time_choice),
-                    rm_flag=0,
-                    batching_proportion=0,
-                    production_time_interval=random.choice(time_choice)
-                )
-                mat_ids = ProductRecipe.objects.filter(product_info=product,
-                                                       stage_id=stage['stage']).values_list('material', flat=True)
-                i = 0
-                for mat in mat_ids:
-                    ProductBatchingDetail.objects.create(
-                        product_batching=instance,
-                        sn=i,
-                        material_id=mat
-                    )
-        except Exception:
-            pass
+# def add_batch():
+#     dev_ids = list(GlobalCode.objects.filter(global_type__type_name='炼胶机类型').values_list('id', flat=True))
+#     time_choice = ('00:02:12', '00:01:42', '00:03:44')
+#     for product in ProductInfo.objects.all():
+#         try:
+#             for stage in product.productrecipe_set.all().values('stage__global_name', 'stage'):
+#                 instance = ProductBatching.objects.create(
+#                     product_info=product,
+#                     stage_product_batch_no=product.factory.global_no + '-' + product.product_no + '-' + stage[
+#                         'stage__global_name'] + '-' + product.versions,
+#                     stage_id=stage['stage'],
+#                     dev_type_id=random.choice(dev_ids),
+#                     batching_weight=random.randint(200, 500),
+#                     manual_material_weight=random.randint(100, 300),
+#                     volume=0,
+#                     batching_time_interval=random.choice(time_choice),
+#                     rm_flag=0,
+#                     batching_proportion=0,
+#                     production_time_interval=random.choice(time_choice)
+#                 )
+#                 mat_ids = ProductRecipe.objects.filter(product_info=product,
+#                                                        stage_id=stage['stage']).values_list('material', flat=True)
+#                 i = 0
+#                 for mat in mat_ids:
+#                     ProductBatchingDetail.objects.create(
+#                         product_batching=instance,
+#                         sn=i,
+#                         material_id=mat
+#                     )
+#         except Exception:
+#             pass
 
 
 def add_material_day_classes_plan():
@@ -1460,7 +1460,7 @@ if __name__ == '__main__':
     add_equip_attribute()
     add_equips()
     add_plan_schedule()
-    add_product()
-    add_batch()
-    add_material_day_classes_plan()
-    add_product_demo_data()
+    # add_product()
+    # add_batch()
+    # add_material_day_classes_plan()
+    # add_product_demo_data()
