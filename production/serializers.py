@@ -73,7 +73,13 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
     def get_stage(self, object):
         plan_classes_uid = object.plan_classes_uid if object.plan_classes_uid else 0
         productclassesplan = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
-        stage = productclassesplan.product_day_plan.product_batching.stage.global_name
+        if productclassesplan:
+            try:
+                stage = productclassesplan.product_day_plan.product_batching.stage.global_name
+            except:
+                stage = None
+        else:
+            stage = None
         return stage if stage else ""
 
     class Meta:
@@ -157,7 +163,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = MaterialTankStatus
-        fields = ("tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value", "dot_time",
+        fields = ("equip_no", "tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value", "dot_time",
                   "fast_speed",
                   "low_speed", "used_flag")
         read_only_fields = COMMON_READ_ONLY_FIELDS

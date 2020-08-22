@@ -68,3 +68,12 @@ class QualityControlFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = QualityControl
         fields = ('barcode',)
+
+
+class WeighParameterCarbonFilter(django_filters.rest_framework.FilterSet):
+    """称量过滤器"""
+    equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
+
+    class Meta:
+        model = MaterialTankStatus
+        fields = ('equip_no',)
