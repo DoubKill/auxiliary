@@ -2,7 +2,6 @@ from django.db import models
 
 from basics.models import AbstractEntity
 
-
 class TrainsFeedbacks(AbstractEntity):
     """车次产出反馈"""
     # id = models.BigIntegerField(primary_key=True, auto_created=True, unique=True)
