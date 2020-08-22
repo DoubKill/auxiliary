@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
-from basics.models import PlanSchedule
+from basics.models import PlanSchedule, Equip
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter
@@ -18,7 +18,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1
 
@@ -399,7 +399,7 @@ class WeighParameterCarbonViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         params = request.data
         temp_data = {
-             # "id": 1,
+            # "id": 1,
             "mname": params.get("masterial_name"),
             "set_weight": None,
             "error_allow": None,
@@ -425,7 +425,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         params = request.data
         temp_data = {
-             # "id": 1,
+            # "id": 1,
             "mname": params.get("masterial_name"),
             "set_weight": None,
             "error_allow": None,
@@ -436,3 +436,21 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
         temp.issue_to_db()
         return super().create(request, *args, **kwargs)
+
+
+class EquipStatusPlanList(mixins.ListModelMixin,
+                          GenericViewSet):
+    """主页面展示"""
+    queryset = Equip.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = EquipStatusPlanSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                            GenericViewSet):
+    """主页面详情展示机"""
+    queryset = Equip.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = EquipDetailedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
