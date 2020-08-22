@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, EquipStatusViewSet, PlanStatusViewSet, \
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
-    WeighParameterFuelViewSet
+    WeighParameterFuelViewSet, MaterialStatisticsViewSet
 
 router = DefaultRouter()
 
@@ -42,6 +42,11 @@ router.register(r'product-actual', ProductActualViewSet, basename="product-actua
 router.register(r'weigh-cb', WeighParameterCarbonViewSet, basename="weigh-cb")
 
 router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
+
+# 物料统计
+router.register(r'material-statistics', MaterialStatisticsViewSet, basename="material-statistics")
+
+
 
 
 urlpatterns = [

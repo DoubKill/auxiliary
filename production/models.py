@@ -106,6 +106,7 @@ class ExpendMaterial(AbstractEntity):
     masterial_no = models.CharField(max_length=64, help_text='原材料id', verbose_name='原材料id')
     masterial_type = models.CharField(max_length=64, help_text='原材料类型', verbose_name='原材料类型')
     masterial_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间')
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.masterial_no}"
