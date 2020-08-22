@@ -13,7 +13,7 @@ from mes.derorators import api_recorder
 from mes.permissions import ProductBatchingPermissions
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
-from recipe.serializers import MaterialSerializer, ProductInfoSerializer, ProductInfoCopySerializer, \
+from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
     ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer
@@ -33,7 +33,7 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除原材料
     """
-    queryset = Material.objects.filter(delete_flag=False).order_by('-created_date')
+    queryset = Material.objects.filter(delete_flag=False).select_related('material_type').order_by('-created_date')
     serializer_class = MaterialSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -125,14 +125,9 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
             data = queryset.values('id', 'product_no', 'product_name')
-            return Response(data)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
 
 class ProductBatchingViewSet(ModelViewSet):
@@ -148,7 +143,9 @@ class ProductBatchingViewSet(ModelViewSet):
     partial_update:
         配料审批
     """
-    queryset = ProductBatching.objects.filter(delete_flag=False).order_by('-created_date')
+    # TODO 配方下载功能（只能下载应用状态的配方，并去除当前计划中的配方）
+    queryset = ProductBatching.objects.filter(delete_flag=False).select_related("factory", "site", "dev_type", "stage",
+                                                                                "product_info").order_by('-created_date')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
@@ -194,7 +191,8 @@ class ProcessStepsViewSet(ModelViewSet):
     partial_update:
         修改胶料配料步序
     """
-    queryset = ProductProcess.objects.filter(delete_flag=False).order_by('-created_date')
+    queryset = ProductProcess.objects.filter(delete_flag=False
+                                             ).select_related("equip", "product_batching").order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProductProcessSerializer
 
