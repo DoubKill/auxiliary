@@ -32,9 +32,10 @@ class ProductClassesPlan(AbstractEntity):
                                          related_name='pdp_product_classes_plan')
     sn = models.PositiveIntegerField(verbose_name='顺序', help_text='顺序')
     plan_trains = models.PositiveIntegerField(verbose_name='车次', help_text='车次')
-    time = models.TimeField(verbose_name='时间', help_text='时间')  # 车次*每一车的时间
-    begin_time = models.DateTimeField(verbose_name='开始时间', null=True)
-    end_time = models.DateTimeField(verbose_name='结束时间', null=True)
+    time = models.DecimalField(verbose_name='消耗时间', help_text='消耗时间',
+                                 decimal_places=2, max_digits=8, blank=True, null=True)  # 车次*每一车的时间
+    begin_time = models.DateTimeField(verbose_name='开始时间', null=True, blank=True)
+    end_time = models.DateTimeField(verbose_name='结束时间', null=True, blank=True)
     weight = models.DecimalField(verbose_name='重量', help_text='重量',
                                  decimal_places=2, max_digits=8, blank=True, null=True)
     unit = models.CharField(max_length=8, help_text='单位', verbose_name='单位')
