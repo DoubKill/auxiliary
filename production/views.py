@@ -12,6 +12,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from basics.models import PlanSchedule
 from mes.common_code import CommonDeleteMixin
+from basics.models import PlanSchedule, Equip
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -19,7 +20,10 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, MaterialStatisticsSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer, MaterialStatisticsSerializer, EquipStatusPlanSerializer, \
+    EquipDetailedSerializer
+
+ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 
@@ -389,7 +393,7 @@ class PlanRelease(APIView):
 
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialTankStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -487,3 +491,21 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 
 
 
+
+
+class EquipStatusPlanList(mixins.ListModelMixin,
+                          GenericViewSet):
+    """主页面展示"""
+    queryset = Equip.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = EquipStatusPlanSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                            GenericViewSet):
+    """主页面详情展示机"""
+    queryset = Equip.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = EquipDetailedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
