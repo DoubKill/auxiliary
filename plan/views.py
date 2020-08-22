@@ -14,7 +14,8 @@ from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBa
     PalletFeedbacksFilter
 from plan.serializers import ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, \
     ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
-    PalletFeedbacksSerializer, UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer
+     UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
+    PalletFeedbacksPlanSerializer
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
 from plan.paginations import LimitOffsetPagination
@@ -237,7 +238,7 @@ class PalletFeedbacksViewSet(mixins.ListModelMixin,
         计划管路删除
     """
     queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
-    serializer_class = PalletFeedbacksSerializer
+    serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter

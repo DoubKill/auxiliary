@@ -13,6 +13,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from basics.models import PlanSchedule
 from mes.common_code import CommonDeleteMixin
 from basics.models import PlanSchedule, Equip
+from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -20,10 +21,8 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, MaterialStatisticsSerializer, EquipStatusPlanSerializer, \
-    EquipDetailedSerializer
-
-ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer, \
+    WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 
@@ -499,13 +498,44 @@ class EquipStatusPlanList(mixins.ListModelMixin,
     queryset = Equip.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = EquipStatusPlanSerializer
+    pagination_class = SinglePageNumberPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
 
 class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                            GenericViewSet):
+                        GenericViewSet):
     """主页面详情展示机"""
     queryset = Equip.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = EquipDetailedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """称量信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = WeighInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """密炼信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = MixerInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """工艺曲线信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
