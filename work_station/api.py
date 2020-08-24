@@ -44,11 +44,5 @@ class IssueWorkStation(object):
         serializer.save()
 
     def issue_to_interface(self):
-        """对接国自组态"""
-        pass
-
-
-class UploadAuxiliary(object):
-
-    def __init__(self):
+        """对接api"""
         pass
