@@ -162,7 +162,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
     class Meta:
         model = MaterialTankStatus
         fields = (
-            "id", "equip_no", "tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value",
+            "id", "equip_no", "tank_type", "tank_name", "material_name", "low_value", "advance_value", "adjust_value",
             "dot_time",
             "fast_speed",
             "low_speed", "used_flag")

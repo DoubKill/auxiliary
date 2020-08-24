@@ -405,7 +405,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         params = request.data
         temp_data = {
             # "id": 1,
-            "mname": params.get("masterial_name"),
+            "mname": params.get("material_name"),
             "set_weight": None,
             "error_allow": None,
             "recipe_name": "配方1",
@@ -421,7 +421,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         for i in data:
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
-            obj.masterial_name = i.get("masterial_name")
+            obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
@@ -449,7 +449,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         params = request.data
         temp_data = {
             # "id": 1,
-            "mname": params.get("masterial_name"),
+            "mname": params.get("material_name"),
             "set_weight": None,
             "error_allow": None,
             "recipe_name": "配方1",
@@ -465,7 +465,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         for i in data:
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
-            obj.masterial_name = i.get("masterial_name")
+            obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
