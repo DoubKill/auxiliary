@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 
 from django.db.transaction import atomic
 from rest_framework import serializers
@@ -9,6 +10,8 @@ from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
     MaterialAttribute, ProductProcess, ProductProcessDetail
 from mes.conf import COMMON_READ_ONLY_FIELDS
+
+logger = logging.getLogger('api_log')
 
 
 class MaterialSerializer(BaseModelSerializer):
@@ -27,11 +30,7 @@ class MaterialSerializer(BaseModelSerializer):
     material_type_name = serializers.CharField(source='material_type.global_name', read_only=True)
     package_unit_name = serializers.CharField(source='package_unit.global_name', read_only=True)
     created_user_name = serializers.CharField(source='created_user.username', read_only=True)
-    update_user_name = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_update_user_name(obj):
-        return obj.last_updated_user.username if obj.last_updated_user else None
+    update_user_name = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
 
     def update(self, instance, validated_data):
         validated_data['last_updated_user'] = self.context['request'].user
@@ -124,8 +123,8 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                                                help_text='段次id')
     batching_details = ProductBatchingDetailSerializer(many=True, required=False,
                                                        help_text="""
-                                                           [{"sn": 序号, "material":原材料id, 
-                                                           "actual_weight":重量, "error_range":误差值}]""")
+                                                           [{"sn": 序号, "material":原材料id, "auto_flag": true,
+                                                           "actual_weight":重量, "standard_error":误差值}]""")
 
     @atomic()
     def create(self, validated_data):
@@ -141,7 +140,16 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
             ProductBatchingDetail.objects.bulk_create(batching_detail_list)
         instance.batching_weight = batching_weight
         instance.save()
-        # TODO 将胶料当做原材料新建一份
+        try:
+            material_type = GlobalCode.objects.filter(global_type__type_name='原材料类别',
+                                                      global_name=instance.stage.global_name).first()
+            Material.objects.get_or_create(
+                material_no=instance.stage_product_batch_no,
+                material_name=instance.stage_product_batch_no,
+                material_type=material_type
+            )
+        except Exception as e:
+            logger.error(e)
         return instance
 
     class Meta:
@@ -222,6 +230,8 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
+    condition_name = serializers.CharField(source='condition.condition', read_only=True)
+    action_name = serializers.CharField(source='action.action', read_only=True)
 
     class Meta:
         model = ProductProcessDetail
@@ -238,10 +248,24 @@ class ProcessDetailSerializer(BaseModelSerializer):
 
 
 class ProductProcessSerializer(BaseModelSerializer):
-    process_details = ProductProcessDetailSerializer(many=True, required=False)
+    process_details = ProductProcessDetailSerializer(many=True, required=False, help_text="""
+                                                                                        [{"sn":'序号',
+                                                                                        "temperature":'温度',
+                                                                                        "rpm":'转速',
+                                                                                        "energy": '能量',
+                                                                                        "power": '功率',
+                                                                                        "pressure" : '压力',
+                                                                                        "condition": '条件id',
+                                                                                        "time" :'时间(分钟)',
+                                                                                        "action":'基本动作id',
+                                                                                        "time_unit":'时间单位'}]""")
 
     @atomic()
     def create(self, validated_data):
+        if ProductProcess.objects.filter(equip=validated_data['equip'],
+                                         product_batching=validated_data['product_batching']).exists():
+            raise serializers.ValidationError('该机台已被其他配方使用')
+
         validated_data['created_user'] = self.context['request'].user
         process_details = validated_data.pop('process_details', None)
         instance = super().create(validated_data)
@@ -260,7 +284,7 @@ class ProductProcessSerializer(BaseModelSerializer):
             instance.process_details.all().delete()
             batching_detail_list = []
             for detail in process_details:
-                detail['product_batching'] = instance
+                detail['product_process'] = instance
                 batching_detail_list.append(ProductProcessDetail(**detail))
             ProductProcessDetail.objects.bulk_create(batching_detail_list)
         return instance

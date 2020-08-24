@@ -13,6 +13,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from basics.models import PlanSchedule
 from mes.common_code import CommonDeleteMixin
 from basics.models import PlanSchedule, Equip
+from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -20,10 +21,8 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, MaterialStatisticsSerializer, EquipStatusPlanSerializer, \
-    EquipDetailedSerializer
-
-ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer
+    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipDetailedSerializer, \
+    WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 
@@ -309,7 +308,8 @@ class ProductActualViewSet(mixins.ListModelMixin,
             day_plan_set = plan_schedule.ps_day_plan.filter(delete_flag=False)
         for day_plan in list(day_plan_set):
             instance = {}
-            plan_trains = 0
+            plan_trains_all = 0
+            plan_weight_all = 0
             actual_trains = 0
             plan_weight = 0
             product_no = day_plan.product_batching.product_info.product_name
@@ -320,8 +320,10 @@ class ProductActualViewSet(mixins.ListModelMixin,
             if not class_plan_set:
                 continue
             for class_plan in list(class_plan_set):
-                plan_trains += class_plan.plan_trains
-                plan_weight += class_plan.weight
+                plan_trains = class_plan.plan_trains
+                plan_trains_all += class_plan.plan_trains
+                plan_weight = class_plan.weight
+                plan_weight_all += class_plan.weight
                 class_name = class_plan.classes_detail.classes.global_name
                 if target_equip_no:
                     temp_ret_set = TrainsFeedbacks.objects.filter(plan_classes_uid=class_plan.plan_classes_uid,
@@ -358,9 +360,9 @@ class ProductActualViewSet(mixins.ListModelMixin,
                     else:
                         day_plan_actual.append(temp_class_actual)
                     actual_trains += 0
-            instance.update(classes_data=day_plan_actual, plan_weight=plan_weight,
+            instance.update(classes_data=day_plan_actual, plan_weight=plan_weight_all,
                             product_no=product_no, equip_no=equip_no,
-                            plan_trains=plan_trains, actual_trains=actual_trains)
+                            plan_trains=plan_trains_all, actual_trains=actual_trains)
             return_data["data"].append(instance)
         return Response(return_data)
 
@@ -386,7 +388,7 @@ class PlanRelease(APIView):
         plan_data = request.data
         plan_data = self._validate(plan_data)
         token = request.get("Auth")
-        url = "http://xxxxx"
+        url = "http://xxxxx"  #
         ret = requests.post(url, data=plan_data)
         # TODO
 
@@ -399,6 +401,21 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
+    def create(self, request, *args, **kwargs):
+        params = request.data
+        temp_data = {
+            # "id": 1,
+            "mname": params.get("material_name"),
+            "set_weight": None,
+            "error_allow": None,
+            "recipe_name": "配方1",
+            "type": params.get("tank_type"),
+            "recstatus": None,
+        }
+        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
+        temp.issue_to_db()
+        return super().create(request, *args, **kwargs)
+
     def put(self, request, *args, **kwargs):
         data = request.data
         for i in data:
@@ -406,7 +423,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             # id = i['id']
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
-            obj.material_name = i.get("material_name")
+            obj.masterial_name = i.get("masterial_name")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
@@ -514,10 +531,56 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
-    queryset = Equip.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = EquipStatusPlanSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    # queryset = Equip.objects.filter(delete_flag=False)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    # serializer_class = EquipStatusPlanSerializer
+    # pagination_class = SinglePageNumberPagination
+    # filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    def list(self, request, *args, **kwargs):
+        air = '''SELECT
+        "equip"."id",
+       "equip"."equip_no",
+       "global_code"."global_name",
+       trains_feedbacks.product_no,
+       equip_status.status,
+       SUM(distinct "product_classes_plan"."plan_trains") AS "plan_num",
+       SUM(distinct "trains_feedbacks"."actual_trains") AS "actual_num",
+       max(equip_status.current_trains) as current_trains
+from equip
+    left join product_day_plan on equip.id = product_day_plan.equip_id
+    left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
+    left JOIN "classes_detail" ON ("product_classes_plan"."classes_detail_id" = "classes_detail"."id")
+    left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
+    left JOIN "global_code" ON ("classes_detail"."classes_id" = "global_code"."id")
+    left join equip_status on equip_status.plan_classes_uid=product_classes_plan.plan_classes_uid
+GROUP BY "equip"."equip_no", "global_code"."global_name";'''
+        equip_set = Equip.objects.raw(air)
+
+        ret_data = {}
+        for _ in equip_set:
+            # if ret_data[_.equip_no] :
+            if _.equip_no in ret_data.keys():
+                ret_data[_.equip_no].append({"global_name": _.global_name,
+                                             "plan_num": _.plan_num,
+                                             "actual_num": _.actual_num,
+                                             "product_no": _.product_no,
+                                             "status": _.status,
+                                             "current_trains": _.current_trains,
+                                             "id": _.id})
+            else:
+                ret_data[_.equip_no] = []
+                ret_data[_.equip_no].append({"global_name": _.global_name,
+                                             "plan_num": _.plan_num,
+                                             "actual_num": _.actual_num,
+                                             "product_no": _.product_no,
+                                             "status": _.status,
+                                             "current_trains": _.current_trains,
+                                             "id": _.id
+                                             })
+
+        return Response(ret_data)
 
 
 class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
@@ -526,4 +589,34 @@ class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     queryset = Equip.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = EquipDetailedSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """称量信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = WeighInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """密炼信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = MixerInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                           GenericViewSet):
+    """工艺曲线信息"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]

@@ -6,7 +6,7 @@ from django.db import models
 #   * Rearrange models' order
 #   * Make sure each model has one field with primary_key=True
 #   * Make sure each ForeignKey has `on_delete` set to the desired behavior.
-#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
+#   * Remove `# managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
@@ -37,7 +37,7 @@ class IfdownPmtRecipe1(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_pmt_recipe_1'
 
 
@@ -63,7 +63,7 @@ class IfdownPmtRecipe2(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_pmt_recipe_2'
 
 
@@ -79,7 +79,7 @@ class IfdownRecipeCb1(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_cb_1'
 
 
@@ -94,7 +94,7 @@ class IfdownRecipeCb2(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_cb_2'
 
 
@@ -113,7 +113,7 @@ class IfdownRecipeMix1(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_mix_1'
 
 
@@ -131,7 +131,7 @@ class IfdownRecipeMix2(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_mix_2'
 
 
@@ -147,7 +147,7 @@ class IfdownRecipeOil11(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_oil1_1'
 
 
@@ -162,7 +162,7 @@ class IfdownRecipeOil12(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_oil1_2'
 
 
@@ -178,7 +178,7 @@ class IfdownRecipePloy1(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_ploy_1'
 
 
@@ -193,7 +193,7 @@ class IfdownRecipePloy2(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_recipe_ploy_2'
 
 
@@ -216,7 +216,7 @@ class IfdownShengchanjihua1(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_shengchanjihua_1'
 
 
@@ -238,7 +238,7 @@ class IfdownShengchanjihua2(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifdown_shengchanjihua_2'
 
 
@@ -253,7 +253,7 @@ class IfupMachineStatus(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifup_machine_status'
 
 
@@ -287,7 +287,7 @@ class IfupReportBasis(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifup_report_basis'
 
 
@@ -306,7 +306,7 @@ class IfupReportCurve(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifup_report_curve'
 
 
@@ -330,7 +330,7 @@ class IfupReportMix(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifup_report_mix'
 
 
@@ -351,5 +351,5 @@ class IfupReportWeight(models.Model):
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'ifup_report_weight'

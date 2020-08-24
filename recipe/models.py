@@ -13,7 +13,7 @@ class Material(AbstractEntity):
                                       on_delete=models.DO_NOTHING, related_name='mt_materials')
     package_unit = models.ForeignKey(GlobalCode, help_text='包装单位', verbose_name='包装单位',
                                      on_delete=models.DO_NOTHING, related_name='pu_materials', blank=True, null=True)
-    used_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用')
+    used_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.material_name
@@ -54,6 +54,27 @@ class ProductInfo(AbstractEntity):
     class Meta:
         db_table = 'product_info'
         verbose_name_plural = verbose_name = '胶料代码'
+
+
+class ProductRecipe(AbstractEntity):
+    """胶料段次配方标准"""
+    product_recipe_no = models.CharField(max_length=64, help_text='胶料标准编号', verbose_name='胶料标准编号')
+    sn = models.PositiveIntegerField(verbose_name='序号', help_text='序号')
+    product_info = models.ForeignKey(ProductInfo, verbose_name='胶料工艺', help_text='胶料工艺',
+                                     on_delete=models.DO_NOTHING)
+    material = models.ForeignKey(Material, verbose_name='原材料', help_text='原材料',
+                                 on_delete=models.DO_NOTHING, blank=True, null=True)
+    stage = models.ForeignKey(GlobalCode, help_text='段次', verbose_name='段次',
+                              on_delete=models.DO_NOTHING)
+    ratio = models.DecimalField(verbose_name='配比', help_text='配比',
+                                decimal_places=2, max_digits=8, blank=True, null=True)
+
+    def __str__(self):
+        return self.product_recipe_no
+
+    class Meta:
+        db_table = 'product_recipe'
+        verbose_name_plural = verbose_name = '胶料段次配方标准'
 
 
 class ProductBatching(AbstractEntity):
@@ -103,7 +124,8 @@ class ProductBatchingDetail(AbstractEntity):
     sn = models.PositiveIntegerField(verbose_name='序号', help_text='序号')
     material = models.ForeignKey(Material, verbose_name='原材料', help_text='原材料', on_delete=models.DO_NOTHING)
     actual_weight = models.DecimalField(verbose_name='重量', help_text='重量', decimal_places=3, max_digits=8)
-    error_range = models.DecimalField(help_text='误差值范围', decimal_places=3, max_digits=8, default=0)
+    standard_error = models.DecimalField(help_text='误差值范围', decimal_places=3, max_digits=8, default=0)
+    auto_flag = models.BooleanField(help_text='手动与否', default=True)
 
     class Meta:
         db_table = 'product_batching_detail'
@@ -114,12 +136,13 @@ class ProductProcess(AbstractEntity):
     """胶料配方步序"""
     equip = models.ForeignKey(Equip, help_text='机台id', on_delete=models.DO_NOTHING)
     product_batching = models.ForeignKey(ProductBatching, help_text='配料标准', on_delete=models.DO_NOTHING)
-    equip_code = models.PositiveIntegerField(help_text='锁定/解除', blank=True, null=True)
-    reuse_time = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
-    mini_time = models.PositiveIntegerField(help_text='超温最短时间', blank=True, null=True)
-    max_time = models.PositiveIntegerField(help_text='超温最长时间', blank=True, null=True)
+    equip_code = models.DecimalField(help_text='锁定/解除', blank=True, null=True, decimal_places=2, max_digits=8)
+    reuse_time = models.DecimalField(help_text='回收时间', blank=True, null=True, decimal_places=2, max_digits=8)
+    mini_time = models.DecimalField(help_text='超温最短时间', blank=True, null=True, decimal_places=2, max_digits=8)
+    max_time = models.DecimalField(help_text='超温最长时间', blank=True, null=True, decimal_places=2, max_digits=8)
     mini_temp = models.DecimalField(help_text='进胶最低温度', decimal_places=2, max_digits=8, blank=True, null=True)
     max_temp = models.DecimalField(help_text='进胶最高温度', decimal_places=2, max_digits=8, blank=True, null=True)
+    over_time = models.DecimalField(help_text='炼胶超时时间', decimal_places=2, max_digits=8, blank=True, null=True)
     over_temp = models.DecimalField(help_text='超温温度', decimal_places=2, max_digits=8, blank=True, null=True)
     reuse_flag = models.BooleanField(help_text='是否回收', default=False)
     zz_temp = models.DecimalField(help_text='转子水温', decimal_places=2, max_digits=8, blank=True, null=True)
@@ -127,6 +150,7 @@ class ProductProcess(AbstractEntity):
     cb_temp = models.DecimalField(help_text='侧壁水温', decimal_places=2, max_digits=8, blank=True, null=True)
     temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
     used_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
+    batching_error = models.DecimalField(help_text='胶料总误差', decimal_places=2, max_digits=8, blank=True, null=True)
 
     class Meta:
         db_table = 'product_process'

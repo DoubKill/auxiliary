@@ -1,15 +1,17 @@
 import django_filters
 
-from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess
 
 
 class MaterialFilter(django_filters.rest_framework.FilterSet):
     material_type_id = django_filters.NumberFilter(field_name='material_type', help_text='原材料类别')
     used_flag = django_filters.BooleanFilter(field_name='used_flag', help_text='是否使用')
+    material_no = django_filters.CharFilter(field_name='material_no', help_text='原材料代码', lookup_expr='icontains')
+    material_name = django_filters.CharFilter(field_name='material_name', help_text='原材料名称', lookup_expr='icontains')
 
     class Meta:
         model = Material
-        fields = ('material_type_id', 'used_flag')
+        fields = ('material_type_id', 'used_flag', 'material_no', 'material_name')
 
 
 class ProductInfoFilter(django_filters.rest_framework.FilterSet):
@@ -41,3 +43,12 @@ class MaterialAttributeFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = MaterialAttribute
         fields = ('material_no',)
+
+
+class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
+    equip_no = django_filters.CharFilter(field_name='equip__equip_no', help_text='机台编号')
+    product_batching = django_filters.NumberFilter(field_name='product_batching', help_text='配料id')
+
+    class Meta:
+        model = ProductProcess
+        fields = ('equip_no', 'product_batching')

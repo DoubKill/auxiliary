@@ -536,7 +536,7 @@ class ProductBatchingDayPlanCopySerializer(BaseModelSerializer):
         return instance
 
 
-class PalletFeedbacksSerializer(BaseModelSerializer):
+class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_name', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
@@ -544,7 +544,7 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
     operation_user = serializers.SerializerMethodField(read_only=True, help_text='操作员')
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
-    day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time',read_only=True)
+    day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time', read_only=True)
     group = serializers.SerializerMethodField(read_only=True, help_text='班组')
 
     def get_group(self, object):
@@ -705,3 +705,5 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
         return instance
+
+
