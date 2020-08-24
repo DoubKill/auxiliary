@@ -423,7 +423,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             # id = i['id']
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
-            obj.masterial_name = i.get("masterial_name")
+            obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
