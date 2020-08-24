@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
-from rest_framework_jwt.views import ObtainJSONWebToken
+from rest_framework_jwt.views import ObtainJSONWebToken, VerifyJSONWebToken
 
 from mes.common_code import menu, CommonDeleteMixin
 from mes.derorators import api_recorder
@@ -36,7 +36,7 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     serializer_class = PermissionSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SinglePageNumberPagination
-    # filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -261,3 +261,17 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = ChildSystemInfo.objects.filter(delete_flag=False)
     serializer_class = ChildSystemInfoSerializer
     permission_classes = (IsAdminUser,)
+
+
+class UsrPermissionView(VerifyJSONWebToken):
+
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.object.get('user') or request.user
+            permissions = list(user.get_all_permissions())
+            return Response({"results": permissions})
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
