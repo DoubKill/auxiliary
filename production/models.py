@@ -2,6 +2,7 @@ from django.db import models
 
 from basics.models import AbstractEntity
 
+
 class TrainsFeedbacks(AbstractEntity):
     """车次产出反馈"""
     # id = models.BigIntegerField(primary_key=True, auto_created=True, unique=True)
@@ -18,6 +19,20 @@ class TrainsFeedbacks(AbstractEntity):
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
 
+    '''中间表字段补充'''
+    '''
+    control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
+    operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
+    total_weight = models.IntegerField(blank=True, null=True,help_text='总重量',verbose_name='总重量')
+    evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
+    evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
+    evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
+    # staff_code = models.CharField(max_length=18, blank=True, null=True, help_text='员工代号', verbose_name='员工代号')
+    save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
+    interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
+    mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
+    # variety = models.CharField(blank=True, null=True, max_length=8, help_text='种类', verbose_name='种类')
+    '''
     @property
     def time(self):
         temp = self.end_time - self.begin_time
