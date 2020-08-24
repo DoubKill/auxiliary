@@ -176,7 +176,7 @@ def main():
                             "operation_user": temp.get("员工代号"),
                             "classes": pcp.classes_detail.classes.global_name,
                         }
-                        sync_data_list.append(**adapt_data_trains)
+                        sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
                     TrainsFeedbacks.objects.bulk_create(sync_data_list)
                 elif m == "IfupReportCurve":
                     sync_data_list = []
