@@ -3,7 +3,7 @@ import re
 import requests
 from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import mixins
+from rest_framework import mixins, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -399,27 +399,14 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
-    def create(self, request, *args, **kwargs):
-        params = request.data
-        temp_data = {
-            # "id": 1,
-            "mname": params.get("masterial_name"),
-            "set_weight": None,
-            "error_allow": None,
-            "recipe_name": "配方1",
-            "type": params.get("tank_type"),
-            "recstatus": None,
-        }
-        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
-        temp.issue_to_db()
-        return super().create(request, *args, **kwargs)
-
     def put(self, request, *args, **kwargs):
         data = request.data
         for i in data:
-            obj = MaterialTankStatus.objects.get(pk=i.get("id"))
+            id = i.get("id")
+            # id = i['id']
+            obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
-            obj.masterial_name = i.get("masterial_name")
+            obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
@@ -428,7 +415,24 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-        return Response("ok")
+            temp_data = {
+                "id": id if id else None,
+                "mname": i.get("material_name", ""),
+                "set_weight": None,
+                "error_allow": None,
+                "recipe_name": "配方1",
+                "type": i.get("tank_type"),
+                "recstatus": "None",
+            }
+            temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
+            temp.issue_to_db()
+            serializer = self.get_serializer(data=i)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
+
+        # return Response("ok")
 
 
 class WeighParameterFuelViewSet(mixins.CreateModelMixin,
@@ -443,27 +447,13 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
-    def create(self, request, *args, **kwargs):
-        params = request.data
-        temp_data = {
-            # "id": 1,
-            "mname": params.get("masterial_name"),
-            "set_weight": None,
-            "error_allow": None,
-            "recipe_name": "配方1",
-            "type": params.get("tank_type"),
-            "recstatus": None,
-        }
-        temp = IssueWorkStation(IfdownRecipeOil11, temp_data)
-        temp.issue_to_db()
-        return super().create(request, *args, **kwargs)
-
     def put(self, request, *args, **kwargs):
         data = request.data
         for i in data:
+            id = i.get("id")
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
-            obj.masterial_name = i.get("masterial_name")
+            obj.material_name = i.get("material_name", "")
             obj.used_flag = i.get("used_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
@@ -472,25 +462,53 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-        return Response("ok")
+            mname = i.get("material_name")
+            temp_data = {
+                "id": id if id else None,
+                "mname": mname if mname else "",
+                "set_weight": None,
+                "error_allow": None,
+                "recipe_name": "配方1",
+                "type": i.get("tank_type"),
+                "recstatus": "None",
+            }
+            temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
+            temp.issue_to_db()
+            serializer = self.get_serializer(data=i)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
+        # ?data[]={}&data[]={}
+
+        #     temp_data = {
+        #         # "id": 1,
+        #         "mname": i.get("masterial_name"),
+        #         "set_weight": None,
+        #         "error_allow": None,
+        #         "recipe_name": "配方1",
+        #         "type": i.get("tank_type"),
+        #         "recstatus": None,
+        #     }
+        #     temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
+        #     temp.issue_to_db()
+        #     serializer = self.get_serializer(data=request.data)
+        #     serializer.is_valid(raise_exception=True)
+        #     self.perform_create(serializer)
+        # headers = self.get_success_headers(serializer.data)
+
+        # return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
+        # return Response("ok")
 
 
 class MaterialStatisticsViewSet(mixins.ListModelMixin,
                                 GenericViewSet):
-
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialStatisticsSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = MaterialStatisticsFilter
-
-
-
-
-
-
-
 
 
 class EquipStatusPlanList(mixins.ListModelMixin,
@@ -503,7 +521,7 @@ class EquipStatusPlanList(mixins.ListModelMixin,
 
 
 class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                            GenericViewSet):
+                        GenericViewSet):
     """主页面详情展示机"""
     queryset = Equip.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
