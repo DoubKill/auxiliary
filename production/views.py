@@ -21,7 +21,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipStatusPlanSerializer, EquipDetailedSerializer, \
+    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipDetailedSerializer, \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
@@ -479,7 +479,6 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
 
 class MaterialStatisticsViewSet(mixins.ListModelMixin,
                                 GenericViewSet):
-
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialStatisticsSerializer
@@ -488,21 +487,59 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
     filter_class = MaterialStatisticsFilter
 
 
-
-
-
-
-
-
-
 class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
-    queryset = Equip.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = EquipStatusPlanSerializer
-    pagination_class = SinglePageNumberPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    # queryset = Equip.objects.filter(delete_flag=False)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    # serializer_class = EquipStatusPlanSerializer
+    # pagination_class = SinglePageNumberPagination
+    # filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    def list(self, request, *args, **kwargs):
+        air = '''SELECT
+        "equip"."id",
+       "equip"."equip_no",
+       "global_code"."global_name",
+       trains_feedbacks.product_no,
+       equip_status.status,
+       SUM(distinct "product_classes_plan"."plan_trains") AS "plan_num",
+       SUM(distinct "trains_feedbacks"."actual_trains") AS "actual_num",
+       max(equip_status.current_trains) as current_trains
+from equip
+    left join product_day_plan on equip.id = product_day_plan.equip_id
+    left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
+    left JOIN "classes_detail" ON ("product_classes_plan"."classes_detail_id" = "classes_detail"."id")
+    left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
+    left JOIN "global_code" ON ("classes_detail"."classes_id" = "global_code"."id")
+    left join equip_status on equip_status.plan_classes_uid=product_classes_plan.plan_classes_uid
+GROUP BY "equip"."equip_no", "global_code"."global_name";'''
+        equip_set = Equip.objects.raw(air)
+
+        ret_data = {}
+        for _ in equip_set:
+            # if ret_data[_.equip_no] :
+            if _.equip_no in ret_data.keys():
+                ret_data[_.equip_no].append({"global_name": _.global_name,
+                                             "plan_num": _.plan_num,
+                                             "actual_num": _.actual_num,
+                                             "product_no": _.product_no,
+                                             "status": _.status,
+                                             "current_trains": _.current_trains,
+                                             "id": _.id})
+            else:
+                ret_data[_.equip_no] = []
+                ret_data[_.equip_no].append({"global_name": _.global_name,
+                                             "plan_num": _.plan_num,
+                                             "actual_num": _.actual_num,
+                                             "product_no": _.product_no,
+                                             "status": _.status,
+                                             "current_trains": _.current_trains,
+                                             "id": _.id
+                                             })
+
+        return Response(ret_data)
 
 
 class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,

@@ -7,10 +7,11 @@ class TrainsFeedbacksFilter(django_filters.rest_framework.FilterSet):
     plan_classes_uid = django_filters.CharFilter(field_name='plan_classes_uid', help_text='班次计划唯一码')
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料编号')
+    operation_user = django_filters.CharFilter(field_name="operation_user", help_text="操作员")
 
     class Meta:
         model = TrainsFeedbacks
-        fields = ('plan_classes_uid', 'equip_no', 'product_no', 'actual_trains')
+        fields = ('plan_classes_uid', 'equip_no', 'product_no', 'actual_trains','operation_user')
 
 
 class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
@@ -24,7 +25,7 @@ class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = PalletFeedbacks
-        fields = ('plan_classes_uid', 'equip_no', 'product_no', "classes", )
+        fields = ('plan_classes_uid', 'equip_no', 'product_no', "classes",)
 
 
 class EquipStatusFilter(django_filters.rest_framework.FilterSet):
