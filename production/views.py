@@ -304,7 +304,8 @@ class ProductActualViewSet(mixins.ListModelMixin,
             day_plan_set = plan_schedule.ps_day_plan.filter(delete_flag=False)
         for day_plan in list(day_plan_set):
             instance = {}
-            plan_trains = 0
+            plan_trains_all = 0
+            plan_weight_all = 0
             actual_trains = 0
             plan_weight = 0
             product_no = day_plan.product_batching.product_info.product_name
@@ -315,8 +316,10 @@ class ProductActualViewSet(mixins.ListModelMixin,
             if not class_plan_set:
                 continue
             for class_plan in list(class_plan_set):
-                plan_trains += class_plan.plan_trains
-                plan_weight += class_plan.weight
+                plan_trains = class_plan.plan_trains
+                plan_trains_all += class_plan.plan_trains
+                plan_weight = class_plan.weight
+                plan_weight_all += class_plan.weight
                 class_name = class_plan.classes_detail.classes.global_name
                 if target_equip_no:
                     temp_ret_set = TrainsFeedbacks.objects.filter(plan_classes_uid=class_plan.plan_classes_uid,
@@ -353,9 +356,9 @@ class ProductActualViewSet(mixins.ListModelMixin,
                     else:
                         day_plan_actual.append(temp_class_actual)
                     actual_trains += 0
-            instance.update(classes_data=day_plan_actual, plan_weight=plan_weight,
+            instance.update(classes_data=day_plan_actual, plan_weight=plan_weight_all,
                             product_no=product_no, equip_no=equip_no,
-                            plan_trains=plan_trains, actual_trains=actual_trains)
+                            plan_trains=plan_trains_all, actual_trains=actual_trains)
             return_data["data"].append(instance)
         return Response(return_data)
 
@@ -381,7 +384,7 @@ class PlanRelease(APIView):
         plan_data = request.data
         plan_data = self._validate(plan_data)
         token = request.get("Auth")
-        url = "http://xxxxx"
+        url = "http://xxxxx"  #
         ret = requests.post(url, data=plan_data)
         # TODO
 
