@@ -46,7 +46,7 @@ class MaterialAttributeFilter(django_filters.rest_framework.FilterSet):
 
 
 class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
-    equip_no = django_filters.NumberFilter(field_name='equip__equip_no', help_text='机台编号')
+    equip_no = django_filters.CharFilter(field_name='equip__equip_no', help_text='机台编号')
     product_batching = django_filters.NumberFilter(field_name='product_batching', help_text='配料id')
 
     class Meta:

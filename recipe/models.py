@@ -136,12 +136,13 @@ class ProductProcess(AbstractEntity):
     """胶料配方步序"""
     equip = models.ForeignKey(Equip, help_text='机台id', on_delete=models.DO_NOTHING)
     product_batching = models.ForeignKey(ProductBatching, help_text='配料标准', on_delete=models.DO_NOTHING)
-    equip_code = models.PositiveIntegerField(help_text='锁定/解除', blank=True, null=True)
-    reuse_time = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
-    mini_time = models.PositiveIntegerField(help_text='超温最短时间', blank=True, null=True)
-    max_time = models.PositiveIntegerField(help_text='超温最长时间', blank=True, null=True)
+    equip_code = models.DecimalField(help_text='锁定/解除', blank=True, null=True, decimal_places=2, max_digits=8)
+    reuse_time = models.DecimalField(help_text='回收时间', blank=True, null=True, decimal_places=2, max_digits=8)
+    mini_time = models.DecimalField(help_text='超温最短时间', blank=True, null=True, decimal_places=2, max_digits=8)
+    max_time = models.DecimalField(help_text='超温最长时间', blank=True, null=True, decimal_places=2, max_digits=8)
     mini_temp = models.DecimalField(help_text='进胶最低温度', decimal_places=2, max_digits=8, blank=True, null=True)
     max_temp = models.DecimalField(help_text='进胶最高温度', decimal_places=2, max_digits=8, blank=True, null=True)
+    over_time = models.DecimalField(help_text='炼胶超时时间', decimal_places=2, max_digits=8, blank=True, null=True)
     over_temp = models.DecimalField(help_text='超温温度', decimal_places=2, max_digits=8, blank=True, null=True)
     reuse_flag = models.BooleanField(help_text='是否回收', default=False)
     zz_temp = models.DecimalField(help_text='转子水温', decimal_places=2, max_digits=8, blank=True, null=True)
@@ -149,6 +150,7 @@ class ProductProcess(AbstractEntity):
     cb_temp = models.DecimalField(help_text='侧壁水温', decimal_places=2, max_digits=8, blank=True, null=True)
     temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
     used_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
+    batching_error = models.DecimalField(help_text='胶料总误差', decimal_places=2, max_digits=8, blank=True, null=True)
 
     class Meta:
         db_table = 'product_process'
