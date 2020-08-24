@@ -1,6 +1,6 @@
 import django_filters
 
-from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess
 
 
 class MaterialFilter(django_filters.rest_framework.FilterSet):
@@ -43,3 +43,12 @@ class MaterialAttributeFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = MaterialAttribute
         fields = ('material_no',)
+
+
+class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
+    equip_no = django_filters.CharFilter(field_name='equip__equip_no', help_text='机台编号')
+    product_batching = django_filters.NumberFilter(field_name='product_batching', help_text='配料id')
+
+    class Meta:
+        model = ProductProcess
+        fields = ('equip_no', 'product_batching')

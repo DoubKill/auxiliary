@@ -12,13 +12,13 @@ from basics.views import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.permissions import ProductBatchingPermissions
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter
+    MaterialAttributeFilter, ProcessStepsFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
     ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
-    ProductBatchingDetail, ProductProcessDetail
+    ProductBatchingDetail, ProductProcessDetail, BaseAction, BaseCondition
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -191,10 +191,12 @@ class ProcessStepsViewSet(ModelViewSet):
     partial_update:
         修改胶料配料步序
     """
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = ProductProcess.objects.filter(delete_flag=False
                                              ).select_related("equip", "product_batching").order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProductProcessSerializer
+    filter_class = ProcessStepsFilter
 
 
 class ProductProcessDetailViewSet(ModelViewSet):
@@ -212,6 +214,23 @@ class ProductProcessDetailViewSet(ModelViewSet):
     delete:
         删除胶料配料步序详情
     """
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = ProductProcessDetail.objects.filter(delete_flag=False).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProcessDetailSerializer
+
+
+class ActionListView(APIView):
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get(self, request):
+        data = BaseAction.objects.values('id', 'code', 'action')
+        return Response({'results': data})
+
+
+class ConditionListView(APIView):
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get(self, request):
+        data = BaseCondition.objects.values('id', 'code', 'condition')
+        return Response({'results': data})

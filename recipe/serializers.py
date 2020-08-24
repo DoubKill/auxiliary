@@ -230,6 +230,8 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
+    condition_name = serializers.CharField(source='condition.condition', read_only=True)
+    action_name = serializers.CharField(source='action.action', read_only=True)
 
     class Meta:
         model = ProductProcessDetail
@@ -246,10 +248,24 @@ class ProcessDetailSerializer(BaseModelSerializer):
 
 
 class ProductProcessSerializer(BaseModelSerializer):
-    process_details = ProductProcessDetailSerializer(many=True, required=False)
+    process_details = ProductProcessDetailSerializer(many=True, required=False, help_text="""
+                                                                                        [{"sn":'序号',
+                                                                                        "temperature":'温度',
+                                                                                        "rpm":'转速',
+                                                                                        "energy": '能量',
+                                                                                        "power": '功率',
+                                                                                        "pressure" : '压力',
+                                                                                        "condition": '条件id',
+                                                                                        "time" :'时间(分钟)',
+                                                                                        "action":'基本动作id',
+                                                                                        "time_unit":'时间单位'}]""")
 
     @atomic()
     def create(self, validated_data):
+        if ProductProcess.objects.filter(equip=validated_data['equip'],
+                                         product_batching=validated_data['product_batching']).exists():
+            raise serializers.ValidationError('该机台已被其他配方使用')
+
         validated_data['created_user'] = self.context['request'].user
         process_details = validated_data.pop('process_details', None)
         instance = super().create(validated_data)
@@ -268,7 +284,7 @@ class ProductProcessSerializer(BaseModelSerializer):
             instance.process_details.all().delete()
             batching_detail_list = []
             for detail in process_details:
-                detail['product_batching'] = instance
+                detail['product_process'] = instance
                 batching_detail_list.append(ProductProcessDetail(**detail))
             ProductProcessDetail.objects.bulk_create(batching_detail_list)
         return instance
