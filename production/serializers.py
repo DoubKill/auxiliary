@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.forms.models import model_to_dict
 
 from recipe.models import ProductBatching
-from work_station.models import IfupReportBasis
+from work_station.models import IfupReportBasis, IfupReportWeight, IfupReportMix, IfupReportCurve
 
 
 class EquipStatusSerializer(BaseModelSerializer):
@@ -163,9 +163,20 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = MaterialTankStatus
-        fields = ("equip_no", "tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value", "dot_time",
-                  "fast_speed",
-                  "low_speed", "used_flag")
+        fields = (
+        "id", "equip_no", "tank_type", "tank_name", "masterial_name", "low_value", "advance_value", "adjust_value",
+        "dot_time",
+        "fast_speed",
+        "low_speed", "used_flag")
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class MaterialStatisticsSerializer(BaseModelSerializer):
+    """物料统计报表"""
+
+    class Meta:
+        model = ExpendMaterial
+        fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
@@ -175,6 +186,7 @@ class EquipStatusPlanSerializer(BaseModelSerializer):
     product_no = serializers.SerializerMethodField(read_only=True, help_text='当前胶料编码')
     group_name_list = serializers.SerializerMethodField(read_only=True, help_text='班组列表')
     current_trains = serializers.SerializerMethodField(read_only=True, help_text='收皮数量')
+    # equip = serializers.
 
     def get_status(self, object):
         es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
@@ -300,3 +312,91 @@ class EquipDetailedSerializer(BaseModelSerializer):
         model = Equip
         fields = (
             'id', 'equip_no', 'status', 'current_trains', 'product_no', 'group_name', 'group_product', 'statusinfo')
+
+
+class WeighInformationSerializer(BaseModelSerializer):
+    """称量信息"""
+    weigh_info = serializers.SerializerMethodField(read_only=True)
+
+    def get_weigh_info(self, object):
+        weigh_info = []
+        irw_queryset = IfupReportWeight.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+                                                       配方号=object.product_no).all()
+        print(irw_queryset)
+        if irw_queryset:
+            for irw_obj in irw_queryset:
+                weigh_dict = {}
+                weigh_dict['id'] = irw_obj.序号
+                weigh_dict['物料名称'] = irw_obj.物料名称
+                weigh_dict['设定重量'] = irw_obj.设定重量
+                weigh_dict['实际重量'] = irw_obj.实际重量
+                weigh_dict['秤状态'] = irw_obj.秤状态
+                weigh_dict['物料类型'] = irw_obj.物料类型
+                weigh_info.append(weigh_dict)
+            return weigh_info
+        else:
+            return None
+
+    class Meta:
+        model = TrainsFeedbacks
+        fields = ('weigh_info',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class MixerInformationSerializer(BaseModelSerializer):
+    """密炼信息"""
+    mixer_info = serializers.SerializerMethodField(read_only=True)
+
+    def get_mixer_info(self, object):
+        mixer_info = []
+        irm_queryset = IfupReportMix.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+                                                    配方号=object.product_no).all()
+        if irm_queryset:
+            for irm_obj in irm_queryset:
+                mixer_dict = {}
+                mixer_dict['id'] = irm_obj.序号
+                mixer_dict['条件'] = irm_obj.条件
+                mixer_dict['时间'] = irm_obj.时间
+                mixer_dict['温度'] = irm_obj.温度
+                mixer_dict['功率'] = irm_obj.功率
+                mixer_dict['能量'] = irm_obj.能量
+                mixer_dict['动作'] = irm_obj.动作
+                mixer_dict['转速'] = irm_obj.转速
+                mixer_dict['压力'] = irm_obj.压力
+                mixer_info.append(mixer_dict)
+            return mixer_info
+        else:
+            return None
+
+    class Meta:
+        model = TrainsFeedbacks
+        fields = ('mixer_info',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class CurveInformationSerializer(BaseModelSerializer):
+    """工艺曲线信息"""
+    curve_info = serializers.SerializerMethodField(read_only=True)
+
+    def get_curve_info(self, object):
+        curve_info = []
+        irc_queryset = IfupReportCurve.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+                                                      配方号=object.product_no).all()
+        if irc_queryset:
+            for irc_obj in irc_queryset:
+                curve_dict = {}
+                curve_dict['id'] = irc_obj.序号
+                curve_dict['温度'] = irc_obj.温度
+                curve_dict['功率'] = irc_obj.功率
+                curve_dict['转速'] = irc_obj.转速
+                curve_dict['压力'] = irc_obj.压力
+                curve_dict['时间'] = irc_obj.存盘时间
+                curve_info.append(curve_dict)
+            return curve_info
+        else:
+            return None
+
+    class Meta:
+        model = TrainsFeedbacks
+        fields = ('curve_info',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS

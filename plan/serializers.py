@@ -536,7 +536,7 @@ class ProductBatchingDayPlanCopySerializer(BaseModelSerializer):
         return instance
 
 
-class PalletFeedbacksSerializer(BaseModelSerializer):
+class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_name', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
