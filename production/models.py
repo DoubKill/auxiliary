@@ -123,7 +123,7 @@ class ExpendMaterial(AbstractEntity):
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间')
 
     def __str__(self):
-        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.masterial_no}"
+        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"
 
     class Meta:
         db_table = 'expend_material'
