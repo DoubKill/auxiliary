@@ -15,6 +15,7 @@ from plan.models import ProductClassesPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus
 from system.models import User
 from work_station.models import IfupReportBasis, IfupReportCurve, IfupReportMix
+from django.db.transaction import atomic
 
 
 def random_name():
@@ -23,7 +24,6 @@ def random_name():
     for _ in user_dict:
         name_list.append(_['username'])
     return random.choice(name_list)
-
 
 def add_product():
     pcp_set = ProductClassesPlan.objects.all()
@@ -40,7 +40,7 @@ def add_product():
                                                begin_time=datetime.datetime.now(),
                                                end_time=datetime.datetime.now(),
                                                operation_user=random_name(),
-                                               classes=pcp_obj.classes_detail.classes.global_name)
+                                               classes=pcp_obj.work_schedule_plan.classes.global_name)
             print(t)
             p = PalletFeedbacks.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
                                                bath_no=i, equip_no=pcp_obj.product_day_plan.equip.equip_no,
@@ -53,7 +53,7 @@ def add_product():
                                                begin_trains=i, end_trains=1,
                                                pallet_no='托盘（虽然我也不知道是啥意思）',
                                                barcode=i * 100,
-                                               classes=pcp_obj.classes_detail.classes.global_name,
+                                               classes=pcp_obj.work_schedule_plan.classes.global_name,
                                                lot_no='追踪号'
                                                )
             print(p)
