@@ -148,30 +148,6 @@ class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
 
 
-class MesLogin(ObtainJSONWebToken):
-    menu = {
-        "basics": [
-            "globalcodetype",
-            "globalcode",
-            "workschedule",
-            "equip"
-        ],
-        "system": {
-            "user",
-        },
-        "auth": {
-        }
-
-    }
-
-    def post(self, request, *args, **kwargs):
-        temp = super().post(request, *args, **kwargs)
-        format = kwargs.get("format")
-        if temp.status_code != 200:
-            return temp
-        return menu(request, self.menu, temp, format)
-
-
 class ImportExcel(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -263,7 +239,7 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     permission_classes = (IsAdminUser,)
 
 
-class UsrPermissionView(VerifyJSONWebToken):
+class LoginView(ObtainJSONWebToken):
     """
     post
         获取权限列表
