@@ -12,10 +12,9 @@ from basics.views import CommonDeleteMixin
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBatchingDayPlanFilter, \
     PalletFeedbacksFilter
-from plan.serializers import ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, \
-    ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
-    UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
+from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
     PalletFeedbacksPlanSerializer
+#ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
 from plan.paginations import LimitOffsetPagination
@@ -29,7 +28,7 @@ from recipe.models import Material
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownShengchanjihua1
 
-
+'''
 @method_decorator([api_recorder], name="dispatch")
 class ProductDayPlanViewSet(CommonDeleteMixin, ModelViewSet):
     """
@@ -227,7 +226,7 @@ class ProductDayPlanManyCreate(APIView):
         book_obj_or_list = pbdp_ser.save()
         return Response(ProductDayPlanSerializer(book_obj_or_list, many=many).data)
 
-
+'''
 @method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.ListModelMixin,
                              GenericViewSet, CommonDeleteMixin):
