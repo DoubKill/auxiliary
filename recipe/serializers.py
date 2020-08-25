@@ -103,15 +103,14 @@ class ProductBatchingDetailSerializer(BaseModelSerializer):
 
 
 class ProductBatchingListSerializer(BaseModelSerializer):
-    product_name = serializers.CharField(source='product_info.product_name')
+    product_name = serializers.CharField(source='product_info.product_name', read_only=True)
     created_user_name = serializers.CharField(source='created_user.username', read_only=True)
     update_user_name = serializers.CharField(source='last_updated_user.username', read_only=True)
-    stage_name = serializers.CharField(source="stage.global_name")
-    site_name = serializers.CharField(source="site.global_name")
-    dev_type_name = serializers.SerializerMethodField()
-
-    def get_dev_type_name(self, obj):
-        return obj.dev_type.global_name if obj.dev_type else None
+    stage_name = serializers.CharField(source="stage.global_name", read_only=True)
+    site_name = serializers.CharField(source="site.global_name", read_only=True)
+    dev_type_name = serializers.CharField(source='dev_type.global_name', default=None, read_only=True)
+    equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
+    equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
 
     class Meta:
         model = ProductBatching

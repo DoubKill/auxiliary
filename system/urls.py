@@ -18,9 +18,9 @@ router.register(r'section', SectionViewSet)
 
 router.register(r"permission", PermissionViewSet)
 #系统配置
-router.register(r"config", SystemConfigViewSet)
+router.register(r"system-config", SystemConfigViewSet)
 #子系统信息
-router.register(r"child-info", ChildSystemInfoViewSet)
+router.register(r"child-system-info", ChildSystemInfoViewSet)
 
 
 urlpatterns = [
