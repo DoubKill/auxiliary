@@ -181,7 +181,7 @@ class MaterialTankStatus(AbstractEntity):
 '''为了车次报表 将中间表的部分表复制过来 相当于备份表 因为中间表的数据会定期删除'''
 
 
-class IfupReportWeight(models.Model):
+class IfupReportWeightBackups(models.Model):
     """车次报表材料重量表"""
     序号 = models.AutoField(primary_key=True)
     车次号 = models.IntegerField(blank=True, null=True)
@@ -199,10 +199,10 @@ class IfupReportWeight(models.Model):
 
     class Meta:
         # managed = False
-        db_table = 'ifup_report_weight'
+        db_table = 'ifup_report_weight_backups'
 
 
-class IfupReportBasis(models.Model):
+class IfupReportBasisBackups(models.Model):
     """车次报表主信息"""
     序号 = models.AutoField(primary_key=True)
     车次号 = models.IntegerField(blank=True, null=True)
@@ -233,10 +233,10 @@ class IfupReportBasis(models.Model):
 
     class Meta:
         # managed = False
-        db_table = 'ifup_report_basis'
+        db_table = 'ifup_report_basis_backups'
 
 
-class IfupReportMix(models.Model):
+class IfupReportMixBackups(models.Model):
     """车次报表步序表"""
     序号 = models.AutoField(primary_key=True)
     步骤号 = models.IntegerField(blank=True, null=True)
@@ -257,10 +257,10 @@ class IfupReportMix(models.Model):
 
     class Meta:
         # managed = False
-        db_table = 'ifup_report_mix'
+        db_table = 'ifup_report_mix_backups'
 
 
-class IfupReportCurve(models.Model):
+class IfupReportCurveBackups(models.Model):
     """车次报表工艺曲线数据表"""
     序号 = models.AutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
@@ -276,4 +276,4 @@ class IfupReportCurve(models.Model):
 
     class Meta:
         # managed = False
-        db_table = 'ifup_report_curve'
+        db_table = 'ifup_report_curve_backups'
