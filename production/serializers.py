@@ -10,7 +10,7 @@ from django.db.models import Sum
 from django.forms.models import model_to_dict
 
 from recipe.models import ProductBatching
-from work_station.models import IfupReportBasis, IfupReportWeight, IfupReportMix, IfupReportCurve
+from production.models import IfupReportBasis, IfupReportWeight, IfupReportMix, IfupReportCurve
 
 
 class EquipStatusSerializer(BaseModelSerializer):
