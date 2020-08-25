@@ -264,7 +264,10 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
 
 
 class UsrPermissionView(VerifyJSONWebToken):
-
+    """
+    post
+        获取权限列表
+    """
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -293,6 +296,6 @@ class UsrPermissionView(VerifyJSONWebToken):
             auth = permissions_tree.pop("auth")
             # 合并auth与system
             permissions_tree["system"].update(**auth)
-            return Response({"results": permissions_tree})
+            return Response({"results": permissions_tree, "username": user.username})
         # 返回异常信息
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
