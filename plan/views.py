@@ -275,6 +275,8 @@ class StopPlan(APIView):
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id")
+        if plan_id is None:
+            return Response("没有传id", status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
@@ -288,8 +290,10 @@ class StopPlan(APIView):
         temp_data = {
             'id': params.get("id", None),  # id
             'state': '等待',  # 计划状态：等待，运行中，完成
+            'remark': 'u',
+            'recstatus': '等待'
         }
-        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
         return Response('修改成功', status=200)
@@ -302,6 +306,8 @@ class IssuedPlan(APIView):
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id", None)
+        if plan_id is None:
+            return Response("没有传id", status=400)
         equip_name = params.get("equip_name", None)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
@@ -326,10 +332,10 @@ class IssuedPlan(APIView):
             'actno': params.get("actual_trains", None),  # 当前车次
             'oper': params.get("operation_user", None),  # 操作员角色
             'state': '运行中',  # 计划状态：等待，运行中，完成
-            'remark': params.get("plan_classes_uid", None),
-            'recstatus': params.get("plan_classes_uid", None),
+            'remark':'c',
+            'recstatus': '运行中',
         }
-        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
         return Response('修改成功', status=200)
@@ -342,6 +348,8 @@ class RetransmissionPlan(APIView):
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id")
+        if plan_id is None:
+            return Response("没有传id", status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
@@ -356,8 +364,11 @@ class RetransmissionPlan(APIView):
             'id': params.get("id", None),  # id
             'setno': params.get("plan_trains", None),  # 设定车次
             'state': '等待',  # 计划状态：等待，运行中，完成
+            'remark': 'u',
+            'recstatus': '更新完成'
+
         }
-        temp = IssueWorkStation(IfdownShengchanjihua1, temp_data)
+        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
         return Response('修改成功', status=200)

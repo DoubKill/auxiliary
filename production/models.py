@@ -20,14 +20,14 @@ class TrainsFeedbacks(AbstractEntity):
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
 
     '''中间表字段补充'''
-    control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
-    operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
-    evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
-    evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
-    evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
-    save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
-    interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
-    mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
+    # control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
+    # operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
+    # evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
+    # evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
+    # evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
+    # save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
+    # interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
+    # mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
 
     @property
     def time(self):
@@ -204,7 +204,7 @@ class IfupReportWeightBackups(models.Model):
 
 class IfupReportBasisBackups(models.Model):
     """车次报表主信息"""
-    序号 = models.AutoField(primary_key=True)
+    序号 = models.BigAutoField(primary_key=True)
     车次号 = models.IntegerField(blank=True, null=True)
     开始时间 = models.CharField(max_length=20, blank=True, null=True)
     消耗时间 = models.IntegerField(blank=True, null=True)
@@ -238,7 +238,7 @@ class IfupReportBasisBackups(models.Model):
 
 class IfupReportMixBackups(models.Model):
     """车次报表步序表"""
-    序号 = models.AutoField(primary_key=True)
+    序号 = models.BigAutoField(primary_key=True)
     步骤号 = models.IntegerField(blank=True, null=True)
     条件 = models.CharField(max_length=20, blank=True, null=True)
     时间 = models.IntegerField(blank=True, null=True)
@@ -262,7 +262,7 @@ class IfupReportMixBackups(models.Model):
 
 class IfupReportCurveBackups(models.Model):
     """车次报表工艺曲线数据表"""
-    序号 = models.AutoField(primary_key=True)
+    序号 = models.BigAutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
     配方号 = models.CharField(max_length=20, blank=True, null=True)
     温度 = models.IntegerField(blank=True, null=True)
