@@ -13,7 +13,7 @@ from plan.uuidfield import UUidTools
 from production.models import PalletFeedbacks, TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatchingDetail, ProductBatching
 
-
+'''
 class ProductClassesPlanSerializer(BaseModelSerializer):
     classes = serializers.CharField(source='classes_detail.classes.global_name', read_only=True)
 
@@ -535,7 +535,7 @@ class ProductBatchingDayPlanCopySerializer(BaseModelSerializer):
                                                     )
         return instance
 
-
+'''
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_name', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
