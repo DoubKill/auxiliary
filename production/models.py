@@ -2,6 +2,7 @@ from django.db import models
 
 from basics.models import AbstractEntity
 
+
 class TrainsFeedbacks(AbstractEntity):
     """车次产出反馈"""
     # id = models.BigIntegerField(primary_key=True, auto_created=True, unique=True)
@@ -17,6 +18,16 @@ class TrainsFeedbacks(AbstractEntity):
     end_time = models.DateTimeField(help_text='结束时间', verbose_name='结束时间')
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
+
+    '''中间表字段补充'''
+    control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
+    operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
+    evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
+    evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
+    evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
+    save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
+    interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
+    mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
 
     @property
     def time(self):
@@ -108,7 +119,7 @@ class ExpendMaterial(AbstractEntity):
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间')
 
     def __str__(self):
-        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.masterial_no}"
+        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"
 
     class Meta:
         db_table = 'expend_material'
@@ -165,3 +176,104 @@ class MaterialTankStatus(AbstractEntity):
     class Meta:
         db_table = 'material_tank_status'
         verbose_name_plural = verbose_name = '储料罐状态'
+
+
+'''为了车次报表 将中间表的部分表复制过来 相当于备份表 因为中间表的数据会定期删除'''
+
+
+class IfupReportWeightBackups(models.Model):
+    """车次报表材料重量表"""
+    序号 = models.AutoField(primary_key=True)
+    车次号 = models.IntegerField(blank=True, null=True)
+    物料名称 = models.CharField(max_length=19, blank=True, null=True)
+    设定重量 = models.IntegerField(blank=True, null=True)
+    实际重量 = models.IntegerField(blank=True, null=True)
+    秤状态 = models.CharField(max_length=8, blank=True, null=True)
+    计划号 = models.CharField(max_length=50)
+    配方号 = models.CharField(max_length=50)
+    物料编码 = models.CharField(max_length=19, blank=True, null=True)
+    物料类型 = models.CharField(max_length=1, blank=True, null=True)
+    存盘时间 = models.CharField(max_length=19, blank=True, null=True)
+    机台号 = models.IntegerField()
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifup_report_weight_backups'
+
+
+class IfupReportBasisBackups(models.Model):
+    """车次报表主信息"""
+    序号 = models.AutoField(primary_key=True)
+    车次号 = models.IntegerField(blank=True, null=True)
+    开始时间 = models.CharField(max_length=20, blank=True, null=True)
+    消耗时间 = models.IntegerField(blank=True, null=True)
+    排胶时间 = models.IntegerField(blank=True, null=True)
+    间隔时间 = models.IntegerField(blank=True, null=True)
+    排胶温度 = models.IntegerField(blank=True, null=True)
+    排胶功率 = models.IntegerField(blank=True, null=True)
+    排胶能量 = models.IntegerField(blank=True, null=True)
+    作业方式 = models.CharField(max_length=8, blank=True, null=True)
+    控制方式 = models.CharField(max_length=8, blank=True, null=True)
+    员工代号 = models.CharField(max_length=18, blank=True, null=True)
+    总重量 = models.IntegerField(blank=True, null=True)
+    胶料重量 = models.IntegerField(blank=True, null=True)
+    炭黑重量 = models.IntegerField(blank=True, null=True)
+    油1重量 = models.IntegerField(blank=True, null=True)
+    油2重量 = models.IntegerField(blank=True, null=True)
+    计划号 = models.CharField(max_length=50, blank=True, null=True)
+    配方号 = models.CharField(max_length=50, blank=True, null=True)
+    加胶时间 = models.IntegerField(blank=True, null=True)
+    加炭黑时间 = models.IntegerField(blank=True, null=True)
+    加油1时间 = models.IntegerField(blank=True, null=True)
+    加油2时间 = models.IntegerField(blank=True, null=True)
+    存盘时间 = models.CharField(max_length=20, blank=True, null=True)
+    机台号 = models.IntegerField()
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifup_report_basis_backups'
+
+
+class IfupReportMixBackups(models.Model):
+    """车次报表步序表"""
+    序号 = models.AutoField(primary_key=True)
+    步骤号 = models.IntegerField(blank=True, null=True)
+    条件 = models.CharField(max_length=20, blank=True, null=True)
+    时间 = models.IntegerField(blank=True, null=True)
+    温度 = models.IntegerField(blank=True, null=True)
+    功率 = models.IntegerField(blank=True, null=True)
+    能量 = models.IntegerField(blank=True, null=True)
+    动作 = models.CharField(max_length=20, blank=True, null=True)
+    转速 = models.IntegerField(blank=True, null=True)
+    压力 = models.IntegerField(blank=True, null=True)
+    计划号 = models.CharField(max_length=50, blank=True, null=True)
+    配方号 = models.CharField(max_length=50, blank=True, null=True)
+    存盘时间 = models.CharField(max_length=20, blank=True, null=True)
+    密炼车次 = models.IntegerField(blank=True, null=True)
+    机台号 = models.IntegerField()
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifup_report_mix_backups'
+
+
+class IfupReportCurveBackups(models.Model):
+    """车次报表工艺曲线数据表"""
+    序号 = models.AutoField(primary_key=True)
+    计划号 = models.CharField(max_length=20, blank=True, null=True)
+    配方号 = models.CharField(max_length=20, blank=True, null=True)
+    温度 = models.IntegerField(blank=True, null=True)
+    能量 = models.IntegerField(blank=True, null=True)
+    功率 = models.IntegerField(blank=True, null=True)
+    压力 = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    转速 = models.IntegerField(blank=True, null=True)
+    存盘时间 = models.CharField(max_length=20, blank=True, null=True)
+    机台号 = models.IntegerField()
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifup_report_curve_backups'

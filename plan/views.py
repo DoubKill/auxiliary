@@ -303,7 +303,7 @@ class IssuedPlan(APIView):
         params = request.query_params
         plan_id = params.get("id", None)
         equip_name = params.get("equip_name", None)
-        pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
             return Response("计划状态变更没有数据", status=400)

@@ -8,9 +8,9 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     OperationLog, MaterialTankStatus
 from django.db.models import Sum
 from django.forms.models import model_to_dict
-
+from production.utils import strtoint
 from recipe.models import ProductBatching
-from work_station.models import IfupReportBasis, IfupReportWeight, IfupReportMix, IfupReportCurve
+from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, IfupReportCurveBackups
 
 
 class EquipStatusSerializer(BaseModelSerializer):
@@ -26,6 +26,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
     """车次产出反馈"""
     equip_status = serializers.SerializerMethodField(read_only=True)
     production_details = serializers.SerializerMethodField(read_only=True)
+    status = serializers.SerializerMethodField(read_only=True)
 
     def get_equip_status(self, object):
         equip_status = {}
@@ -41,7 +42,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
 
     def get_production_details(self, object):
         production_details = {}
-        irb_obj = IfupReportBasis.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid,
+        irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid,
                                                  配方号=object.product_no).order_by('存盘时间').last()
         if irb_obj:
             production_details['控制方式'] = irb_obj.控制方式  # 本远控
@@ -57,6 +58,12 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
             return production_details
         else:
             return None
+
+    def get_status(self, object):
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=object.plan_classes_uid).last()
+        if ps_obj:
+            return ps_obj.status
+        return None
 
     class Meta:
         model = TrainsFeedbacks
@@ -178,93 +185,10 @@ class MaterialStatisticsSerializer(BaseModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-# class EquipStatusPlanSerializer(BaseModelSerializer):
-#     """主页面展示"""
-#     status = serializers.SerializerMethodField(read_only=True, help_text='机台状态')
-#     product_no = serializers.SerializerMethodField(read_only=True, help_text='当前胶料编码')
-#     group_name_list = serializers.SerializerMethodField(read_only=True, help_text='班组列表')
-#     current_trains = serializers.SerializerMethodField(read_only=True, help_text='收皮数量')
-#
-#     # equip = serializers.
-#
-#     def get_status(self, object):
-#         es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
-#         if es_obj:
-#             return es_obj.status
-#         else:
-#             return None
-#
-#     def get_current_trains(self, object):
-#         es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
-#         if es_obj:
-#             return es_obj.current_trains
-#         else:
-#             return None
-#
-#     def get_product_no(self, object):
-#         pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
-#         if pfb_obj:
-#             return pfb_obj.product_no
-#         else:
-#             return None
-#
-#     def get_group_name_list(self, object):
-#         a = ProductClassesPlan.objects.values('product_day_plan__equip__equip_no',
-#                                               'classes_detail__classes__global_name'
-#                                               ).annotate(num=Sum('plan_trains'))
-#
-#         air = '''SELECT
-#         "equip"."id",
-#        "equip"."equip_no",
-#        "global_code"."global_name",
-#        SUM("product_classes_plan"."plan_trains") AS "plan_num",
-#        SUM("trains_feedbacks"."actual_trains") AS "actual_num"
-# from equip
-#     left join product_day_plan on equip.id = product_day_plan.equip_id
-#     left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
-#     left JOIN "classes_detail" ON ("product_classes_plan"."classes_detail_id" = "classes_detail"."id")
-#     left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
-#     left JOIN "global_code" ON ("classes_detail"."classes_id" = "global_code"."id")
-# GROUP BY "equip"."equip_no", "global_code"."global_name";'''
-#         equip_set = Equip.objects.raw(air)
-#         ret_data = [{"equip_no": _.equip_no,
-#                      "global_name":_.global_name,
-#                      "plan_num":_.plan_num,
-#                      "actual_num":_.actual_num
-#         } for _ in equip_set]
-#
-#         print(ret_data)
-#         return ret_data
-#         # res = GlobalCode.objects.annotate(
-#         #     plan_sum=Sum(
-#         #         'work_schedule_plan__plan_schedule__ps_day_plan__pdp_product_classes_plan__plan_trains')).filter(
-#         #     global_type__type_name="班组",
-#         #     work_schedule_plan__plan_schedule__ps_day_plan__equip=object).values('plan_sum', 'global_name')
-#         # for i in res:
-#         #     ppcp_queryset = ProductClassesPlan.objects.filter(
-#         #         product_day_plan__plan_schedule__work_schedule_plan__group__global_name=i['global_name']).values(
-#         #         'plan_classes_uid')
-#         #     uid_list = []
-#         #     for ppcp_obj in ppcp_queryset:
-#         #         uid_list.append(ppcp_obj['plan_classes_uid'])
-#         #     trains_sum = 0
-#         #     for uid in uid_list:
-#         #         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=uid).last()  # 因为车次反馈是不断新增数据的，所以直接找最后一条
-#         #         trains_sum += tfb_obj.actual_trains
-#         #     i['actual_trains'] = trains_sum
-#
-#
-#     class Meta:
-#         model = Equip
-#         fields = ('id', 'equip_no', 'status', 'current_trains', 'product_no', 'group_name_list')
-
-
 class EquipDetailedSerializer(BaseModelSerializer):
     """主页面详情展示"""
     status_current_trains = serializers.SerializerMethodField(read_only=True, help_text='机台状态和收皮数量')
-    # current_trains = serializers.SerializerMethodField(read_only=True, help_text='收皮数量')
     product_no_classes = serializers.SerializerMethodField(read_only=True, help_text='当前胶料编码和当前班次')
-    # group_name = serializers.SerializerMethodField(read_only=True, help_text='当前班次')
     group_product = serializers.SerializerMethodField(read_only=True, help_text='班次对应胶料列表')
     statusinfo = serializers.SerializerMethodField(read_only=True, help_text='机台状态统计')
 
@@ -276,13 +200,6 @@ class EquipDetailedSerializer(BaseModelSerializer):
         else:
             return None
 
-    # def get_current_trains(self, object):
-    #     es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
-    #     if es_obj:
-    #         return es_obj.current_trains
-    #     else:
-    #         return None
-
     def get_product_no_classes(self, object):
         pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
         if pfb_obj:
@@ -291,20 +208,14 @@ class EquipDetailedSerializer(BaseModelSerializer):
         else:
             return None
 
-    # def get_group_name(self, object):
-    #     pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
-    #     if pfb_obj:
-    #         return pfb_obj.classes
-    #     else:
-    #         return None
-
     def get_group_product(self, object):
         pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
         if pfb_obj:
             res = ProductBatching.objects.annotate(
                 sum_trains=Sum('pb_day_plan__pdp_product_classes_plan__plan_trains')).filter(
                 pb_day_plan__equip__equip_no=object.equip_no,
-                pb_day_plan__pdp_product_classes_plan__classes_detail__classes__global_name=pfb_obj.classes).values('sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
+                pb_day_plan__pdp_product_classes_plan__classes_detail__classes__global_name=pfb_obj.classes).values(
+                'sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
             for i in res:
                 pcp_queryset = ProductClassesPlan.objects.filter(
                     product_day_plan__product_batching__stage_product_batch_no=i[
@@ -315,7 +226,8 @@ class EquipDetailedSerializer(BaseModelSerializer):
                 sum_trains = 0
                 for uid in uid_List:
                     tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=uid).last()
-                    sum_trains += tfb_obj.actual_trains
+                    if tfb_obj:
+                        sum_trains += tfb_obj.actual_trains
                 i['trains_plan'] = sum_trains
             return res
         else:
@@ -339,7 +251,7 @@ class WeighInformationSerializer(BaseModelSerializer):
 
     def get_weigh_info(self, object):
         weigh_info = []
-        irw_queryset = IfupReportWeight.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+        irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
                                                        配方号=object.product_no).all()
         print(irw_queryset)
         if irw_queryset:
@@ -368,7 +280,7 @@ class MixerInformationSerializer(BaseModelSerializer):
 
     def get_mixer_info(self, object):
         mixer_info = []
-        irm_queryset = IfupReportMix.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+        irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
                                                     配方号=object.product_no).all()
         if irm_queryset:
             for irm_obj in irm_queryset:
@@ -399,7 +311,7 @@ class CurveInformationSerializer(BaseModelSerializer):
 
     def get_curve_info(self, object):
         curve_info = []
-        irc_queryset = IfupReportCurve.objects.filter(机台号=object.equip_no, 计划号=object.plan_classes_uid.hex,
+        irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
                                                       配方号=object.product_no).all()
         if irc_queryset:
             for irc_obj in irc_queryset:

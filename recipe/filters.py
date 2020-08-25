@@ -31,10 +31,11 @@ class ProductBatchingFilter(django_filters.rest_framework.FilterSet):
     site = django_filters.NumberFilter(field_name='site', help_text='SITE')
     used_type = django_filters.NumberFilter(field_name='used_type', help_text='状态')
     stage_id = django_filters.NumberFilter(field_name='stage_id', help_text='段次id')
+    equip_id = django_filters.NumberFilter(field_name='equip_id', help_text='设备id')
 
     class Meta:
         model = ProductBatching
-        fields = ('factory_id', 'stage_id', 'stage_product_batch_no', 'dev_type', 'site', 'used_type')
+        fields = ('factory_id', 'stage_id', 'stage_product_batch_no', 'dev_type', 'site', 'used_type', 'equip_id')
 
 
 class MaterialAttributeFilter(django_filters.rest_framework.FilterSet):
@@ -46,9 +47,9 @@ class MaterialAttributeFilter(django_filters.rest_framework.FilterSet):
 
 
 class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
-    equip_no = django_filters.CharFilter(field_name='equip__equip_no', help_text='机台编号')
+    equip = django_filters.NumberFilter(field_name='equip', help_text='设备id')
     product_batching = django_filters.NumberFilter(field_name='product_batching', help_text='配料id')
 
     class Meta:
         model = ProductProcess
-        fields = ('equip_no', 'product_batching')
+        fields = ('equip', 'product_batching')

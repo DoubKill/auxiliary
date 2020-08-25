@@ -130,6 +130,7 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
             return super().list(request, *args, **kwargs)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductBatchingViewSet(ModelViewSet):
     """
     list:
@@ -178,6 +179,7 @@ class ProductBatchingViewSet(ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProcessStepsViewSet(ModelViewSet):
     """
     list:
@@ -199,6 +201,7 @@ class ProcessStepsViewSet(ModelViewSet):
     filter_class = ProcessStepsFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductProcessDetailViewSet(ModelViewSet):
     """
     list:
@@ -220,6 +223,7 @@ class ProductProcessDetailViewSet(ModelViewSet):
     serializer_class = ProcessDetailSerializer
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ActionListView(APIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
@@ -228,6 +232,7 @@ class ActionListView(APIView):
         return Response({'results': data})
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ConditionListView(APIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 

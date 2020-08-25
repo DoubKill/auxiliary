@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
-from rest_framework_jwt.views import ObtainJSONWebToken
+from rest_framework_jwt.views import ObtainJSONWebToken, VerifyJSONWebToken
 
 from mes.common_code import menu, CommonDeleteMixin
 from mes.derorators import api_recorder
@@ -36,7 +36,7 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     serializer_class = PermissionSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SinglePageNumberPagination
-    # filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -148,30 +148,6 @@ class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
 
 
-class MesLogin(ObtainJSONWebToken):
-    menu = {
-        "basics": [
-            "globalcodetype",
-            "globalcode",
-            "workschedule",
-            "equip"
-        ],
-        "system": {
-            "user",
-        },
-        "auth": {
-        }
-
-    }
-
-    def post(self, request, *args, **kwargs):
-        temp = super().post(request, *args, **kwargs)
-        format = kwargs.get("format")
-        if temp.status_code != 200:
-            return temp
-        return menu(request, self.menu, temp, format)
-
-
 class ImportExcel(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -261,3 +237,44 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = ChildSystemInfo.objects.filter(delete_flag=False)
     serializer_class = ChildSystemInfoSerializer
     permission_classes = (IsAdminUser,)
+
+
+class LoginView(ObtainJSONWebToken):
+    """
+    post
+        获取权限列表
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.object.get('user') or request.user
+            token = serializer.object.get('token')
+            # 获取该用户所有权限
+            permissions = list(user.get_all_permissions())
+            # 除去前端不涉及模块
+            permission_list = []
+            for p in permissions:
+                if p.split(".")[0] not in ["contenttypes", "sessions", "work_station", "admin"]:
+                    permission_list.append(p)
+            # 生成菜单管理树
+            permissions_set = set([_.split(".")[0] for _ in permission_list])
+            permissions_tree = {__:{} for __ in permissions_set}
+            for x in permission_list:
+                first_key = x.split(".")[0]
+                second_key = x.split(".")[-1].split("_")[-1]
+                op_value = x.split(".")[-1].split("_")[0]
+                op_list =  permissions_tree.get(first_key, {}).get(second_key)
+                if op_list:
+                    permissions_tree[first_key][second_key].append(op_value)
+                else:
+                    permissions_tree[first_key][second_key] = [op_value]
+            auth = permissions_tree.pop("auth")
+            # 合并auth与system
+            permissions_tree["system"].update(**auth)
+            return Response({"results": permissions_tree,
+                             "username": user.username,
+                             "token": token})
+        # 返回异常信息
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
