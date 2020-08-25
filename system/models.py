@@ -100,6 +100,7 @@ class ChildSystemInfo(AbstractEntity):
     system_type = models.CharField(max_length=64, help_text='系统类型', verbose_name='系统地址')
     system_name = models.CharField(max_length=64, help_text='系统名称', verbose_name='系统名称')
     status = models.CharField(max_length=64, help_text='子系统状态', verbose_name='子系统状态')
+    status_lock = models.BooleanField()
 
     def __str__(self):
         return f"{self.system_type}|{self.system_name}|{self.path}"

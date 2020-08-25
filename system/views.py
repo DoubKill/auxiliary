@@ -148,30 +148,6 @@ class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
 
 
-class MesLogin(ObtainJSONWebToken):
-    menu = {
-        "basics": [
-            "globalcodetype",
-            "globalcode",
-            "workschedule",
-            "equip"
-        ],
-        "system": {
-            "user",
-        },
-        "auth": {
-        }
-
-    }
-
-    def post(self, request, *args, **kwargs):
-        temp = super().post(request, *args, **kwargs)
-        format = kwargs.get("format")
-        if temp.status_code != 200:
-            return temp
-        return menu(request, self.menu, temp, format)
-
-
 class ImportExcel(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -263,8 +239,11 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     permission_classes = (IsAdminUser,)
 
 
-class UsrPermissionView(VerifyJSONWebToken):
-
+class LoginView(ObtainJSONWebToken):
+    """
+    post
+        获取权限列表
+    """
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -293,6 +272,6 @@ class UsrPermissionView(VerifyJSONWebToken):
             auth = permissions_tree.pop("auth")
             # 合并auth与system
             permissions_tree["system"].update(**auth)
-            return Response({"results": permissions_tree})
+            return Response({"results": permissions_tree, "username": user.username})
         # 返回异常信息
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
