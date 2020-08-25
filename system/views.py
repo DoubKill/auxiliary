@@ -250,6 +250,7 @@ class LoginView(ObtainJSONWebToken):
 
         if serializer.is_valid():
             user = serializer.object.get('user') or request.user
+            token = serializer.object.get('token')
             # 获取该用户所有权限
             permissions = list(user.get_all_permissions())
             # 除去前端不涉及模块
@@ -272,6 +273,8 @@ class LoginView(ObtainJSONWebToken):
             auth = permissions_tree.pop("auth")
             # 合并auth与system
             permissions_tree["system"].update(**auth)
-            return Response({"results": permissions_tree, "username": user.username})
+            return Response({"results": permissions_tree,
+                             "username": user.username,
+                             "token": token})
         # 返回异常信息
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
