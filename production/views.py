@@ -540,12 +540,6 @@ class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
 
-    # queryset = Equip.objects.filter(delete_flag=False)
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
-    # serializer_class = EquipStatusPlanSerializer
-    # pagination_class = SinglePageNumberPagination
-    # filter_backends = [DjangoFilterBackend, OrderingFilter]
-
     def list(self, request, *args, **kwargs):
         air = '''SELECT
         "equip"."id",

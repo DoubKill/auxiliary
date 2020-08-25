@@ -546,6 +546,8 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
     day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time', read_only=True)
     group = serializers.SerializerMethodField(read_only=True, help_text='班组')
+    begin_time = serializers.DateTimeField(source='work_schedule_plan__start_time', read_only=True, help_text='开始时间')
+    end_time = serializers.DateTimeField(source='work_schedule_plan__end_time', read_only=True, help_text='结束时间')
 
     def get_group(self, object):
         classes_detail = object.classes_detail
@@ -557,21 +559,21 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
             return None
 
     def get_actual_trains(self, object):
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).last()
         if tfb_obj:
             return tfb_obj.actual_trains
         else:
             return None
 
     def get_operation_user(self, object):
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=object.plan_classes_uid).last()
         if tfb_obj:
             return tfb_obj.operation_user
         else:
             return None
 
     def get_status(self, object):
-        plan_status = PlanStatus.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=object.plan_classes_uid).last()
         if plan_status:
             return plan_status.status
         else:
@@ -705,5 +707,3 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
         return instance
-
-
