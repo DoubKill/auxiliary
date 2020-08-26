@@ -54,10 +54,6 @@ class WorkSchedule(AbstractEntity):
 
 class ClassesDetail(AbstractEntity):
     """倒班条目"""
-    TYPE_CHOICE = (
-        ('normal', '正常'),
-        ('rest', '休假'),
-    )
     work_schedule = models.ForeignKey('WorkSchedule', models.DO_NOTHING,
                                       help_text='工作日程id', verbose_name='工作日程id', related_name="classesdetail_set")
     classes = models.ForeignKey('GlobalCode', models.DO_NOTHING,
