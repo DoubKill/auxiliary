@@ -125,7 +125,7 @@ def one_instance(func):
         return func(*args,**kwargs)
     return f
 
-@one_instance
+
 def main():
     # temp_list = dir(md)  # 原计划动态导入中间表，改为写死
     # 手动对中间表模型进行排序确保业务逻辑正确
