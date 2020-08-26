@@ -543,23 +543,23 @@ class EquipStatusPlanList(mixins.ListModelMixin,
     """主页面展示"""
 
     def list(self, request, *args, **kwargs):
-        air = '''SELECT
-        "equip"."id",
-       "equip"."equip_no",
-       "global_code"."global_name",
+        air = '''SELECT equip.id,
+       equip.equip_no,
+       global_code.global_name,
        trains_feedbacks.product_no,
        equip_status.status,
-       SUM(distinct "product_classes_plan"."plan_trains") AS "plan_num",
-       SUM(distinct "trains_feedbacks"."actual_trains") AS "actual_num",
-       max(equip_status.current_trains) as current_trains
+       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
+       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num,
+       max(equip_status.current_trains)                   as current_trains
 from equip
-    left join product_day_plan on equip.id = product_day_plan.equip_id
-    left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
-    left JOIN "work_schedule_plan" ON ("product_classes_plan"."work_schedule_plan_id" = "work_schedule_plan"."id")
-    left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
-    left JOIN "global_code" ON ("work_schedule_plan"."classes_id" = "global_code"."id")
-    left join equip_status on equip_status.plan_classes_uid=product_classes_plan.plan_classes_uid
-GROUP BY "equip"."equip_no", "global_code"."global_name";'''
+         left join product_day_plan on equip.id = product_day_plan.equip_id
+         left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
+         left JOIN work_schedule_plan ON (product_classes_plan.work_schedule_plan_id = work_schedule_plan.id)
+         left JOIN trains_feedbacks
+                   ON (trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid)
+         left JOIN global_code ON (work_schedule_plan.classes_id = global_code.id)
+         left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid
+GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
 
         ret_data = {}
@@ -629,6 +629,10 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = CurveInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     def list(self, request, *args, **kwargs):
         params = request.query_params
