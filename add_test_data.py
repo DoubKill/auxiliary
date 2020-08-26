@@ -1374,10 +1374,10 @@ def add_plan():
 def add_WorkSchedulePlan():
     gc_set = GlobalCode.objects.filter(global_type_id=7)
     group_set = GlobalCode.objects.filter(global_type_id=6)
-    ps_set = PlanSchedule.objects.all()
-    for gc_obj in gc_set:
-        for ps_obj in ps_set:
-            for group_obj in group_set:
+    ps_set = PlanSchedule.objects.all()[:5]
+    for ps_obj in ps_set:
+        for group_obj in group_set:
+            for gc_obj in gc_set:
                 WorkSchedulePlan.objects.create(classes=gc_obj, rest_flag=False, plan_schedule=ps_obj,
                                                 group=group_obj, start_time=datetime.datetime.now(),
                                                 end_time=datetime.datetime.now())
@@ -1428,12 +1428,12 @@ def add_material_day_classes_plan():
                 else:
                     # 暂不做其他班次的处理
                     continue
-                i = 1
-                for ws_obj in WorkSchedulePlan.objects.all()[0:8:3]:
-                    ProductClassesPlan.objects.create(sn=i, product_day_plan=day_plan, plan_classes_uid=uuid.uuid1(),
+
+                for ws_obj in WorkSchedulePlan.objects.all()[0:3]:
+                    ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan, plan_classes_uid=uuid.uuid1(),
                                                       unit="kg", plan_trains=50, weight=250,
                                                       time=45, work_schedule_plan=ws_obj)  # classes_detail=cs,
-                    i += 1
+                    sn += 1
 
 
 def add_product_demo_data():

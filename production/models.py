@@ -18,6 +18,7 @@ class TrainsFeedbacks(AbstractEntity):
     end_time = models.DateTimeField(help_text='结束时间', verbose_name='结束时间')
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     '''中间表字段补充'''
     # control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
@@ -60,6 +61,7 @@ class PalletFeedbacks(AbstractEntity):
     barcode = models.CharField(max_length=64, help_text='收皮条码', verbose_name='收皮条码')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
     lot_no = models.CharField(max_length=64, help_text='追踪号', verbose_name='追踪号')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.barcode}|{self.equip_no}"
@@ -80,6 +82,7 @@ class EquipStatus(AbstractEntity):
     pressure = models.DecimalField(decimal_places=2, max_digits=8, help_text='压力', verbose_name='压力')
     status = models.CharField(max_length=64, help_text='状态', verbose_name='状态')
     current_trains = models.IntegerField(help_text='当前车次', verbose_name='当前车次')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}"
@@ -96,6 +99,7 @@ class PlanStatus(AbstractEntity):
     product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
     status = models.CharField(max_length=64, help_text='状态', verbose_name='状态')
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}"
@@ -116,7 +120,7 @@ class ExpendMaterial(AbstractEntity):
     material_no = models.CharField(max_length=64, help_text='原材料id', verbose_name='原材料id')
     material_type = models.CharField(max_length=64, help_text='原材料类型', verbose_name='原材料类型')
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
-    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"
@@ -169,6 +173,7 @@ class MaterialTankStatus(AbstractEntity):
     dot_time = models.DecimalField(decimal_places=2, max_digits=8, help_text='点动时间', verbose_name='电动时间')
     fast_speed = models.DecimalField(decimal_places=2, max_digits=8, help_text='快称速度', verbose_name='快称速度')
     low_speed = models.DecimalField(decimal_places=2, max_digits=8, help_text='慢称速度', verbose_name='慢称速度')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
         return f"{self.tank_name}|{self.tank_type}|{self.equip_no}"
