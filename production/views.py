@@ -18,13 +18,15 @@ from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl, MaterialTankStatus
+    QualityControl, MaterialTankStatus, IfupReportBasisBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, EquipDetailedSerializer, \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
+from production.utils import strtoint
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
+from django.db.models import Sum, Max
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -540,12 +542,6 @@ class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
 
-    # queryset = Equip.objects.filter(delete_flag=False)
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
-    # serializer_class = EquipStatusPlanSerializer
-    # pagination_class = SinglePageNumberPagination
-    # filter_backends = [DjangoFilterBackend, OrderingFilter]
-
     def list(self, request, *args, **kwargs):
         air = '''SELECT
         "equip"."id",
@@ -559,9 +555,9 @@ class EquipStatusPlanList(mixins.ListModelMixin,
 from equip
     left join product_day_plan on equip.id = product_day_plan.equip_id
     left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
-    left JOIN "classes_detail" ON ("product_classes_plan"."classes_detail_id" = "classes_detail"."id")
+    left JOIN "work_schedule_plan" ON ("product_classes_plan"."work_schedule_plan_id" = "work_schedule_plan"."id")
     left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
-    left JOIN "global_code" ON ("classes_detail"."classes_id" = "global_code"."id")
+    left JOIN "global_code" ON ("work_schedule_plan"."classes_id" = "global_code"."id")
     left join equip_status on equip_status.plan_classes_uid=product_classes_plan.plan_classes_uid
 GROUP BY "equip"."equip_no", "global_code"."global_name";'''
         equip_set = Equip.objects.raw(air)
@@ -628,3 +624,38 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+
+class TrainsFeedbacksAPIView(mixins.ListModelMixin,
+                             GenericViewSet):
+    """车次报表展示接口"""
+
+    def list(self, request, *args, **kwargs):
+        tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
+            Max('product_time')).values()
+        for tf_obj in tf_queryset:
+            production_details = {}
+            irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
+                                                            计划号=tf_obj['plan_classes_uid'],
+                                                            配方号=tf_obj['product_no']).order_by('存盘时间').last()
+            if irb_obj:
+                production_details['控制方式'] = irb_obj.控制方式  # 本远控
+                production_details['作业方式'] = irb_obj.作业方式  # 手自动
+                production_details['总重量'] = irb_obj.总重量
+                production_details['排胶时间'] = irb_obj.排胶时间
+                production_details['排胶温度'] = irb_obj.排胶温度
+                production_details['排胶能量'] = irb_obj.排胶能量
+                production_details['员工代号'] = irb_obj.员工代号
+                production_details['存盘时间'] = irb_obj.存盘时间
+                production_details['间隔时间'] = irb_obj.间隔时间
+                production_details['密炼时间'] = irb_obj.存盘时间  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
+                tf_obj['production_details'] = production_details
+            else:
+                tf_obj['production_details'] = None
+            ps_obj = PlanStatus.objects.filter(机台号=strtoint(tf_obj['equip_no']), 计划号=tf_obj['plan_classes_uid'],
+                                               配方号=tf_obj['product_no']).last()
+            if ps_obj:
+                tf_obj['status'] = ps_obj.status
+            else:
+                tf_obj['status'] = None
+        return Response(tf_queryset)

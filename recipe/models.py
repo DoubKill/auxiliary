@@ -1,6 +1,6 @@
 
 from django.db import models
-from basics.models import GlobalCode, Equip
+from basics.models import GlobalCode, Equip, EquipCategoryAttribute
 from system.models import AbstractEntity, User
 
 
@@ -94,7 +94,8 @@ class ProductBatching(AbstractEntity):
     product_info = models.ForeignKey(ProductInfo, help_text='胶料工艺信息', on_delete=models.DO_NOTHING)
     precept = models.CharField(max_length=64, help_text='方案', verbose_name='方案', blank=True, null=True)
     stage_product_batch_no = models.CharField(max_length=63, help_text='胶料配方编码')
-    dev_type = models.ForeignKey(GlobalCode, help_text='机型', on_delete=models.DO_NOTHING, blank=True, null=True)
+    dev_type = models.ForeignKey(EquipCategoryAttribute, help_text='机型', on_delete=models.DO_NOTHING, blank=True,
+                                 null=True)
     stage = models.ForeignKey(GlobalCode, help_text='段次', verbose_name='段次',
                               on_delete=models.DO_NOTHING, related_name='stage_batches')
     versions = models.CharField(max_length=64, help_text='版本', verbose_name='版本')
@@ -108,7 +109,7 @@ class ProductBatching(AbstractEntity):
     used_time = models.DateTimeField(help_text='发行时间', verbose_name='发行时间', blank=True, null=True)
     production_time_interval = models.DecimalField(help_text='炼胶时间(分)', blank=True, null=True,
                                                    decimal_places=2, max_digits=8)
-    equip_no = models.CharField(max_length=64, help_text='机台编号', blank=True, null=True)
+    equip = models.ForeignKey(Equip, help_text='设备', blank=True, null=True, on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return self.stage_product_batch_no
@@ -151,8 +152,10 @@ class ProductProcess(AbstractEntity):
     temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
     used_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
     batching_error = models.DecimalField(help_text='胶料总误差', decimal_places=2, max_digits=8, blank=True, null=True)
+    sp_num = models.PositiveSmallIntegerField(help_text='收皮', blank=True, null=True)
 
     class Meta:
+        unique_together = ('equip', 'product_batching')
         db_table = 'product_process'
         verbose_name_plural = verbose_name = '胶料配料标准步序'
 

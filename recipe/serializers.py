@@ -3,7 +3,7 @@ import logging
 
 from django.db.transaction import atomic
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 from basics.models import GlobalCode
 from mes.base_serializer import BaseModelSerializer
@@ -103,15 +103,14 @@ class ProductBatchingDetailSerializer(BaseModelSerializer):
 
 
 class ProductBatchingListSerializer(BaseModelSerializer):
-    product_name = serializers.CharField(source='product_info.product_name')
+    product_name = serializers.CharField(source='product_info.product_name', read_only=True)
     created_user_name = serializers.CharField(source='created_user.username', read_only=True)
     update_user_name = serializers.CharField(source='last_updated_user.username', read_only=True)
-    stage_name = serializers.CharField(source="stage.global_name")
-    site_name = serializers.CharField(source="site.global_name")
-    dev_type_name = serializers.SerializerMethodField()
-
-    def get_dev_type_name(self, obj):
-        return obj.dev_type.global_name if obj.dev_type else None
+    stage_name = serializers.CharField(source="stage.global_name", read_only=True)
+    site_name = serializers.CharField(source="site.global_name", read_only=True)
+    dev_type_name = serializers.CharField(source='dev_type.category_name', default=None, read_only=True)
+    equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
+    equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
 
     class Meta:
         model = ProductBatching
@@ -125,6 +124,17 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                                                        help_text="""
                                                            [{"sn": 序号, "material":原材料id, "auto_flag": true,
                                                            "actual_weight":重量, "standard_error":误差值}]""")
+
+    def validate(self, attrs):
+        product_batching = ProductBatching.objects.filter(factory=attrs['factory'],
+                                                          site=attrs['site'],
+                                                          stage=attrs['stage'],
+                                                          product_info=attrs['product_info']
+                                                          ).order_by('-versions').first()
+        if product_batching:
+            if product_batching.versions >= attrs['versions']:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
+                raise serializers.ValidationError('该配方版本号不得小于现有版本号')
+        return attrs
 
     @atomic()
     def create(self, validated_data):
@@ -155,7 +165,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     class Meta:
         model = ProductBatching
         fields = ('factory', 'site', 'product_info', 'precept', 'stage_product_batch_no',
-                  'stage', 'versions', 'batching_details', 'equip_no')
+                  'stage', 'versions', 'batching_details', 'equip', 'id', 'dev_type')
 
 
 class ProductBatchingRetrieveSerializer(ProductBatchingListSerializer):
@@ -262,10 +272,6 @@ class ProductProcessSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
-        if ProductProcess.objects.filter(equip=validated_data['equip'],
-                                         product_batching=validated_data['product_batching']).exists():
-            raise serializers.ValidationError('该机台已被其他配方使用')
-
         validated_data['created_user'] = self.context['request'].user
         process_details = validated_data.pop('process_details', None)
         instance = super().create(validated_data)
@@ -293,3 +299,10 @@ class ProductProcessSerializer(BaseModelSerializer):
         model = ProductProcess
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
+        validators = [
+                    UniqueTogetherValidator(
+                        queryset=model.objects.filter(delete_flag=False),
+                        fields=('equip', 'product_batching'),
+                        message="该机台已绑定相同配方，请修改后重试！"
+                    )
+                ]
