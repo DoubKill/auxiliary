@@ -170,6 +170,14 @@ LOGGING = {
             'backupCount': 10,
             'formatter': 'standard',
         },
+        'asyncFile':{
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'async.log'),
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'simple',
+        },
     },
     'loggers': {
         'django.db.backends': {
@@ -189,7 +197,11 @@ LOGGING = {
         'error_log': {
             'handlers': ['errorFile'],
             'level': 'DEBUG' if DEBUG else 'INFO',
-        }
+        },
+        'async_log':{
+            'handlers': ['asyncFile'],
+            'level': 'INFO',
+            }
     },
 }
 

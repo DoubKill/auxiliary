@@ -22,7 +22,7 @@ django.setup()
 from system.models import SystemConfig, ChildSystemInfo, AsyncUpdateContent
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("async_log")
 
 
 def one_instance(func):
@@ -104,7 +104,6 @@ class SystemSync(object):
 @one_instance
 def run():
     while True:
-        logger.error("日志测试~~~~~~")
         time.sleep(3)
     pass
 
