@@ -60,6 +60,7 @@ router.register(r'curve-information-list', CurveInformationList, basename="curve
 # 车次报表展示
 router.register(r'trains-feedbacks-apiview', TrainsFeedbacksAPIView, basename="trains-feedbacks-apiview")
 
+
 urlpatterns = [
     path('', include(router.urls)),
 ]
