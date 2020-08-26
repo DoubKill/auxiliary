@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import socket
+import time
 
 import django
 import logging
@@ -73,24 +74,38 @@ class SystemSync(object):
         if self.if_system_online:
             sync_set = AsyncUpdateContent.objects.filter(recv_flag=False)
             for instance in sync_set:
-                id = instance.id,
-                model_name = instance.src_table_name,
-                body_data = instance.content,
-                address = instance.dst_address,
+                id = instance.id
+                # 若dst_address是存入全量接口url 改参数冗余暂时不处理
+                model_name = instance.src_table_name
+                body_data = instance.content
+                address = instance.dst_address
                 method = instance.method
-                requests.request(method, address, json=json.loads(body_data))
-
+                try:
+                    ret = requests.request(method, address, json=json.loads(body_data))
+                except Exception as e:
+                    logger.error(f"{address}|网络异常，详情：{e}")
+                    continue
+                if ret.status_code < 300:
+                    self.sync_feedback(id)
+                else:
+                    logger.error(f"{address}|同步失败，详情：{ret.text}")
         logger.warning("系统未联网，同步未执行")
 
-
-    def sync_feedback(self):
-        pass
+    # 同步成功修改异步更新表状态
+    def sync_feedback(self, id):
+        try:
+            instance = AsyncUpdateContent.objects.get(id=id)
+            instance.recv_flag = True
+            instance.save()
+        except Exception as e:
+            logger.error(f"同步反馈结果写入失败，详情：{e}")
 
 
 @one_instance
 def run():
     while True:
-        print()
+        logger.error("日志测试~~~~~~")
+        time.sleep(3)
     pass
 
 if __name__ == '__main__':
