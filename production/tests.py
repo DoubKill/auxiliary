@@ -53,7 +53,7 @@ def add_product():
             # 与此同时中间表增数据
             IfupReportBasisBackups.objects.create(车次号=t.plan_trains, 开始时间=t.begin_time, 消耗时间=i, 排胶时间=i,
                                                   间隔时间=i, 排胶温度=i, 排胶功率=i, 排胶能量=i, 作业方式='去你妈的作业',
-                                                  控制方式='好累啊', 员工代号=random_name(), 总重量=t.plan_weight,
+                                                  控制方式='好累啊', 员工代号=t.operation_user, 总重量=t.plan_weight,
                                                   胶料重量=t.plan_weight, 炭黑重量=t.plan_weight, 油1重量=i, 油2重量=i,
                                                   计划号=t.plan_classes_uid, 配方号=t.product_no, 加胶时间=i, 加炭黑时间=i,
                                                   加油1时间=1, 加油2时间=i, 存盘时间=str(i), 机台号=strtoint(t.equip_no),
