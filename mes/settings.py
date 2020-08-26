@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'mes.middlewares.OperationLogRecordMiddleware',
+    'mes.middlewares.SyncMiddleware',
 ]
 
 ROOT_URLCONF = 'mes.urls'
@@ -170,13 +170,21 @@ LOGGING_DIR = os.environ.get('LOGGING_DIR', os.path.join(BASE_DIR, 'logs'))
 #             'backupCount': 10,
 #             'formatter': 'standard',
 #         },
+#         'syncFile': {
+#             'level': 'DEBUG',
+#             'class': 'logging.handlers.TimedRotatingFileHandler',
+#             'filename': os.path.join(LOGGING_DIR, 'sync.log'),
+#             'when': 'D',
+#             'backupCount': 10,
+#             'formatter': 'standard',
+#         },
 #         'asyncFile':{
 #             'level': 'DEBUG',
 #             'class': 'logging.handlers.TimedRotatingFileHandler',
 #             'filename': os.path.join(LOGGING_DIR, 'async.log'),
 #             'when': 'D',
 #             'backupCount': 10,
-#             'formatter': 'simple',
+#             'formatter': 'standard',
 #         },
 #     },
 #     'loggers': {
@@ -196,6 +204,10 @@ LOGGING_DIR = os.environ.get('LOGGING_DIR', os.path.join(BASE_DIR, 'logs'))
 #         },
 #         'error_log': {
 #             'handlers': ['errorFile'],
+#             'level': 'DEBUG' if DEBUG else 'INFO',
+#         },
+#         'sync_log': {
+#             'handlers': ['syncFile'],
 #             'level': 'DEBUG' if DEBUG else 'INFO',
 #         },
 #         'async_log':{

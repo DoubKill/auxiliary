@@ -63,8 +63,9 @@ class SystemSync(object):
         config_value = SystemConfig.objects.filter(config_name="system_name").first().config_value
         child_system = ChildSystemInfo.objects.filter(system_name=config_value).first()
         if child_system:
-            child_system_status = child_system.status
-            if child_system_status == "联网":
+            cls.system_name = config_value
+            # 必须为联网状态切改状态在当前不可更改
+            if child_system.status == "联网" and child_system.status_lock:
                 return True
             return False
         return False
