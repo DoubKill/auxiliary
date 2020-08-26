@@ -1,9 +1,9 @@
+from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 
 from mes.conf import PROJECT_API_TREE
 from production.utils import OpreationLogRecorder
 from system.models import SystemConfig, ChildSystemInfo
-from rest_framework.response import Response
 
 
 class DisableCSRF(MiddlewareMixin):
@@ -54,9 +54,9 @@ class SyncMiddleware(MiddlewareMixin):
         return False
 
     def process_request(self, request):
-        url = request.get_full_path()
+        tag = request.META.get("HTTP_TAG")
         # 根据url判断是否为基础数据同步
-        if ("basics" in url) or ("system" in url) or ("recipe" in url):
+        if tag:
             # 若为基础数据同步需判断是否联网
             if not self.if_system_online:
-                return Response(f"{self.system_name}处于非联网/独立状态，请检查系统联网配置后重试", status=400)
+                return HttpResponse(f"系统处于非联网/独立状态，请检查系统联网配置后重试", status=400)
