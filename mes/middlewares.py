@@ -39,7 +39,11 @@ class SyncMiddleware(MiddlewareMixin):
     # 获取当前系统状态
     @property
     def if_system_online(self):
-        config_value = SystemConfig.objects.filter(config_name="system_name").first().config_value
+        system_config = SystemConfig.objects.filter(config_name="system_name").first()
+        if system_config:
+            config_value = system_config.config_value
+        else:
+            return False
         child_system = ChildSystemInfo.objects.filter(system_name=config_value).first()
         if child_system:
             self.system_name = config_value
