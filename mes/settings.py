@@ -105,135 +105,130 @@ JWT_AUTH = {
 
 LOGGING_DIR = os.environ.get('LOGGING_DIR', os.path.join(BASE_DIR, 'logs'))
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-#         },
-#         'simple': {
-#             'format': '%(levelname)s %(message)s'
-#         },
-#         'standard': {
-#             'format': '%(asctime)s [%(threadName)s:%(thread)d] [%(name)s:%(lineno)d] '
-#                       '[%(module)s:%(funcName)s] [%(levelname)s]- %(message)s'
-#         },
-#         'django_request': {
-#             'format': '%(levelname)s %(asctime)s %(pathname)s %(module)s %(lineno)d %(message)s'
-#                       ' status_code:%(status_code)d',
-#             'datefmt': '%Y-%m-%d %H:%M:%S'
-#         },
-#         'django_db_backends': {
-#             'format': '%(levelname)s %(asctime)s %(pathname)s %(module)s %(lineno)d %(message)s',
-#             'datefmt': '%Y-%m-%d %H:%M:%S'
-#         },
-#     },
-#     'filters': {
-#         'require_debug_true': {
-#             '()': 'django.utils.log.RequireDebugTrue',
-#         },
-#
-#     },
-#     'handlers': {
-#         'console': {
-#             'level': 'DEBUG',
-#             'filters': ['require_debug_true'],
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'standard'
-#         },
-#         'django_db_backends': {
-#             'level': 'DEBUG',
-#             'filters': ['require_debug_true'],
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'django_db_backends'
-#         },
-#         'django_request': {
-#             'level': 'DEBUG',
-#             'filters': ['require_debug_true'],
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'django_request'
-#         },
-#         'timedRotatingFile': {
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': os.path.join(LOGGING_DIR, 'api_log.log'),
-#             'when': 'D',
-#             'backupCount': 10,
-#             'formatter': 'standard',
-#         },
-#         'errorFile': {
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': os.path.join(LOGGING_DIR, 'error.log'),
-#             'when': 'D',
-#             'backupCount': 10,
-#             'formatter': 'standard',
-#         },
-#         'syncFile': {
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': os.path.join(LOGGING_DIR, 'sync.log'),
-#             'when': 'D',
-#             'backupCount': 10,
-#             'formatter': 'standard',
-#         },
-#         'asyncFile':{
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': os.path.join(LOGGING_DIR, 'async.log'),
-#             'when': 'D',
-#             'backupCount': 10,
-#             'formatter': 'standard',
-#         },
-#     },
-#     'loggers': {
-#         'django.db.backends': {
-#             'handlers': ['django_db_backends'],
-#             'propagate': True,
-#             'level': 'DEBUG' if DEBUG else 'INFO',
-#         },
-#         'django.request': {
-#             'handlers': ['django_request'],
-#             'level': 'ERROR',
-#             'propagate': False,
-#         },
-#         'api_log': {
-#             'handlers': ['timedRotatingFile'],
-#             'level': 'DEBUG' if DEBUG else 'INFO',
-#         },
-#         'error_log': {
-#             'handlers': ['errorFile'],
-#             'level': 'DEBUG' if DEBUG else 'INFO',
-#         },
-#         'sync_log': {
-#             'handlers': ['syncFile'],
-#             'level': 'DEBUG' if DEBUG else 'INFO',
-#         },
-#         'async_log':{
-#             'handlers': ['asyncFile'],
-#             'level': 'INFO',
-#             }
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+        'standard': {
+            'format': '%(asctime)s [%(threadName)s:%(thread)d] [%(name)s:%(lineno)d] '
+                      '[%(module)s:%(funcName)s] [%(levelname)s]- %(message)s'
+        },
+        'django_request': {
+            'format': '%(levelname)s %(asctime)s %(pathname)s %(module)s %(lineno)d %(message)s'
+                      ' status_code:%(status_code)d',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'django_db_backends': {
+            'format': '%(levelname)s %(asctime)s %(pathname)s %(module)s %(lineno)d %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+        'django_db_backends': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'django_db_backends'
+        },
+        'django_request': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'django_request'
+        },
+        'timedRotatingFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'api_log.log'),
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'errorFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'error.log'),
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'syncFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'sync.log'),
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'asyncFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'async.log'),
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['django_db_backends'],
+            'propagate': True,
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        },
+        'django.request': {
+            'handlers': ['django_request'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'api_log': {
+            'handlers': ['timedRotatingFile'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        },
+        'error_log': {
+            'handlers': ['errorFile'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        },
+        'sync_log': {
+            'handlers': ['syncFile'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        },
+        'async_log': {
+            'handlers': ['asyncFile'],
+            'level': 'INFO',
+            }
+    },
+}
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#         'NAME': os.getenv('DATABASE_NAME', 'GZSFJ'),  # 数据库名称
-#         'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
-#         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
-#         'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
-#         'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('DATABASE_NAME', 'SFJ'),  # 数据库名称
+        'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
+        'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
     }
 }
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
