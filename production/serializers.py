@@ -219,7 +219,7 @@ class EquipDetailedSerializer(BaseModelSerializer):
             res = ProductBatching.objects.annotate(
                 sum_trains=Sum('pb_day_plan__pdp_product_classes_plan__plan_trains')).filter(
                 pb_day_plan__equip__equip_no=object.equip_no,
-                pb_day_plan__pdp_product_classes_plan__classes_detail__classes__global_name=pfb_obj.classes).values(
+                pb_day_plan__pdp_product_classes_plan__work_schedule_plan__classes__global_name=pfb_obj.classes).values(
                 'sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
             for i in res:
                 pcp_queryset = ProductClassesPlan.objects.filter(
