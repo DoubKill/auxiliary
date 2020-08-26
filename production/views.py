@@ -631,8 +631,26 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
     """车次报表展示接口"""
 
     def list(self, request, *args, **kwargs):
+        params = request.query_params
+        begin_time = params.get("begin_time", None)
+        end_time = params.get("end_time", None)
+        equip_no = params.get("equip_no", None)
+        product_no = params.get("product_no", None)
+        operation_user = params.get("operation_user", None)
+        filter_dict = {}
+        if begin_time:
+            filter_dict['begin_time__gte'] = begin_time
+        if end_time:
+            filter_dict['end_time__lte'] = end_time
+        if equip_no:
+            filter_dict['equip_no'] = equip_no
+        if product_no:
+            filter_dict['product_no'] = product_no
+        if operation_user:
+            filter_dict['operation_user'] = operation_user
+        print(filter_dict)
         tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
-            Max('product_time')).values()
+            Max('product_time')).filter(**filter_dict).values()
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
@@ -652,8 +670,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['production_details'] = production_details
             else:
                 tf_obj['production_details'] = None
-            ps_obj = PlanStatus.objects.filter(机台号=strtoint(tf_obj['equip_no']), 计划号=tf_obj['plan_classes_uid'],
-                                               配方号=tf_obj['product_no']).last()
+            ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'], plan_classes_uid=tf_obj['plan_classes_uid'],
+                                               product_no=tf_obj['product_no']).last()
             if ps_obj:
                 tf_obj['status'] = ps_obj.status
             else:
