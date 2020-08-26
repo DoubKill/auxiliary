@@ -61,4 +61,4 @@ class ClassDetailFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = ClassesDetail
-        fields = ('schedule_no', 'schedule_name')
+        fields = ('schedule_name',)
