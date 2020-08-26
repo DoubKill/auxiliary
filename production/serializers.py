@@ -10,7 +10,8 @@ from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
 from recipe.models import ProductBatching
-from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, IfupReportCurveBackups
+from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
+    IfupReportCurveBackups
 
 
 class EquipStatusSerializer(BaseModelSerializer):
@@ -25,8 +26,9 @@ class EquipStatusSerializer(BaseModelSerializer):
 class TrainsFeedbacksSerializer(BaseModelSerializer):
     """车次产出反馈"""
     equip_status = serializers.SerializerMethodField(read_only=True)
-    production_details = serializers.SerializerMethodField(read_only=True)
-    status = serializers.SerializerMethodField(read_only=True)
+
+    # production_details = serializers.SerializerMethodField(read_only=True)
+    # status = serializers.SerializerMethodField(read_only=True)
 
     def get_equip_status(self, object):
         equip_status = {}
@@ -40,6 +42,8 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
                             rpm=equip.rpm)
         return equip_status
 
+    '''
+    # zqf 这些是在原有的基础上加的 随后我重新写了接口 这些就没用了 暂时注释掉
     def get_production_details(self, object):
         production_details = {}
         irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid,
@@ -64,6 +68,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
         if ps_obj:
             return ps_obj.status
         return None
+    '''
 
     class Meta:
         model = TrainsFeedbacks
@@ -251,8 +256,9 @@ class WeighInformationSerializer(BaseModelSerializer):
 
     def get_weigh_info(self, object):
         weigh_info = []
-        irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
-                                                       配方号=object.product_no).all()
+        irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no),
+                                                              计划号=object.plan_classes_uid.hex,
+                                                              配方号=object.product_no).all()
         print(irw_queryset)
         if irw_queryset:
             for irw_obj in irw_queryset:
@@ -280,8 +286,9 @@ class MixerInformationSerializer(BaseModelSerializer):
 
     def get_mixer_info(self, object):
         mixer_info = []
-        irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
-                                                    配方号=object.product_no).all()
+        irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(object.equip_no),
+                                                           计划号=object.plan_classes_uid.hex,
+                                                           配方号=object.product_no).all()
         if irm_queryset:
             for irm_obj in irm_queryset:
                 mixer_dict = {}
@@ -311,8 +318,9 @@ class CurveInformationSerializer(BaseModelSerializer):
 
     def get_curve_info(self, object):
         curve_info = []
-        irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(object.equip_no), 计划号=object.plan_classes_uid.hex,
-                                                      配方号=object.product_no).all()
+        irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(object.equip_no),
+                                                             计划号=object.plan_classes_uid.hex,
+                                                             配方号=object.product_no).all()
         if irc_queryset:
             for irc_obj in irc_queryset:
                 curve_dict = {}

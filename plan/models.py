@@ -35,7 +35,7 @@ class ProductClassesPlan(AbstractEntity):
                                  decimal_places=3, max_digits=8, blank=True, null=True)
     unit = models.CharField(max_length=8, help_text='单位', verbose_name='单位')
     work_schedule_plan = models.ForeignKey(WorkSchedulePlan, on_delete=models.DO_NOTHING, help_text='班次id',
-                                           verbose_name='排班详情id', related_name='cd_product_classes_plan')
+                                           verbose_name='排班详情id', related_name='cd_product_classes_plan',null=True)
     plan_classes_uid = models.UUIDField(verbose_name='班次计划唯一码', help_text='班次计划唯一码',
                                         null=True)
     note = models.CharField(max_length=64, help_text='备注', blank=True, null=True)
