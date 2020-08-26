@@ -244,10 +244,27 @@ class ConditionListView(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class RecipeReceiveAPiView(CreateAPIView):
-    permission_classes = ()
-    authentication_classes = ()
     """
     接受上辅机配方数据接口
     """
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = RecipeReceiveSerializer
     queryset = ProductBatching.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeObsoleteAPiView(APIView):
+    """
+    接收MES弃用配方接口
+    """
+
+    def post(self, request):
+        stage_product_batch_no = self.request.data.get('stage_product_batch_no')
+        try:
+            product_batching = ProductBatching.objects.get(stage_product_batch_no=stage_product_batch_no)
+        except ProductBatching.DoesNotExist:
+            return Response('暂无该配方数据', status=status.HTTP_200_OK)
+        product_batching.used_type = 6
+        product_batching.save()
+        return Response('弃用成功', status=status.HTTP_200_OK)
