@@ -34,11 +34,13 @@ def random_status():
 
 
 def add_product():
-    pcp_set = ProductClassesPlan.objects.all()[:3]
+    pcp_set = ProductClassesPlan.objects.all()[:30]
+    # pcp_set = ProductClassesPlan.objects.all()
     for pcp_obj in pcp_set:
         num = pcp_obj.weight / pcp_obj.plan_trains
         # for i in range(1, pcp_obj.plan_trains + 1):
-        for i in range(1, 3):
+        user_name=random_name()
+        for i in range(1, 5):
             t = TrainsFeedbacks.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
                                                plan_trains=pcp_obj.plan_trains,
                                                actual_trains=i, bath_no=i,
@@ -48,7 +50,7 @@ def add_product():
                                                actual_weight=num * i,
                                                begin_time=datetime.datetime.now(),
                                                end_time=datetime.datetime.now(),
-                                               operation_user=random_name(),
+                                               operation_user=user_name,
                                                classes=pcp_obj.work_schedule_plan.classes.global_name)
             # 与此同时中间表增数据
             IfupReportBasisBackups.objects.create(车次号=t.plan_trains, 开始时间=t.begin_time, 消耗时间=i, 排胶时间=i,
@@ -66,7 +68,7 @@ def add_product():
                                                actual_weight=num * i,
                                                begin_time=datetime.datetime.now(),
                                                end_time=datetime.datetime.now(),
-                                               operation_user=random_name(),
+                                               operation_user=user_name,
                                                begin_trains=i, end_trains=1,
                                                pallet_no='托盘（虽然我也不知道是啥意思）',
                                                barcode=i * 100,
@@ -83,7 +85,7 @@ def add_product():
             ps = PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
                                            equip_no=pcp_obj.product_day_plan.equip.equip_no,
                                            product_no=pcp_obj.product_day_plan.product_batching.stage_product_batch_no,
-                                           status=random_status(), operation_user=random_name())
+                                           status=random_status(), operation_user=user_name)
             print(ps)
 
         IfupReportWeightBackups.objects.create(车次号=t.plan_trains, 物料名称=t.product_no, 设定重量=t.plan_weight,

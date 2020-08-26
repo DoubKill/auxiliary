@@ -351,7 +351,7 @@ class RetransmissionPlan(APIView):
             return Response("没有传id", status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).last()
         if not ps_obj:
             return Response("计划状态变更没有数据", status=400)
         if ps_obj.status != '等待':

@@ -1314,21 +1314,20 @@ def add_product_batching():
     product_infos = list(ProductInfo.objects.values_list('id', flat=True))[:20]
     dev_types = list(GlobalCode.objects.filter(global_type__type_name='炼胶机类型').values_list('id', flat=True))
     stages = list(GlobalCode.objects.filter(global_type__type_name='胶料段次').values_list('id', flat=True))
-
     for product_info in product_infos:
         for stage in stages:
             pb = ProductBatching.objects.create(
-                # factory_id=random.choice(factories),
                 factory_id=1,
-                # site_id=random.choice(sites),
                 site_id=1,
-                # product_info_id=product_info,
                 product_info_id=1,
                 stage_product_batch_no='1',
-                # dev_type_id=random.choice(dev_types),
                 dev_type_id=1,
-                # stage_id=stage,
                 stage_id=1,
+                # factory_id=random.choice(factories),
+                # site_id=random.choice(sites),
+                # product_info_id=product_info,
+                # stage_id=stage,
+                # dev_type_id=random.choice(dev_types),
                 versions='01'
             )
             pb.stage_product_batch_no = pb.site.global_name + '-' + pb.stage.global_name + '+' + \
