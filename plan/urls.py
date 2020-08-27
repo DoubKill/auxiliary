@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from plan.views import  PalletFeedbacksViewSet, UpRegulation, DownRegulation, \
-    UpdateTrains, StopPlan, IssuedPlan, RetransmissionPlan
+    UpdateTrains, StopPlan, IssuedPlan, RetransmissionPlan, PlanReceive
 #ProductDayPlanViewSet, ProductDayPlanManyCreate, MaterialDemandedViewSet, ProductBatchingDayPlanViewSet, ProductDayPlanCopyView, ProductBatchingDayPlanCopyView, MaterialRequisitionClassesViewSet, MaterialDemandedAPIView, ProductBatchingDayPlanManyCreate,
 router = DefaultRouter()
 '''
@@ -27,6 +27,7 @@ urlpatterns = [
     path('stop-plan/', StopPlan.as_view()),  # 计划停止
     path('issued-plan/', IssuedPlan.as_view()),  # 计划下达
     path('retransmission-plan/', RetransmissionPlan.as_view()),  # 计划重传
+    path('plan-receive/', PlanReceive.as_view()),  # 计划重传
 
 ]
 '''

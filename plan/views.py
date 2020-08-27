@@ -13,7 +13,7 @@ from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBatchingDayPlanFilter, \
     PalletFeedbacksFilter
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer
 #ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
@@ -371,3 +371,16 @@ class RetransmissionPlan(APIView):
         temp.issue_to_db()
 
         return Response('修改成功', status=200)
+
+@method_decorator([api_recorder], name="dispatch")
+class PlanReceive(APIView):
+    """
+        接受上辅机计划数据接口
+        """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = PlanReceiveSerializer
+    queryset = ProductDayPlan.objects.all()
+
+
+

@@ -8,7 +8,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
 
 from basics.models import PlanSchedule
 from mes.common_code import CommonDeleteMixin
@@ -21,7 +21,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus, IfupReportBasisBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer, EquipDetailedSerializer, \
+    ProductionRecordSerializer, MaterialTankStatusSerializer,  \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from production.utils import strtoint
 from work_station.api import IssueWorkStation
@@ -618,10 +618,87 @@ GROUP BY equip.equip_no, global_code.global_name;'''
 class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                         GenericViewSet):
     """主页面详情展示机"""
-    queryset = Equip.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = EquipDetailedSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    # queryset = Equip.objects.filter(delete_flag=False)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    # serializer_class = EquipDetailedSerializer
+    # filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    def list(self, request, *args, **kwargs):
+        params = request.query_params
+        equip_no = params.get('equip_no')
+        print(equip_no)
+        air_list = f'''select equip_status.id,
+       equip_status.equip_no,
+       equip_status.status,
+       product_batching.stage_product_batch_no as product_no,
+       equip_status.current_trains,
+       global_code.global_name                 as classes_name
+from equip_status
+         left join product_classes_plan
+                   on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid
+         left join product_day_plan on product_classes_plan.product_day_plan_id = product_day_plan.id
+         left join product_batching on product_day_plan.product_batching_id = product_batching.id
+         left join work_schedule_plan on product_classes_plan.work_schedule_plan_id = work_schedule_plan.id
+         left join global_code on work_schedule_plan.classes_id = global_code.id
+where equip_status.equip_no = '{equip_no}'
+order by equip_status.product_time desc
+limit 1;'''
+        try:
+            equip_list = EquipStatus.objects.raw(air_list)[0]
+        except Exception as e:
+            return Response('暂无数据', status=400)
+        ret_data = {}
+        ret_data['equip_no'] = equip_list.equip_no
+        ret_data['status'] = equip_list.status
+        ret_data['product_no'] = equip_list.product_no
+        ret_data['current_trains'] = equip_list.current_trains
+        ret_data['classes_name'] = equip_list.classes_name
+        ret_data['product_list'] = []
+        ret_data['status_list'] = []
+        air_product_list = f'''select equip_status.id,
+       product_batching.stage_product_batch_no,
+       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
+       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num
+from equip_status
+         left join product_classes_plan
+                   on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid
+         left join product_day_plan on product_classes_plan.product_day_plan_id = product_day_plan.id
+         left join product_batching on product_day_plan.product_batching_id = product_batching.id
+         left JOIN trains_feedbacks
+                   ON trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid
+where equip_status.equip_no = '{equip_no}'
+group by product_batching.stage_product_batch_no;'''
+
+        try:
+            product_list = EquipStatus.objects.raw(air_product_list)
+        except Exception as e:
+            return Response('暂无数据', status=400)
+        for _ in product_list:
+            p_list = {}
+            p_list['product_no'] = _.stage_product_batch_no
+            p_list['plan_num'] = _.plan_num
+            p_list['actual_num'] = _.actual_num
+            ret_data['product_list'].append(p_list)
+
+        air_status_list = f'''select equip_status.id,
+       equip_status.status,
+       count(equip_status.status) as count_status
+from equip_status
+where equip_status.equip_no = '{equip_no}'
+group by equip_status.status;
+'''
+
+        try:
+            status_list = EquipStatus.objects.raw(air_status_list)
+        except Exception as e:
+            return Response('暂无数据', status=400)
+        for _ in status_list:
+            s_list = {}
+            s_list['status'] = _.status
+            s_list['count_status'] = _.count_status
+            ret_data['status_list'].append(s_list)
+        return Response(ret_data)
 
 
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
