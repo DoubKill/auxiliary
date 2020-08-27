@@ -3,6 +3,7 @@ from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +17,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
-    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer
+    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
     ProductBatchingDetail, ProductProcessDetail, BaseAction, BaseCondition
 
@@ -145,8 +146,9 @@ class ProductBatchingViewSet(ModelViewSet):
         配料审批
     """
     # TODO 配方下载功能（只能下载应用状态的配方，并去除当前计划中的配方）
-    queryset = ProductBatching.objects.filter(delete_flag=False).select_related("factory", "site", "dev_type", "stage",
-                                                                                "product_info").order_by('-created_date')
+    queryset = ProductBatching.objects.filter(delete_flag=False).select_related("factory", "site", "dev_type",
+                                                                                "stage", "product_info"
+                                                                                ).order_by('-created_date')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
@@ -239,3 +241,31 @@ class ConditionListView(APIView):
     def get(self, request):
         data = BaseCondition.objects.values('id', 'code', 'condition')
         return Response({'results': data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeReceiveAPiView(CreateAPIView):
+    """
+    接受上辅机配方数据接口
+    """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = RecipeReceiveSerializer
+    queryset = ProductBatching.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeObsoleteAPiView(APIView):
+    """
+    接收MES弃用配方接口
+    """
+
+    def post(self, request):
+        stage_product_batch_no = self.request.data.get('stage_product_batch_no')
+        try:
+            product_batching = ProductBatching.objects.get(stage_product_batch_no=stage_product_batch_no)
+        except ProductBatching.DoesNotExist:
+            return Response('暂无该配方数据', status=status.HTTP_200_OK)
+        product_batching.used_type = 6
+        product_batching.save()
+        return Response('弃用成功', status=status.HTTP_200_OK)

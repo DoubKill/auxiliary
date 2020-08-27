@@ -103,10 +103,17 @@ class ProductBatching(AbstractEntity):
     batching_weight = models.DecimalField(verbose_name='配料重量', help_text='配料重量',
                                           decimal_places=3, max_digits=8, default=0)
     manual_material_weight = models.DecimalField(verbose_name='手动小料重量', help_text='手动小料重量',
-                                                 decimal_places=3, max_digits=8, blank=True, null=True)
+                                                 decimal_places=3, max_digits=8, default=0)
+    auto_material_weight = models.DecimalField(verbose_name='自动小料重量', help_text='自动小料重量',
+                                               decimal_places=3, max_digits=8, default=0)
     volume = models.DecimalField(verbose_name='配料体积', help_text='配料体积', decimal_places=2, max_digits=8,
                                  blank=True, null=True)
-    used_time = models.DateTimeField(help_text='发行时间', verbose_name='发行时间', blank=True, null=True)
+    used_user = models.ForeignKey(User, help_text='启用人', blank=True, null=True,
+                                  on_delete=models.DO_NOTHING, related_name='used_batching')
+    used_time = models.DateTimeField(help_text='启用时间', verbose_name='启用时间', blank=True, null=True)
+    obsolete_user = models.ForeignKey(User, help_text='弃用人', blank=True, null=True,
+                                      on_delete=models.DO_NOTHING, related_name='obsolete_batching')
+    obsolete_time = models.DateTimeField(help_text='弃用时间', verbose_name='弃用时间', blank=True, null=True)
     production_time_interval = models.DecimalField(help_text='炼胶时间(分)', blank=True, null=True,
                                                    decimal_places=2, max_digits=8)
     equip = models.ForeignKey(Equip, help_text='设备', blank=True, null=True, on_delete=models.DO_NOTHING)

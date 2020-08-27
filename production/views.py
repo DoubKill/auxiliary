@@ -545,23 +545,23 @@ class EquipStatusPlanList(mixins.ListModelMixin,
     """主页面展示"""
 
     def list(self, request, *args, **kwargs):
-        air = '''SELECT
-        "equip"."id",
-       "equip"."equip_no",
-       "global_code"."global_name",
+        air = '''SELECT equip.id,
+       equip.equip_no,
+       global_code.global_name,
        trains_feedbacks.product_no,
        equip_status.status,
-       SUM(distinct "product_classes_plan"."plan_trains") AS "plan_num",
-       SUM(distinct "trains_feedbacks"."actual_trains") AS "actual_num",
-       max(equip_status.current_trains) as current_trains
+       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
+       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num,
+       max(equip_status.current_trains)                   as current_trains
 from equip
-    left join product_day_plan on equip.id = product_day_plan.equip_id
-    left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
-    left JOIN "work_schedule_plan" ON ("product_classes_plan"."work_schedule_plan_id" = "work_schedule_plan"."id")
-    left JOIN "trains_feedbacks" ON ("trains_feedbacks"."plan_classes_uid" = "product_classes_plan"."plan_classes_uid")
-    left JOIN "global_code" ON ("work_schedule_plan"."classes_id" = "global_code"."id")
-    left join equip_status on equip_status.plan_classes_uid=product_classes_plan.plan_classes_uid
-GROUP BY "equip"."equip_no", "global_code"."global_name";'''
+         left join product_day_plan on equip.id = product_day_plan.equip_id
+         left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id
+         left JOIN work_schedule_plan ON (product_classes_plan.work_schedule_plan_id = work_schedule_plan.id)
+         left JOIN trains_feedbacks
+                   ON (trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid)
+         left JOIN global_code ON (work_schedule_plan.classes_id = global_code.id)
+         left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid
+GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
 
         ret_data = {}
@@ -631,10 +631,32 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
+    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = CurveInformationSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     def list(self, request, *args, **kwargs):
+        params = request.query_params
+        begin_time = params.get("begin_time", None)
+        end_time = params.get("end_time", None)
+        equip_no = params.get("equip_no", None)
+        product_no = params.get("product_no", None)
+        operation_user = params.get("operation_user", None)
+        filter_dict = {}
+        if begin_time:
+            filter_dict['begin_time__gte'] = begin_time
+        if end_time:
+            filter_dict['end_time__lte'] = end_time
+        if equip_no:
+            filter_dict['equip_no'] = equip_no
+        if product_no:
+            filter_dict['product_no'] = product_no
+        if operation_user:
+            filter_dict['operation_user'] = operation_user
+        print(filter_dict)
         tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
-            Max('product_time')).values()
+            Max('product_time')).filter(**filter_dict).values()
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
@@ -654,8 +676,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['production_details'] = production_details
             else:
                 tf_obj['production_details'] = None
-            ps_obj = PlanStatus.objects.filter(机台号=strtoint(tf_obj['equip_no']), 计划号=tf_obj['plan_classes_uid'],
-                                               配方号=tf_obj['product_no']).last()
+            ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'], plan_classes_uid=tf_obj['plan_classes_uid'],
+                                               product_no=tf_obj['product_no']).last()
             if ps_obj:
                 tf_obj['status'] = ps_obj.status
             else:

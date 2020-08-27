@@ -157,8 +157,8 @@ class ProductionRecordSerializer(BaseModelSerializer):
     def get_class_group(self, object):
         product = ProductClassesPlan.objects.filter(plan_classes_uid=object.plan_classes_uid).first()
         if product:
-            group = product.work_schedule_plan.all().first()
-            return group.group_name if group else None
+            group = product.work_schedule_plan.group
+            return group.global_name if group else None
         else:
             return None
 
@@ -219,7 +219,7 @@ class EquipDetailedSerializer(BaseModelSerializer):
             res = ProductBatching.objects.annotate(
                 sum_trains=Sum('pb_day_plan__pdp_product_classes_plan__plan_trains')).filter(
                 pb_day_plan__equip__equip_no=object.equip_no,
-                pb_day_plan__pdp_product_classes_plan__classes_detail__classes__global_name=pfb_obj.classes).values(
+                pb_day_plan__pdp_product_classes_plan__work_schedule_plan__classes__global_name=pfb_obj.classes).values(
                 'sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
             for i in res:
                 pcp_queryset = ProductClassesPlan.objects.filter(

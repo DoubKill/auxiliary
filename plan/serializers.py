@@ -595,10 +595,10 @@ class UpRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
-        for p_obj in p_status:
-            if p_obj.status != '等待':
-                raise serializers.ValidationError({'equip_name': '只有等待中的计划才能上调'})
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        # for p_obj in p_status:
+        if p_status.status != '等待':
+            raise serializers.ValidationError({'equip_name': '只有等待中的计划才能上调'})
         update_dict = {'delete_flag': False}
         equip_name = validated_data.get('equip_name', None)
         if equip_name:
@@ -647,10 +647,10 @@ class DownRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
-        for p_obj in p_status:
-            if p_obj.status != '等待':
-                raise serializers.ValidationError({'equip_name': '只有等待中的计划才能下调'})
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        # for p_obj in p_status:
+        if p_status.status != '等待':
+            raise serializers.ValidationError({'equip_name': '只有等待中的计划才能下调'})
         update_dict = {'delete_flag': False}
         equip_name = validated_data.get('equip_name', None)
         if equip_name:

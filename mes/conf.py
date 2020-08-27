@@ -17,3 +17,5 @@ PROJECT_API_TREE = {
     "production": ('trains-feedbacks', 'pallet-feedbacks'),
 }
 
+
+SYSTEM_NAME = "上辅机群控"
