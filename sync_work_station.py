@@ -178,6 +178,7 @@ def main():
                         "end_time": end_time,
                         "operation_user": temp.员工代号,
                         "classes": pcp.classes_detail.classes.global_name,
+                        "product_time": end_time
                     }
                     sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
                 TrainsFeedbacks.objects.bulk_create(sync_data_list)
@@ -185,6 +186,13 @@ def main():
                 sync_data_list = []
                 for temp in temp_model_set:
                     uid = temp.计划号
+                    end_time_str = temp.存盘时间
+                    if len(end_time_str) == 15:
+                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+                    elif len(end_time_str) == 18:
+                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    else:
+                        continue
                     current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
                                                                   机台号=temp.机台号).first().密炼车次
                     adapt_data = {
@@ -197,6 +205,7 @@ def main():
                         "pressure": temp.压力,
                         "current_trains": current_trains,
                         "status": "等待",
+                        "product_time": end_time,
                     }
                     sync_data_list.append(EquipStatus(**adapt_data))
                 EquipStatus.objects.bulk_create(sync_data_list)

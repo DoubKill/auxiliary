@@ -236,7 +236,10 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = ChildSystemInfo.objects.filter(delete_flag=False)
     serializer_class = ChildSystemInfoSerializer
+    pagination_class = SinglePageNumberPagination
     permission_classes = (IsAdminUser,)
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ("system_type",)
 
 
 class LoginView(ObtainJSONWebToken):
