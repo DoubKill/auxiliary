@@ -6,7 +6,7 @@ from django.db.transaction import atomic
 from rest_framework import serializers
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
-from basics.models import PlanSchedule, WorkSchedule, ClassesDetail, WorkSchedulePlan
+from basics.models import PlanSchedule, WorkSchedule, ClassesDetail, WorkSchedulePlan, Equip
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from mes.base_serializer import BaseModelSerializer
 from plan.uuidfield import UUidTools
@@ -536,6 +536,8 @@ class ProductBatchingDayPlanCopySerializer(BaseModelSerializer):
         return instance
 
 '''
+
+
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_name', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
@@ -702,3 +704,41 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
         return instance
+
+
+class PlanReceiveSerializer(BaseModelSerializer):
+    equip = serializers.CharField()
+    product_batching = serializers.CharField()
+    plan_schedule = serializers.CharField()
+
+    def validate(self, attrs):
+        plan_schedule_no = attrs['plan_schedule_no']
+        product_batching = attrs.get('product_batching')
+        equip = attrs.get('equip')
+        if ProductDayPlan.objects.filter(plan_schedule_no=PlanSchedule.plan_schedule_no):
+            raise serializers.ValidationError('该计划已存在， 请重试！')
+        try:
+            equip = Equip.objects.get(equip_no=equip)
+            product_batching = ProductBatching.objects.get(stage_product_batch_no=product_batching)
+        except Equip.DoesNotExist:
+            raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
+        attrs['product_batching'] = product_batching
+        attrs['plan_schedule_no'] = plan_schedule_no
+        attrs['equip'] = equip
+        return attrs
+
+    @atomic()
+    def create(self, validated_data):
+        pdp_product_classes_plan = validated_data.pop('pdp_product_classes_plan')
+        instance = super().create(validated_data)
+        product_classes_list = [None] * len(pdp_product_classes_plan)
+        for i, detail in enumerate(pdp_product_classes_plan):
+            detail['product_batching'] = instance
+            product_classes_list[i] = ProductClassesPlan(**detail)
+        ProductClassesPlan.objects.bulk_create(product_classes_list)
+        return instance
+
+    class Meta:
+        model = ProductDayPlan
+        fields = ('equip', 'product_batching', 'plan_schedule', 'pdp_product_classes_plan',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS
