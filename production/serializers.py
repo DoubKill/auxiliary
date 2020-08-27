@@ -190,64 +190,64 @@ class MaterialStatisticsSerializer(BaseModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class EquipDetailedSerializer(BaseModelSerializer):
-    """主页面详情展示"""
-    status_current_trains = serializers.SerializerMethodField(read_only=True, help_text='机台状态和收皮数量')
-    product_no_classes = serializers.SerializerMethodField(read_only=True, help_text='当前胶料编码和当前班次')
-    group_product = serializers.SerializerMethodField(read_only=True, help_text='班次对应胶料列表')
-    statusinfo = serializers.SerializerMethodField(read_only=True, help_text='机台状态统计')
-
-    def get_status_current_trains(self, object):
-        es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
-        if es_obj:
-            # return es_obj.status
-            return {"status": es_obj.status, "current_trains": es_obj.current_trains}
-        else:
-            return None
-
-    def get_product_no_classes(self, object):
-        pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
-        if pfb_obj:
-            # return pfb_obj.product_no
-            return {"product_no": pfb_obj.product_no, "classes": pfb_obj.classes}
-        else:
-            return None
-
-    def get_group_product(self, object):
-        pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
-        if pfb_obj:
-            res = ProductBatching.objects.annotate(
-                sum_trains=Sum('pb_day_plan__pdp_product_classes_plan__plan_trains')).filter(
-                pb_day_plan__equip__equip_no=object.equip_no,
-                pb_day_plan__pdp_product_classes_plan__work_schedule_plan__classes__global_name=pfb_obj.classes).values(
-                'sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
-            for i in res:
-                pcp_queryset = ProductClassesPlan.objects.filter(
-                    product_day_plan__product_batching__stage_product_batch_no=i[
-                        'pb_day_plan__product_batching__stage_product_batch_no'])
-                uid_List = []
-                for pcp_obj in pcp_queryset:
-                    uid_List.append(pcp_obj.plan_classes_uid)
-                sum_trains = 0
-                for uid in uid_List:
-                    tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=uid).last()
-                    if tfb_obj:
-                        sum_trains += tfb_obj.actual_trains
-                i['trains_plan'] = sum_trains
-            return res
-        else:
-            return None
-
-    def get_statusinfo(self, object):
-        es_list = EquipStatus.objects.filter(equip_no=object.equip_no).values('status').distinct()
-        for es_dict in es_list:
-            es_dict['num'] = EquipStatus.objects.filter(equip_no=object.equip_no, status=es_dict['status']).count()
-        return es_list
-
-    class Meta:
-        model = Equip
-        fields = (
-            'id', 'equip_no', 'status_current_trains', 'product_no_classes', 'group_product', 'statusinfo')
+# class EquipDetailedSerializer(BaseModelSerializer):
+#     """主页面详情展示"""
+#     status_current_trains = serializers.SerializerMethodField(read_only=True, help_text='机台状态和收皮数量')
+#     product_no_classes = serializers.SerializerMethodField(read_only=True, help_text='当前胶料编码和当前班次')
+#     group_product = serializers.SerializerMethodField(read_only=True, help_text='班次对应胶料列表')
+#     statusinfo = serializers.SerializerMethodField(read_only=True, help_text='机台状态统计')
+#
+#     def get_status_current_trains(self, object):
+#         es_obj = EquipStatus.objects.filter(equip_no=object.equip_no).last()  # 因为机台状况反馈是不断新增数据的，所以直接找最后一条
+#         if es_obj:
+#             # return es_obj.status
+#             return {"status": es_obj.status, "current_trains": es_obj.current_trains}
+#         else:
+#             return None
+#
+#     def get_product_no_classes(self, object):
+#         pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
+#         if pfb_obj:
+#             # return pfb_obj.product_no
+#             return {"product_no": pfb_obj.product_no, "classes": pfb_obj.classes}
+#         else:
+#             return None
+#
+#     def get_group_product(self, object):
+#         pfb_obj = TrainsFeedbacks.objects.filter(equip_no=object.equip_no).last()
+#         if pfb_obj:
+#             res = ProductBatching.objects.annotate(
+#                 sum_trains=Sum('pb_day_plan__pdp_product_classes_plan__plan_trains')).filter(
+#                 pb_day_plan__equip__equip_no=object.equip_no,
+#                 pb_day_plan__pdp_product_classes_plan__work_schedule_plan__classes__global_name=pfb_obj.classes).values(
+#                 'sum_trains', 'pb_day_plan__product_batching__stage_product_batch_no')
+#             for i in res:
+#                 pcp_queryset = ProductClassesPlan.objects.filter(
+#                     product_day_plan__product_batching__stage_product_batch_no=i[
+#                         'pb_day_plan__product_batching__stage_product_batch_no'])
+#                 uid_List = []
+#                 for pcp_obj in pcp_queryset:
+#                     uid_List.append(pcp_obj.plan_classes_uid)
+#                 sum_trains = 0
+#                 for uid in uid_List:
+#                     tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=uid).last()
+#                     if tfb_obj:
+#                         sum_trains += tfb_obj.actual_trains
+#                 i['trains_plan'] = sum_trains
+#             return res
+#         else:
+#             return None
+#
+#     def get_statusinfo(self, object):
+#         es_list = EquipStatus.objects.filter(equip_no=object.equip_no).values('status').distinct()
+#         for es_dict in es_list:
+#             es_dict['num'] = EquipStatus.objects.filter(equip_no=object.equip_no, status=es_dict['status']).count()
+#         return es_list
+#
+#     class Meta:
+#         model = Equip
+#         fields = (
+#             'id', 'equip_no', 'status_current_trains', 'product_no_classes', 'group_product', 'statusinfo')
 
 
 class WeighInformationSerializer(BaseModelSerializer):
