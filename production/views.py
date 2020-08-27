@@ -411,20 +411,20 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
-    def create(self, request, *args, **kwargs):
-        params = request.data
-        temp_data = {
-            # "id": 1,
-            "mname": params.get("material_name"),
-            "set_weight": None,
-            "error_allow": None,
-            "recipe_name": "配方1",
-            "type": params.get("tank_type"),
-            "recstatus": None,
-        }
-        temp = IssueWorkStation(IfdownRecipeCb1, temp_data)
-        temp.issue_to_db()
-        return super().create(request, *args, **kwargs)
+    # def create(self, request, *args, **kwargs):
+    #     params = request.data
+    #     temp_data = {
+    #         # "id": 1,
+    #         "mname": params.get("material_name"),
+    #         "set_weight": None,
+    #         "error_allow": None,
+    #         "recipe_name": "配方1",
+    #         "type": params.get("tank_type"),
+    #         "recstatus": "None",
+    #     }
+    #     temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
+    #     temp.issue_to_db()
+    #     return super().create(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
         data = request.data
@@ -432,6 +432,8 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             id = i.get("id")
             # id = i['id']
             obj = MaterialTankStatus.objects.get(pk=id)
+            print(obj)
+            print(obj.id)
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
@@ -455,7 +457,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             temp.issue_to_db()
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            # self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
         return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
 
@@ -503,7 +505,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             temp.issue_to_db()
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            # self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
         return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
         # ?data[]={}&data[]={}
