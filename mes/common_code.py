@@ -1,4 +1,4 @@
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
@@ -15,6 +15,22 @@ class CommonDeleteMixin(object):
         instance.delete_user = request.user
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SyncCreateMixin(mixins.CreateModelMixin):
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        setattr(response, "model_name", self.queryset.model.__name__)
+        return response
+
+
+class SyncUpdateMixin(mixins.UpdateModelMixin):
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        setattr(response, "model_name", self.queryset.model.__name__)
+        return response
 
 
 def return_permission_params(model_name):

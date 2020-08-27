@@ -19,3 +19,5 @@ PROJECT_API_TREE = {
 
 
 SYSTEM_NAME = "上辅机群控"
+
+SYNC_SYSTEM_NAME = "MES"
