@@ -8,6 +8,8 @@ import random
 import uuid
 import django
 
+from add_test_data import random_str
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
@@ -80,7 +82,7 @@ def add_product():
                                            equip_no=pcp_obj.product_day_plan.equip.equip_no,
                                            temperature=36.7,
                                            rpm=1.1, energy=2.2, power=3.3, pressure=4.4, status=random_status(),
-                                           current_trains=i)
+                                           current_trains=i,product_time=datetime.datetime.now())
             print(e)
             ps = PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
                                            equip_no=pcp_obj.product_day_plan.equip.equip_no,
