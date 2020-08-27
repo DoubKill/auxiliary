@@ -631,10 +631,7 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = CurveInformationSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    queryset = TrainsFeedbacks.objects.all()
 
     def list(self, request, *args, **kwargs):
         params = request.query_params
@@ -642,6 +639,11 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
         end_time = params.get("end_time", None)
         equip_no = params.get("equip_no", None)
         product_no = params.get("product_no", None)
+        try:
+            page = int(params.get("page", 1))
+            page_size = int(params.get("page_size", 10))
+        except Exception as e:
+            return Response("page和page_size必须是int", status=400)
         operation_user = params.get("operation_user", None)
         filter_dict = {}
         if begin_time:
@@ -657,6 +659,12 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
         print(filter_dict)
         tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
             Max('product_time')).filter(**filter_dict).values()
+        count = tf_queryset.count()
+        tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
+        if count % page_size:
+            counts = count // page_size + 1
+        else:
+            counts = count // page_size
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
@@ -682,4 +690,5 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['status'] = ps_obj.status
             else:
                 tf_obj['status'] = None
-        return Response(tf_queryset)
+
+        return Response({'count': counts, 'results': tf_queryset})

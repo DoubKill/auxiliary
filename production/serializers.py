@@ -257,7 +257,7 @@ class WeighInformationSerializer(BaseModelSerializer):
     def get_weigh_info(self, object):
         weigh_info = []
         irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                              计划号=object.plan_classes_uid.hex,
+                                                              计划号=object.plan_classes_uid,
                                                               配方号=object.product_no).all()
         print(irw_queryset)
         if irw_queryset:
@@ -287,7 +287,7 @@ class MixerInformationSerializer(BaseModelSerializer):
     def get_mixer_info(self, object):
         mixer_info = []
         irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                           计划号=object.plan_classes_uid.hex,
+                                                           计划号=object.plan_classes_uid,
                                                            配方号=object.product_no).all()
         if irm_queryset:
             for irm_obj in irm_queryset:
@@ -319,7 +319,7 @@ class CurveInformationSerializer(BaseModelSerializer):
     def get_curve_info(self, object):
         curve_info = []
         irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                             计划号=object.plan_classes_uid.hex,
+                                                             计划号=object.plan_classes_uid,
                                                              配方号=object.product_no).all()
         if irc_queryset:
             for irc_obj in irc_queryset:
