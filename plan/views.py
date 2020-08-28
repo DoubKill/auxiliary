@@ -373,7 +373,7 @@ class RetransmissionPlan(APIView):
         return Response('修改成功', status=200)
 
 @method_decorator([api_recorder], name="dispatch")
-class PlanReceive(APIView):
+class PlanReceive(CreateAPIView):
     """
         接受上辅机计划数据接口
         """
@@ -381,6 +381,13 @@ class PlanReceive(APIView):
     authentication_classes = ()
     serializer_class = PlanReceiveSerializer
     queryset = ProductDayPlan.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 

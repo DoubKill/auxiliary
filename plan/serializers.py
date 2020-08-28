@@ -706,24 +706,40 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         return instance
 
 
+class ProductClassesPlanSerializer(BaseModelSerializer):
+    # class Meta:
+    #     model = ProductClassesPlan
+    #     fields = '__all__'
+
+    work_schedule_plan = serializers.CharField()
+
+    class Meta:
+        model = ProductClassesPlan
+        fields = (
+            'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan', 'plan_classes_uid',
+            'note')
+
+
 class PlanReceiveSerializer(BaseModelSerializer):
     equip = serializers.CharField()
     product_batching = serializers.CharField()
     plan_schedule = serializers.CharField()
+    pdp_product_classes_plan = ProductClassesPlanSerializer(many=True)
 
     def validate(self, attrs):
-        plan_schedule_no = attrs['plan_schedule_no']
+        plan_schedule = attrs['plan_schedule']
         product_batching = attrs.get('product_batching')
         equip = attrs.get('equip')
-        if ProductDayPlan.objects.filter(plan_schedule_no=PlanSchedule.plan_schedule_no):
+        if ProductDayPlan.objects.filter(plan_schedule__plan_schedule_no=plan_schedule):
             raise serializers.ValidationError('该计划已存在， 请重试！')
         try:
             equip = Equip.objects.get(equip_no=equip)
             product_batching = ProductBatching.objects.get(stage_product_batch_no=product_batching)
+            plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
         attrs['product_batching'] = product_batching
-        attrs['plan_schedule_no'] = plan_schedule_no
+        attrs['plan_schedule'] = plan_schedule
         attrs['equip'] = equip
         return attrs
 
@@ -733,7 +749,9 @@ class PlanReceiveSerializer(BaseModelSerializer):
         instance = super().create(validated_data)
         product_classes_list = [None] * len(pdp_product_classes_plan)
         for i, detail in enumerate(pdp_product_classes_plan):
-            detail['product_batching'] = instance
+            detail['product_day_plan'] = instance
+            work_schedule_plan_no = detail['work_schedule_plan']
+            detail['work_schedule_plan'] = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan_no)
             product_classes_list[i] = ProductClassesPlan(**detail)
         ProductClassesPlan.objects.bulk_create(product_classes_list)
         return instance
