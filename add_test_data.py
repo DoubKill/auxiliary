@@ -5,7 +5,7 @@ import os
 import string
 import traceback
 
-import time as t
+import time
 import random
 import uuid
 
@@ -1527,9 +1527,9 @@ def add_product_demo_data():
                         "status": "running",
                         "current_trains": m,
                         "product_time": end_time,
+                        "created_date": end_time + datetime.timedelta(seconds=x),
                     }
                     EquipStatus.objects.create(**equip_status_data)
-                    t.sleep(1)
 
 
 if __name__ == '__main__':
