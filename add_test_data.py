@@ -5,11 +5,13 @@ import os
 import string
 import traceback
 
-import time
+import time as t
 import random
 import uuid
 
 import django
+
+from production_data_script import pallet_count
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
