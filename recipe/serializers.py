@@ -140,15 +140,23 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
         instance = super().create(validated_data)
-        batching_weight = 0
+        batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details:
             batching_detail_list = [None] * len(batching_details)
             for i, detail in enumerate(batching_details):
-                batching_weight += detail.get('actual_weight', 0)
+                auto_flag = detail.get('detail')
+                actual_weight = detail.get('actual_weight', 0)
+                if auto_flag == 1:
+                    auto_material_weight += actual_weight
+                elif auto_flag == 2:
+                    manual_material_weight += actual_weight
+                batching_weight += actual_weight
                 detail['product_batching'] = instance
                 batching_detail_list[i] = ProductBatchingDetail(**detail)
             ProductBatchingDetail.objects.bulk_create(batching_detail_list)
         instance.batching_weight = batching_weight
+        instance.manual_material_weight = manual_material_weight
+        instance.auto_material_weight = auto_material_weight
         instance.save()
         try:
             material_type = GlobalCode.objects.filter(global_type__type_name='原材料类别',
@@ -183,19 +191,29 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
+        if instance.used_type != 1:
+            raise serializers.ValidationError('只有编辑状态的配方才可修改')
         batching_details = validated_data.pop('batching_details', None)
         instance = super().update(instance, validated_data)
-        batching_weight = 0
+        batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details is not None:
             instance.batching_details.all().delete()
             batching_detail_list = [None] * len(batching_details)
             for i, detail in enumerate(batching_details):
-                batching_weight += detail.get('actual_weight', 0)
+                actual_weight = detail.get('actual_weight', 0)
+                auto_flag = detail.get('detail')
+                if auto_flag == 1:
+                    auto_material_weight += actual_weight
+                elif auto_flag == 2:
+                    manual_material_weight += actual_weight
+                batching_weight += actual_weight
                 detail['product_batching'] = instance
                 batching_detail_list[i] = ProductBatchingDetail(**detail)
             ProductBatchingDetail.objects.bulk_create(batching_detail_list)
-        instance.batching_weight = batching_weight
-        instance.save()
+            instance.batching_weight = batching_weight
+            instance.manual_material_weight = manual_material_weight
+            instance.auto_material_weight = auto_material_weight
+            instance.save()
         return instance
 
     class Meta:
