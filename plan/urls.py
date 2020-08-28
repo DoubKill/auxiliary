@@ -27,7 +27,7 @@ urlpatterns = [
     path('stop-plan/', StopPlan.as_view()),  # 计划停止
     path('issued-plan/', IssuedPlan.as_view()),  # 计划下达
     path('retransmission-plan/', RetransmissionPlan.as_view()),  # 计划重传
-    path('plan-receive/', PlanReceive.as_view()),  # 计划重传
+    path('plan-receive/', PlanReceive.as_view()),  # mes下达到上辅机
 
 ]
 '''

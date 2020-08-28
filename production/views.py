@@ -4,6 +4,7 @@ import requests
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -21,7 +22,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
     QualityControl, MaterialTankStatus, IfupReportBasisBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
-    ProductionRecordSerializer, MaterialTankStatusSerializer,  \
+    ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from production.utils import strtoint
 from work_station.api import IssueWorkStation
@@ -647,7 +648,9 @@ limit 1;'''
         try:
             equip_list = EquipStatus.objects.raw(air_list)[0]
         except Exception as e:
-            return Response('暂无数据', status=400)
+            # return Response('暂无数据', status=400)
+            raise ValidationError('暂无数据')
+
         ret_data = {}
         ret_data['equip_no'] = equip_list.equip_no
         ret_data['status'] = equip_list.status
@@ -673,7 +676,8 @@ group by product_batching.stage_product_batch_no;'''
         try:
             product_list = EquipStatus.objects.raw(air_product_list)
         except Exception as e:
-            return Response('暂无数据', status=400)
+            # return Response('暂无数据', status=400)
+            raise ValidationError('暂无数据')
         for _ in product_list:
             p_list = {}
             p_list['product_no'] = _.stage_product_batch_no
@@ -692,7 +696,8 @@ group by equip_status.status;
         try:
             status_list = EquipStatus.objects.raw(air_status_list)
         except Exception as e:
-            return Response('暂无数据', status=400)
+            # return Response('暂无数据', status=400)
+            raise ValidationError('暂无数据')
         for _ in status_list:
             s_list = {}
             s_list['status'] = _.status
