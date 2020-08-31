@@ -16,10 +16,10 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
-from basics.models import PlanSchedule
 from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
 
+pallet_count = 5
 
 class ProductDataEmulator():
 
@@ -50,18 +50,15 @@ def run():
     #         continue
     day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
     for day_plan in list(day_plan_set):
-        date = day_plan.plan_schedule.day_time
         class_plan_set = ProductClassesPlan.objects.filter(product_day_plan=day_plan.id)
         bath_no = 1
         for class_plan in list(class_plan_set):
             plan_trains = class_plan.plan_trains
-            temp_start_time = class_plan.classes_detail.start_time
-            start_time = f"{date} {temp_start_time}"
-            start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+            start_time = class_plan.work_schedule_plan.start_time
             for m in range(1, int(plan_trains)+1):
-                class_name = class_plan.classes_detail.classes.global_name
+                class_name = class_plan.work_schedule_plan.classes.global_name
                 equip_no = day_plan.equip.equip_no
-                product_no = day_plan.product_batching.product_info.product_no
+                product_no = day_plan.product_batching.stage_product_batch_no
                 plan_weight = class_plan.weight
                 # time_str = '2020-08-01 08:00:00'
                 # time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
@@ -84,11 +81,12 @@ def run():
                     "begin_time": start_time,
                     "end_time": end_time,
                     "operation_user": "string-user",
-                    "classes": class_name
+                    "classes": class_name,
+                    "product_time": end_time,
                 }
                 start_time = end_time
                 TrainsFeedbacks.objects.create(**train_data)
-                if m % 5 == 0:
+                if m % pallet_count == 0:
                     end_time = start_time + datetime.timedelta(seconds=150*5)
                     pallet_data = {
                             "plan_classes_uid": class_plan.plan_classes_uid,
@@ -100,11 +98,12 @@ def run():
                             "begin_time": start_time,
                             "end_time": end_time,
                             "operation_user": "string-user",
-                            "begin_trains": 1,
+                            "begin_trains": m - (pallet_count-1),
                             "end_trains": m,
                             "pallet_no": f"{bath_no}|test",
                             "barcode": "KJDL:LKYDFJM<NLIIRD",
-                            "classes": class_name
+                            "classes": class_name,
+                            "product_time": end_time,
                         }
                     start_time = end_time
                     bath_no += 1
@@ -120,6 +119,7 @@ def run():
                         "pressure": random.randint(80,360),
                         "status": "running",
                         "current_trains": m,
+                        "product_time": end_time,
                     }
                     EquipStatus.objects.create(**equip_status_data)
                     t.sleep(1)
