@@ -2,6 +2,7 @@ from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import mixins, status
 from rest_framework.generics import CreateAPIView, ListAPIView
@@ -14,7 +15,7 @@ from plan.filters import ProductDayPlanFilter, MaterialDemandedFilter, ProductBa
     PalletFeedbacksFilter
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
     PalletFeedbacksPlanSerializer, PlanReceiveSerializer
-#ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
+# ProductDayPlanSerializer, MaterialDemandedSerializer, ProductBatchingDayPlanSerializer, ProductDayPlanCopySerializer, ProductBatchingDayPlanCopySerializer, MaterialRequisitionClassesSerializer, \
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingDayPlan, \
     ProductBatchingClassesPlan, MaterialRequisitionClasses
 from plan.paginations import LimitOffsetPagination
@@ -227,6 +228,8 @@ class ProductDayPlanManyCreate(APIView):
         return Response(ProductDayPlanSerializer(book_obj_or_list, many=many).data)
 
 '''
+
+
 @method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.ListModelMixin,
                              GenericViewSet, CommonDeleteMixin):
@@ -234,13 +237,24 @@ class PalletFeedbacksViewSet(mixins.ListModelMixin,
     list:
         计划管理展示
     delete:
-        计划管路删除
+        计划管理删除
     """
     queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
     serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        if plan_status.status != '等待':
+            return Response({'_': "只有等待的计划才能删除"}, status=400)
+            # raise ValidationError('只有等待的计划才能删除')
+        instance.delete_flag = True
+        instance.delete_user = request.user
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UpRegulation(GenericViewSet, mixins.UpdateModelMixin):
@@ -275,14 +289,14 @@ class StopPlan(APIView):
         params = request.query_params
         plan_id = params.get("id")
         if plan_id is None:
-            return Response("没有传id", status=400)
+            return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
-            return Response("计划状态变更没有数据", status=400)
+            return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
-            return Response("只有运行中的计划才能停止！", status=400)
+            return Response({'_': "只有运行中的计划才能停止！"}, status=400)
         ps_obj.status = '等待'
         ps_obj.save()
 
@@ -295,7 +309,7 @@ class StopPlan(APIView):
         temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
-        return Response('修改成功', status=200)
+        return Response({'_': '修改成功'}, status=200)
 
 
 class IssuedPlan(APIView):
@@ -306,14 +320,14 @@ class IssuedPlan(APIView):
         params = request.query_params
         plan_id = params.get("id", None)
         if plan_id is None:
-            return Response("没有传id", status=400)
+            return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name", None)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
-            return Response("计划状态变更没有数据", status=400)
+            return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '等待':
-            return Response("只有等待中的计划才能运行！", status=400)
+            return Response({'_': "只有等待中的计划才能下达！"}, status=400)
         ps_obj.status = '运行'
         ps_obj.save()
 
@@ -331,13 +345,13 @@ class IssuedPlan(APIView):
             'actno': params.get("actual_trains", None),  # 当前车次
             'oper': params.get("operation_user", None),  # 操作员角色
             'state': '运行中',  # 计划状态：等待，运行中，完成
-            'remark':'c',
+            'remark': 'c',
             'recstatus': '运行中',
         }
         temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
-        return Response('修改成功', status=200)
+        return Response({'_': '修改成功'}, status=200)
 
 
 class RetransmissionPlan(APIView):
@@ -348,15 +362,15 @@ class RetransmissionPlan(APIView):
         params = request.query_params
         plan_id = params.get("id")
         if plan_id is None:
-            return Response("没有传id", status=400)
+            return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).last()
         if not ps_obj:
-            return Response("计划状态变更没有数据", status=400)
+            return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '等待':
-            return Response("只有等待中的计划才能运行！", status=400)
-        ps_obj.status = '运行'
+            return Response({'_': "只有等待中的计划才能运行！"}, status=400)
+        ps_obj.status = '运行中'
         ps_obj.save()
 
         temp_data = {
@@ -370,7 +384,8 @@ class RetransmissionPlan(APIView):
         temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
         temp.issue_to_db()
 
-        return Response('修改成功', status=200)
+        return Response({'_': '修改成功'}, status=200)
+
 
 @method_decorator([api_recorder], name="dispatch")
 class PlanReceive(CreateAPIView):
@@ -388,6 +403,3 @@ class PlanReceive(CreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
-

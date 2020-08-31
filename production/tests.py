@@ -9,11 +9,14 @@ import uuid
 import django
 
 from add_test_data import random_str
+from basics.models import Equip, PlanSchedule, WorkSchedulePlan
+from plan.uuidfield import UUidTools
+from recipe.models import ProductBatching
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
-from plan.models import ProductClassesPlan
+from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, IfupReportBasisBackups, \
     IfupReportWeightBackups, IfupReportMixBackups, IfupReportCurveBackups
 from system.models import User
@@ -34,6 +37,23 @@ def random_status():
     status_list = ['等待', '运行中', '完成']
     return random.choice(status_list)
 
+def add_product_plan():
+    e_set = Equip.objects.all()[:3]
+    p_set = ProductBatching.objects.all()[:3]
+    ps_set = PlanSchedule.objects.all()[:3]
+    ws_set = WorkSchedulePlan.objects.all()[:3]
+
+    i = 1
+    for e_obj in e_set:
+        for p_obj in p_set:
+            for ps_obj in ps_set:
+                pdp_obj = ProductDayPlan.objects.create(equip=e_obj, product_batching=p_obj, plan_schedule=ps_obj)
+                for ws_obj in ws_set:
+                    pcp_obj = ProductClassesPlan.objects.create(product_day_plan=pdp_obj, sn=i, plan_trains=i, time=i,
+                                                                weight=i, unit='包', work_schedule_plan=ws_obj,
+                                                                plan_classes_uid=UUidTools.uuid1_hex(), note='备注')
+
+                    i += 1
 
 def add_product():
     pcp_set = ProductClassesPlan.objects.all()[:30]
@@ -127,5 +147,6 @@ def add_work():
 
 
 if __name__ == '__main__':
+    add_product_plan()
     add_product()
     # add_work()
