@@ -203,7 +203,7 @@ class IfdownShengchanjihua1(models.Model):
     recipe = models.CharField(max_length=19)  # 配方名
     recipeid = models.CharField(max_length=19, blank=True, null=True)  # 配方编号
     lasttime = models.CharField(max_length=19, blank=True, null=True) # 班日期
-    planid = models.CharField(max_length=19) # 计划编号  plan_no
+    planid = models.CharField(max_length=36) # 计划编号  plan_no
     startime = models.CharField(max_length=19, blank=True, null=True)  # 开始时间
     stoptime = models.CharField(max_length=19, blank=True, null=True)  # 结束时间
     grouptime = models.CharField(max_length=10, blank=True, null=True)  # 班次

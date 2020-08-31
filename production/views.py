@@ -767,12 +767,13 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
         print(filter_dict)
         tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
             Max('product_time')).filter(**filter_dict).values()
-        count = tf_queryset.count()
+        counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
-        if count % page_size:
-            counts = count // page_size + 1
-        else:
-            counts = count // page_size
+        # TODO 这里count应该是数据的总条数 而不是总页数，（疑问：前端需要的是总页数还是总条数）
+        # if count % page_size:
+        #     counts = count // page_size + 1
+        # else:
+        #     counts = count // page_size
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
