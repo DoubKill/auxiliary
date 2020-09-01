@@ -257,6 +257,7 @@ class PalletFeedbacksViewSet(mixins.ListModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class UpRegulation(GenericViewSet, mixins.UpdateModelMixin):
     """上调"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
@@ -265,6 +266,7 @@ class UpRegulation(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
     """下调"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
@@ -273,6 +275,7 @@ class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     """修改车次"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
@@ -281,6 +284,7 @@ class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class StopPlan(APIView):
     """计划停止"""
 
@@ -312,6 +316,7 @@ class StopPlan(APIView):
         return Response({'_': '修改成功'}, status=200)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class IssuedPlan(APIView):
     """下达计划"""
 
@@ -354,6 +359,7 @@ class IssuedPlan(APIView):
         return Response({'_': '修改成功'}, status=200)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class RetransmissionPlan(APIView):
     """重传计划"""
 
