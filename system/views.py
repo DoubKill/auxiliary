@@ -2,6 +2,7 @@ import xlrd
 from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
 from rest_framework import mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -296,3 +297,26 @@ class LoginView(ObtainJSONWebToken):
                              "token": token})
         # 返回异常信息
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SystemStatusSwitch(APIView):
+    # post: 切换系统运行状态的接口
+    query_set = ChildSystemInfo.objects.filter(delete_flag=False)
+
+    def post(self, request, *args, **kwargs):
+        params = request.data
+        status = params.get("system_status")
+        if status not in ["联网", "独立"]:
+            raise ValidationError("系统运行状态只有联网/独立")
+        config = SystemConfig.objects.filter(config_name="system_name").first()
+        if not config:
+            raise ValidationError("系统配置异常，请联系管理员检查处理")
+        config_value = config.config_value
+        child_system = ChildSystemInfo.objects.filter(system_name=config_value).first()
+        if not child_system:
+            raise ValidationError("系统配置异常，请联系管理员检查处理")
+        if child_system.status_lock:
+            raise ValidationError("系统运行状态处于同步中，请稍后再试")
+        child_system.status = status
+        child_system.save()
+        return Response("ok")

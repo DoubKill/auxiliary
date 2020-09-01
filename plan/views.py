@@ -1,6 +1,7 @@
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 from rest_framework import mixins, status
 from rest_framework.generics import CreateAPIView
@@ -15,6 +16,12 @@ from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, U
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from rest_framework.views import APIView
 
+# Create your views here.
+from plan.uuidfield import UUidTools
+from production.models import PalletFeedbacks, PlanStatus
+from recipe.models import Material, ProductProcess
+from work_station.api import IssueWorkStation
+from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1
 from production.models import PlanStatus
 from work_station.api import IssueWorkStation
 
@@ -159,6 +166,43 @@ class StopPlan(APIView):
 class IssuedPlan(APIView):
     """下达计划"""
 
+    def plan_recipe_integrity_check(self, pcp_obj):
+        # 检验计计划配方是否可用
+        if not pcp_obj:
+            raise ValidationError("无对应班次计划")
+        try:
+            product_batching = pcp_obj.product_day_plan.product_batching
+        except:
+            raise ValidationError("无对应日计划胶料配料标准")
+        # 胶料对应机台
+        equip = product_batching.equip
+        # 胶料配料详情，一份胶料对应多个配料
+        product_batching_details = product_batching.batching_details.filter(delete_flag=False)
+        if not product_batching_details:
+            raise ValidationError("胶料配料详情为空，该计划不可用")
+        product_process = ProductProcess.objects.filter(equip=equip, product_batching=product_batching).first()
+        if not product_process:
+            raise ValidationError("胶料配料步序为空，该计划不可用")
+        # 步序详情，一份通用步序对应多份步序详情
+        product_process_details = product_process.process_details.filter(delete_flag=False)
+        if not product_process_details:
+            raise ValidationError("胶料配料步序详情为空，该计划不可用")
+
+        return product_batching, product_batching_details, product_process, product_process_details
+
+    def _map_PmtRecipe(self, pcp_object ,product_process, product_batching):
+        IfdownPmtRecipe1
+        data = {
+            "id": product_process.id,
+            "lasttime": str(pcp_object.product_day_plan.plan_schedule.day_time),
+            "oper": self.request.uer.username,
+            "recipe_code": product_batching.stage_product_batch_no,
+            "recipe_name": product_batching.stage_product_batch_no,
+            "equip_code":1
+
+        }
+
+
     @atomic()
     def get(self, request):
         params = request.query_params
@@ -167,6 +211,10 @@ class IssuedPlan(APIView):
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name", None)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+        # 校验计划与配方完整性
+        product_batching, product_batching_details, product_process, product_process_details = self.plan_recipe_integrity_check(
+            pcp_obj)
+
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
@@ -175,7 +223,7 @@ class IssuedPlan(APIView):
         ps_obj.status = '运行'
         ps_obj.save()
 
-        temp_data = {
+        plan_data = {
             # 'id': params.get("id", None),  # id
             'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
@@ -189,10 +237,11 @@ class IssuedPlan(APIView):
             'actno': params.get("actual_trains", None),  # 当前车次
             'oper': params.get("operation_user", None),  # 操作员角色
             'state': '运行中',  # 计划状态：等待，运行中，完成
-            'remark': 'c',
-            'recstatus': '运行中',
+            'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
+            'recstatus': '等待',  # 等待， 进行中， 完成
         }
-        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
+        # 模型类的名称需根据设备编号来拼接
+        temp = IssueWorkStation('IfdownShengchanjihua1', plan_data)
         temp.issue_to_db()
 
         return Response({'_': '修改成功'}, status=200)
@@ -217,7 +266,6 @@ class RetransmissionPlan(APIView):
             return Response({'_': "只有等待中的计划才能运行！"}, status=400)
         ps_obj.status = '运行中'
         ps_obj.save()
-
         temp_data = {
             'id': params.get("id", None),  # id
             'setno': params.get("plan_trains", None),  # 设定车次

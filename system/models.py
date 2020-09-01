@@ -102,6 +102,7 @@ class ChildSystemInfo(AbstractEntity):
     system_name = models.CharField(max_length=64, help_text='系统名称', verbose_name='系统名称')
     status = models.CharField(max_length=64, help_text='子系统状态', verbose_name='子系统状态', default="联网")
     status_lock = models.BooleanField(help_text="状态锁/true的时候status不可修改", verbose_name="状态锁", default=False)
+    lost_time = models.DateTimeField(blank=True, null=True, help_text='断网时间', verbose_name='断网时间')
 
     def __str__(self):
         return f"{self.system_type}|{self.system_name}|{self.link_address}"

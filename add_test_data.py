@@ -20,7 +20,7 @@ django.setup()
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
 from recipe.models import Material, ProductInfo, ProductBatching
-from system.models import GroupExtension, User, Section
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from plan.models import ProductDayPlan, ProductClassesPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
 from plan.uuidfield import UUidTools
@@ -1522,7 +1522,15 @@ def add_product_demo_data():
                     EquipStatus.objects.create(**equip_status_data)
 
 
+def add_system_config():
+    SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
+    ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
+    ChildSystemInfo.objects.create(link_address="10.4.10.55", system_type="gz", system_name="上辅机群控", status="联网")
+    ChildSystemInfo.objects.create(link_address="10.4.10.56", system_type="gz", system_name="上辅机工作站1", status="联网")
+
+
 if __name__ == '__main__':
+    add_system_config()
     add_global_codes()
     print("global_codes is ok")
     add_materials()
