@@ -73,6 +73,10 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
+            # 创建计划状态
+            PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
+                                      product_no=instance.product_batching.stage_product_batch_no,
+                                      status='等待', operation_user=' ')
             for pbd_obj in instance.product_batching.batching_details.all():
                 MaterialDemanded.objects.create(product_classes_plan=pcp_obj,
                                                 work_schedule_plan=pcp_obj.work_schedule_plan,
@@ -287,6 +291,8 @@ class PlanReceiveSerializer(BaseModelSerializer):
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
+        except Exception as e:
+            raise serializers.ValidationError('相关表没有数据')
         attrs['product_batching'] = product_batching
         attrs['plan_schedule'] = plan_schedule
         attrs['equip'] = equip
@@ -302,7 +308,13 @@ class PlanReceiveSerializer(BaseModelSerializer):
             work_schedule_plan_no = detail['work_schedule_plan']
             detail['work_schedule_plan'] = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan_no)
             product_classes_list[i] = ProductClassesPlan(**detail)
-        ProductClassesPlan.objects.bulk_create(product_classes_list)
+        pcp_obj_list = ProductClassesPlan.objects.bulk_create(product_classes_list)
+        print(pcp_obj_list)
+        for pcp_obj in pcp_obj_list:
+            PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
+                                      product_no=instance.product_batching.stage_product_batch_no,
+                                      status='等待', operation_user=' ')
+
         return instance
 
     class Meta:
