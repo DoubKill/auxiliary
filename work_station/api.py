@@ -37,6 +37,16 @@ class IssueWorkStation(object):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+    def batch_to_db(self):
+        """
+        对接万隆中间表
+        将数据批量存入到中间表
+        """
+        serializer = self.model_serializer(data=self.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+
     def update_to_db(self):
         """
         对接中间表用于修改数据
