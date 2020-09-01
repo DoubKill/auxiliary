@@ -126,14 +126,18 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                                                            "actual_weight":重量, "standard_error":误差值}]""")
 
     def validate(self, attrs):
-        product_batching = ProductBatching.objects.filter(factory=attrs['factory'],
-                                                          site=attrs['site'],
-                                                          stage=attrs['stage'],
-                                                          product_info=attrs['product_info']
-                                                          ).order_by('-versions').first()
-        if product_batching:
-            if product_batching.versions >= attrs['versions']:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-                raise serializers.ValidationError('该配方版本号不得小于现有版本号')
+        stage_product_batch_no = attrs['stage_product_batch_no']
+        equip = attrs['equip']
+        if ProductBatching.objects.filter(stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
+            raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
+        # product_batching = ProductBatching.objects.filter(factory=attrs['factory'],
+        #                                                   site=attrs['site'],
+        #                                                   stage=attrs['stage'],
+        #                                                   product_info=attrs['product_info']
+        #                                                   ).order_by('-versions').first()
+        # if product_batching:
+        #     if product_batching.versions >= attrs['versions']:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
+        #         raise serializers.ValidationError('该配方版本号不得小于现有版本号')
         return attrs
 
     @atomic()
@@ -174,6 +178,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
         model = ProductBatching
         fields = ('factory', 'site', 'product_info', 'precept', 'stage_product_batch_no',
                   'stage', 'versions', 'batching_details', 'equip', 'id', 'dev_type')
+        extra_kwargs = {'equip': {'required': True}}
 
 
 class ProductBatchingRetrieveSerializer(ProductBatchingListSerializer):
@@ -400,3 +405,66 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                   'dev_type', 'stage', 'equip', 'used_time', 'precept', 'stage_product_batch_no',
                   'versions', 'used_type', 'batching_weight', 'manual_material_weight',
                   'auto_material_weight', 'production_time_interval', 'batching_details')
+
+
+class ProductBatchingSerializer(serializers.ModelSerializer):
+    product_batching = serializers.PrimaryKeyRelatedField(queryset=ProductBatching.objects.all(), help_text='配方id',
+                                                          write_only=True)
+
+    @atomic()
+    def create(self, validated_data):
+        base_product_batching = validated_data['product_batching']
+        equip = validated_data['equip']
+
+        if ProductBatching.objects.filter(stage_product_batch_no=base_product_batching.stage_product_batch_no,
+                                          equip=equip).exists():
+            raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
+
+        product_batching_dict = ProductBatching.objects.filter(
+            id=base_product_batching.id).values('factory_id', 'site_id', 'product_info_id', 'precept',
+                                                'stage_product_batch_no', 'dev_type_id', 'stage_id', 'versions',
+                                                'used_type', 'batching_weight', 'manual_material_weight',
+                                                'auto_material_weight')[0]
+        batching_details = ProductBatchingDetail.objects.filter(
+            product_batching=base_product_batching).values('sn', 'material_id', 'actual_weight',
+                                                           'standard_error', 'auto_flag')
+
+        product_batching_dict['equip'] = equip
+        # 复制配方和配方详情
+        product_batching = ProductBatching.objects.create(**product_batching_dict)
+        batching_detail_list = [None] * len(batching_details)
+        for i, batching_detail in enumerate(batching_details):
+            batching_detail['product_batching'] = product_batching
+            batching_detail_list[i] = ProductBatchingDetail(**batching_detail)
+        ProductBatchingDetail.objects.bulk_create(batching_detail_list)
+
+        # 复制步序和步序详情
+        if base_product_batching.equip:
+            # 有机台才有步序信息
+            base_process = ProductProcess.objects.filter(product_batching=base_product_batching,
+                                                         equip=base_product_batching.equip
+                                                         )
+            if base_process:
+                base_process_dict = base_process.values('equip_code', 'reuse_time', 'mini_time', 'max_time',
+                                                        'mini_temp', 'max_temp', 'over_time', 'over_temp',
+                                                        'reuse_flag', 'zz_temp', 'xlm_temp', 'cb_temp',
+                                                        'temp_use_flag', 'used_flag', 'batching_error',
+                                                        'sp_num')[0]
+                process_details = ProductProcessDetail.objects.filter(
+                    product_process=base_process.first()).values('sn', 'temperature', 'rpm', 'energy', 'power',
+                                                                 'pressure', 'condition_id', 'time', 'action_id',
+                                                                 'time_unit')
+                base_process_dict['equip'] = equip
+                base_process_dict['product_batching'] = product_batching
+                process = ProductProcess.objects.create(**base_process_dict)
+                process_detail_list = [None] * len(process_details)
+                for i, process_details in enumerate(process_details):
+                    process_details['product_process'] = process
+                    process_detail_list[i] = ProductProcessDetail(**process_details)
+                ProductProcessDetail.objects.bulk_create(process_detail_list)
+        return validated_data
+
+    class Meta:
+        model = ProductBatching
+        fields = ('product_batching', 'equip')
+        extra_kwargs = {'equip': {'required': True}}

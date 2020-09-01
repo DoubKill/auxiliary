@@ -17,7 +17,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
-    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer
+    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer, ProductBatchingSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
     ProductBatchingDetail, ProductProcessDetail, BaseAction, BaseCondition
 
@@ -269,3 +269,12 @@ class RecipeObsoleteAPiView(APIView):
         product_batching.used_type = 6
         product_batching.save()
         return Response('弃用成功', status=status.HTTP_200_OK)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductBatchingCopyView(CreateAPIView):
+    """
+    配方新增复制接口
+    """
+    queryset = ProductBatching.objects.all()
+    serializer_class = ProductBatchingSerializer
