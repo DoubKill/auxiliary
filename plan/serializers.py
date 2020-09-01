@@ -291,6 +291,10 @@ class PlanReceiveSerializer(BaseModelSerializer):
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
+        except ProductBatching.DoesNotExist:
+            raise serializers.ValidationError('胶料配料标准{}不存在'.format(attrs.get('product_batching')))
+        except PlanSchedule.DoesNotExist:
+            raise serializers.ValidationError('排班管理{}不存在'.format(attrs.get('plan_schedule')))
         except Exception as e:
             raise serializers.ValidationError('相关表没有数据')
         attrs['product_batching'] = product_batching
