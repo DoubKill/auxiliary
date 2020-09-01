@@ -111,6 +111,16 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     dev_type_name = serializers.CharField(source='dev_type.category_name', default=None, read_only=True)
     equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
+    sp_num = serializers.SerializerMethodField(read_only=True)
+
+    @staticmethod
+    def get_sp_num(obj):
+        if obj.equip:
+            process = ProductProcess.objects.filter(equip=obj.equip, product_batching=obj).first()
+            if process:
+                return process.sp_num
+            return None
+        return None
 
     class Meta:
         model = ProductBatching
@@ -130,19 +140,12 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
         equip = attrs['equip']
         if ProductBatching.objects.filter(stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
-        # product_batching = ProductBatching.objects.filter(factory=attrs['factory'],
-        #                                                   site=attrs['site'],
-        #                                                   stage=attrs['stage'],
-        #                                                   product_info=attrs['product_info']
-        #                                                   ).order_by('-versions').first()
-        # if product_batching:
-        #     if product_batching.versions >= attrs['versions']:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-        #         raise serializers.ValidationError('该配方版本号不得小于现有版本号')
         return attrs
 
     @atomic()
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
+        validated_data['dev_type'] = validated_data['equip'].category
         instance = super().create(validated_data)
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details:
@@ -223,7 +226,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
     class Meta:
         model = ProductBatching
-        fields = ('id', 'batching_details', 'dev_type', 'production_time_interval')
+        fields = ('id', 'batching_details', 'dev_type', 'production_time_interval', 'equip')
 
 
 class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
