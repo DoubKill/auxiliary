@@ -16,7 +16,7 @@ from django.db import models
 
 class IfdownPmtRecipe1(models.Model):
     """1号机台配方主表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True) # 班日期
     oper = models.CharField(max_length=18, blank=True, null=True)  # 操作人角色
     recipe_code = models.CharField(max_length=14, blank=True, null=True)  # 配方编号
@@ -42,7 +42,7 @@ class IfdownPmtRecipe1(models.Model):
 
 
 class IfdownPmtRecipe2(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
     recipe_code = models.CharField(max_length=14, blank=True, null=True)
@@ -69,11 +69,11 @@ class IfdownPmtRecipe2(models.Model):
 
 class IfdownRecipeCb1(models.Model):
     """1号机台配方炭黑表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True, )  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True, )  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 炭黑名
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  #
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    recipe_name = models.CharField(max_length=20)   # 防错
+    recipe_name = models.CharField(max_length=20)   # 配方名
     act_code = models.IntegerField(blank=True, null=True) # 动作编码
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
@@ -84,7 +84,7 @@ class IfdownRecipeCb1(models.Model):
 
 
 class IfdownRecipeCb2(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -100,7 +100,7 @@ class IfdownRecipeCb2(models.Model):
 
 class IfdownRecipeMix1(models.Model):
     """1号机台配方步序表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     set_condition = models.CharField(max_length=22, blank=True, null=True)  # 条件
     set_time = models.IntegerField(blank=True, null=True)    # 时间
     set_temp = models.IntegerField(blank=True, null=True)    # 温度
@@ -118,7 +118,7 @@ class IfdownRecipeMix1(models.Model):
 
 
 class IfdownRecipeMix2(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     set_condition = models.CharField(max_length=22, blank=True, null=True)
     set_time = models.IntegerField(blank=True, null=True)
     set_temp = models.IntegerField(blank=True, null=True)
@@ -137,7 +137,7 @@ class IfdownRecipeMix2(models.Model):
 
 class IfdownRecipeOil11(models.Model):
     """1号机台配方油料表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # 设定重量
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # 防错
@@ -152,7 +152,7 @@ class IfdownRecipeOil11(models.Model):
 
 
 class IfdownRecipeOil12(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -168,7 +168,7 @@ class IfdownRecipeOil12(models.Model):
 
 class IfdownRecipePloy1(models.Model):
     """1号机台配方胶料表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 胶料名称
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量 ProductBatchingDetail.actual_weight
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # 防错？
@@ -183,7 +183,7 @@ class IfdownRecipePloy1(models.Model):
 
 
 class IfdownRecipePloy2(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)
     set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -199,7 +199,7 @@ class IfdownRecipePloy2(models.Model):
 
 class IfdownShengchanjihua1(models.Model):
     """1号机台计划表"""
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     recipe = models.CharField(max_length=19)  # 配方名
     recipeid = models.CharField(max_length=19, blank=True, null=True)  # 配方编号
     lasttime = models.CharField(max_length=19, blank=True, null=True) # 班日期
@@ -212,7 +212,7 @@ class IfdownShengchanjihua1(models.Model):
     actno = models.IntegerField(blank=True, null=True)  # 当前车次
     oper = models.CharField(max_length=18, blank=True, null=True) # 操作员角色
     state = models.CharField(max_length=8, blank=True, null=True) # 计划状态：等待，运行中，完成
-    remark = models.CharField(max_length=4)
+    remark = models.CharField(max_length=4) # c 新增  u 更新 d删除
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
 
     class Meta:
@@ -221,7 +221,7 @@ class IfdownShengchanjihua1(models.Model):
 
 
 class IfdownShengchanjihua2(models.Model):
-    id = models.BigAutoField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     recipe = models.CharField(max_length=19)
     recipeid = models.CharField(max_length=19, blank=True, null=True)
     lasttime = models.CharField(max_length=19, blank=True, null=True)

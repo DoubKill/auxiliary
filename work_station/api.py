@@ -18,7 +18,6 @@ class IssueWorkStation(object):
         data 传入带id数据为修改中间表数据，
              不传入则为新增
         """
-        #TODO 增加机台号
         self.model = getattr(md, model_name)
         self.model_name = model_name
         self.data = data
@@ -34,12 +33,17 @@ class IssueWorkStation(object):
         将数据存入到中间表
         """
         # TODO 判断recstatus进行分支处理
+        serializer = self.model_serializer(data=self.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    def update_to_db(self):
+        """
+        对接中间表用于修改数据
+        """
         id = self.data.get("id")
-        if id:
-            instance = self.model.objects.filter(id=id).first()
-            serializer = self.model_serializer(instance, data=self.data, partial="partial")
-        else:
-            serializer = self.model_serializer(data=self.data)
+        instance = self.model.objects.filter(id=id).first()
+        serializer = self.model_serializer(instance, data=self.data, partial="partial")
         serializer.is_valid(raise_exception=True)
         serializer.save()
 

@@ -46,25 +46,25 @@ class TrainsFeedbacks(AbstractEntity):
 class PalletFeedbacks(AbstractEntity):
     """托盘产出反馈"""
     # id = models.BigIntegerField(primary_key=True, auto_created=True, unique=True)
-    plan_classes_uid = models.UUIDField(help_text='班次计划唯一码', verbose_name='班次计划唯一码')
+    plan_classes_uid = models.UUIDField(help_text='班次计划唯一码/计划编号', verbose_name='班次计划唯一码')
     bath_no = models.IntegerField(help_text='批次', verbose_name='批次')
     equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
     product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
     plan_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='计划重量', verbose_name='计划重量')
     actual_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='实际重量', verbose_name='实际重量')
-    begin_time = models.DateTimeField(help_text='开始时间', verbose_name='开始时间')
+    begin_time = models.DateTimeField(help_text='开始时间', verbose_name='开始时间', auto_created=True)# 根据结束时间大概往前提几分钟
     end_time = models.DateTimeField(help_text='结束时间', verbose_name='结束时间')
     operation_user = models.CharField(max_length=74, help_text='操作员', verbose_name='操作员')
     begin_trains = models.IntegerField(help_text='开始车次', verbose_name='开始车次')
     end_trains = models.IntegerField(help_text='结束车次', verbose_name='结束车次')
     pallet_no = models.CharField(max_length=64, help_text='托盘', verbose_name='托盘')
-    barcode = models.CharField(max_length=64, help_text='收皮条码', verbose_name='收皮条码')
+    # barcode = models.CharField(max_length=64, help_text='收皮条码', verbose_name='收皮条码')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
-    lot_no = models.CharField(max_length=64, help_text='追踪号', verbose_name='追踪号')
+    lot_no = models.CharField(max_length=64, help_text='追踪号/收皮条码', verbose_name='追踪号/收皮条码')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间',null=True)
 
     def __str__(self):
-        return f"{self.plan_classes_uid}|{self.barcode}|{self.equip_no}"
+        return f"{self.plan_classes_uid}|{self.lot_no}|{self.equip_no}"
 
     class Meta:
         db_table = 'pallet_feedbacks'

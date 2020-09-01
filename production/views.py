@@ -1,3 +1,4 @@
+import datetime
 import re
 
 import requests
@@ -413,7 +414,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
             left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
             left join global_code gc on wsp.classes_id = gc.id
             where ps.day_time = '{day_time}'{equip_no_str} 
-            group by e.equip_no, gc.global_name order by e.equip_no, tf.pro;
+            group by e.equip_no, gc.global_name order by e.equip_no;
         """
         query_set = TrainsFeedbacks.objects.raw(sql_str)
         return
