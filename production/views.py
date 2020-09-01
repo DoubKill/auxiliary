@@ -14,6 +14,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
 from basics.models import PlanSchedule
 from mes.common_code import CommonDeleteMixin
 from basics.models import PlanSchedule, Equip
+from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
@@ -429,7 +430,6 @@ class ProductionRecordViewSet(mixins.ListModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
-
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -459,8 +459,6 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             id = i.get("id")
             # id = i['id']
             obj = MaterialTankStatus.objects.get(pk=id)
-            print(obj)
-            print(obj.id)
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name")
             obj.used_flag = i.get("used_flag")
@@ -628,7 +626,6 @@ class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     def list(self, request, *args, **kwargs):
         params = request.query_params
         equip_no = params.get('equip_no')
-        print(equip_no)
         air_list = f'''select equip_status.id,
        equip_status.equip_no,
        equip_status.status,
@@ -764,12 +761,10 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
-        print(filter_dict)
         tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
             Max('product_time')).filter(**filter_dict).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
-        # TODO 这里count应该是数据的总条数 而不是总页数，（疑问：前端需要的是总页数还是总条数）
         # if count % page_size:
         #     counts = count // page_size + 1
         # else:

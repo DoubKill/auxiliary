@@ -105,6 +105,7 @@ class UpRegulation(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
     """下调"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
