@@ -19,9 +19,10 @@ from rest_framework.views import APIView
 # Create your views here.
 from plan.uuidfield import UUidTools
 from production.models import PalletFeedbacks, PlanStatus
-from recipe.models import Material, ProductProcess
+from recipe.models import Material, ProductProcess, ProductBatchingDetail, ProductProcessDetail
 from work_station.api import IssueWorkStation
-from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1
+from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1, IfdownRecipeCb1, IfdownRecipeOil11, \
+    IfdownRecipePloy1, IfdownRecipeMix1
 from production.models import PlanStatus
 from work_station.api import IssueWorkStation
 
@@ -188,42 +189,104 @@ class IssuedPlan(APIView):
         if not product_process_details:
             raise ValidationError("胶料配料步序详情为空，该计划不可用")
 
-        return product_batching, product_batching_details, product_process, product_process_details
+        return product_batching, product_batching_details, product_process, product_process_details, pcp_obj
 
-    def _map_PmtRecipe(self, pcp_object ,product_process, product_batching):
-        IfdownPmtRecipe1
+    def _map_PmtRecipe(self, pcp_object, product_process, product_batching):
         data = {
             "id": product_process.id,
             "lasttime": str(pcp_object.product_day_plan.plan_schedule.day_time),
             "oper": self.request.uer.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code":1
-
+            "equip_code": product_process.equip_code,
+            "reuse_time": product_process.reuse_time,
+            "mini_time": product_process.mini_time,
+            "max_time": product_process.max_time,
+            "mini_temp": product_process.mini_temp,
+            "max_temp": product_process.max_temp,
+            "over_temp": product_process.over_temp,
+            "if_not": product_process.reuse_flag,
+            "temp_zz": product_process.zz_temp,
+            "temp_xlm": product_process.xlm_temp,
+            "temp_cb": product_process.cb_temp,
+            "tempuse": product_process.temp_use_flag,
+            "usenot": product_process.used_flag,
+            "recstatus": "待更新",
         }
+        return data
 
+    def _map_RecipeCb(self, product_batching, product_batching_details):
+        datas = []
+        product_batching_details = product_batching_details.filter(material__material_type__global_name="炭黑")
+        for pbd in product_batching_details:
+            data = {
+                "id": pbd.id,
+                "mname": pbd.material.material_name,
+                "set_weight": pbd.actual_weight,
+                "error_allow": pbd.standard_error,
+                "recipe_name": product_batching.stage_product_batch_no,
+                "act_code": 1 if pbd.auto_flag else 0,  # ?
+                "type": "",  # ?
+                "recstatus": "待更新"
+            }
+            datas.append(IfdownRecipeCb1(**data))
+        return datas
 
-    @atomic()
-    def get(self, request):
-        params = request.query_params
-        plan_id = params.get("id", None)
-        if plan_id is None:
-            return Response({'_': "没有传id"}, status=400)
-        equip_name = params.get("equip_name", None)
-        pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
-        # 校验计划与配方完整性
-        product_batching, product_batching_details, product_process, product_process_details = self.plan_recipe_integrity_check(
-            pcp_obj)
+    def _map_RecipeOil1(self, product_batching, product_batching_details):
+        datas = []
+        product_batching_details = product_batching_details.filter(material__material_type__global_name="油料")
+        for pbd in product_batching_details:
+            data = {
+                "id": pbd.id,
+                "mname": pbd.material.material_name,
+                "set_weight": pbd.actual_weight,
+                "error_allow": pbd.standard_error,
+                "recipe_name": product_batching.stage_product_batch_no,
+                "act_code": 1 if pbd.auto_flag else 0,  # ?
+                "type": "",  # ?
+                "recstatus": "待更新"
+            }
+            datas.append(IfdownRecipeOil11(**data))
+        return datas
 
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
-        if not ps_obj:
-            return Response({'_': "计划状态变更没有数据"}, status=400)
-        if ps_obj.status != '等待':
-            return Response({'_': "只有等待中的计划才能下达！"}, status=400)
-        ps_obj.status = '运行'
-        ps_obj.save()
+    def _map_RecipePloy(self, product_batching, product_batching_details):
+        datas = []
+        product_batching_details = product_batching_details.filter(material__material_type__global_name="胶料")
+        for pbd in product_batching_details:
+            data = {
+                "id": pbd.id,
+                "mname": pbd.material.material_name,
+                "set_weight": pbd.actual_weight,
+                "error_allow": pbd.standard_error,
+                "recipe_name": product_batching.stage_product_batch_no,
+                "act_code": 1 if pbd.auto_flag else 0,  # ?
+                "type": "",  # ?
+                "recstatus": "待更新"
+            }
+            datas.append(IfdownRecipePloy1(**data))
+        return datas
 
-        plan_data = {
+    def _map_RecipeMix(self, product_batching, product_process_details):
+        datas = []
+        for ppd in product_process_details:
+            data = {
+                "id": ppd.id,
+                "set_condition": ppd.condition.condition,  # ? 条件名称还是条件代码
+                "set_time": int(ppd.time),
+                "set_temp": int(ppd.temperature),
+                "set_ener": ppd.energy,
+                "set_power": ppd.power,
+                "act_code": ppd.action.code,
+                "set_pres": int(ppd.pressure),
+                "set_rota": ppd.rpm,
+                "recipe_name": product_batching.stage_product_batch_no,
+                "recstatus": "待更新",
+            }
+            datas.append(IfdownRecipeMix1(**data))
+        return datas
+
+    def _map_Shengchanjihua(self, params):
+        data = {
             # 'id': params.get("id", None),  # id
             'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
@@ -240,10 +303,42 @@ class IssuedPlan(APIView):
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
             'recstatus': '等待',  # 等待， 进行中， 完成
         }
-        # 模型类的名称需根据设备编号来拼接
-        temp = IssueWorkStation('IfdownShengchanjihua1', plan_data)
-        temp.issue_to_db()
+        return data
 
+    def _sync(self, *args, params=None):
+        product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
+        PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
+        IssueWorkStation('IfdownPmtRecipe1', PmtRecipe).issue_to_db()
+        RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
+        IssueWorkStation('IfdownRecipeCb1', RecipeCb).batch_to_db()
+        RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
+        IssueWorkStation('IfdownRecipeOil11', RecipeOil1).batch_to_db()
+        RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
+        IssueWorkStation('IfdownRecipePloy1', RecipePloy).batch_to_db()
+        RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
+        IssueWorkStation('IfdownRecipeMix1', RecipeMix).batch_to_db()
+        Shengchanjihua = self._map_Shengchanjihua(params)
+        IssueWorkStation('IfdownShengchanjihua1', Shengchanjihua).issue_to_db()
+
+    @atomic()
+    def post(self, request):
+        params = request.data
+        plan_id = params.get("id", None)
+        if plan_id is None:
+            return Response({'_': "没有传id"}, status=400)
+        equip_name = params.get("equip_name", None)
+        pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+        # 校验计划与配方完整性
+
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        if not ps_obj:
+            return Response({'_': "计划状态变更没有数据"}, status=400)
+        if ps_obj.status != '等待':
+            return Response({'_': "只有等待中的计划才能下达！"}, status=400)
+        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params)
+        # 模型类的名称需根据设备编号来拼接
+        ps_obj.status = '运行'
+        ps_obj.save()
         return Response({'_': '修改成功'}, status=200)
 
 
