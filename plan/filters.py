@@ -48,14 +48,3 @@ class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = ProductClassesPlan
         fields = ('classes', 'product_no', 'begin_time', 'end_time', 'equip_no')
-
-
-'''
-class MaterialRequisitionFilter(django_filters.rest_framework.FilterSet):
-    """领料日计划过滤器"""
-    material_id = django_filters.NumberFilter(field_name='id')
-
-    class Meta:
-        model = MaterialRequisition
-        fields = ('material_id',)
-'''

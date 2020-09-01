@@ -4,13 +4,13 @@ from django.utils.decorators import method_decorator
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
-from rest_framework_jwt.views import ObtainJSONWebToken, VerifyJSONWebToken
+from rest_framework_jwt.views import ObtainJSONWebToken
 
-from mes.common_code import menu, CommonDeleteMixin
+from mes.common_code import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
@@ -35,13 +35,12 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     """
     queryset = Permission.objects.filter()
     serializer_class = PermissionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     pagination_class = SinglePageNumberPagination
-    filter_backends = (DjangoFilterBackend,)
 
 
 @method_decorator([api_recorder], name="dispatch")
-class UserViewSet(CommonDeleteMixin, ModelViewSet):
+class UserViewSet(ModelViewSet):
     """
     list:
         用户列表
@@ -52,9 +51,9 @@ class UserViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         账号停用和启用
     """
-    queryset = User.objects.filter(delete_flag=False)
+    queryset = User.objects.filter(delete_flag=False).prefetch_related('user_permissions', 'groups')
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
 
@@ -81,23 +80,23 @@ class UserViewSet(CommonDeleteMixin, ModelViewSet):
             return UserUpdateSerializer
 
 
+@method_decorator([api_recorder], name="dispatch")
 class UserGroupsViewSet(mixins.ListModelMixin,
-                        CommonDeleteMixin,
                         GenericViewSet):
-    queryset = User.objects.filter(delete_flag=False)
+    queryset = User.objects.filter(delete_flag=False).prefetch_related('user_permissions', 'groups')
 
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     pagination_class = SinglePageNumberPagination
     filter_class = UserFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):
+class GroupExtensionViewSet(ModelViewSet):
     """
     list:
-        角色列表
+        角色列表,xxx?all=1查询所有
     create:
         创建角色
     update:
@@ -105,21 +104,33 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除角色
     """
-    queryset = GroupExtension.objects.filter(delete_flag=False)
+    queryset = GroupExtension.objects.filter(delete_flag=False).prefetch_related('user_set', 'permissions')
     serializer_class = GroupExtensionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = GroupExtensionFilter
+
+    def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
+        else:
+            return (IsAuthenticated(), )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.values('id', 'name')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == 'list':
             return GroupExtensionSerializer
         if self.action == 'create':
             return GroupExtensionSerializer
-        if self.action == 'update':
+        elif self.action == 'update':
             return GroupExtensionUpdateSerializer
-        if self.action == 'retrieve':
-            return GroupExtensionSerializer
         if self.action == 'partial_update':
             return GroupExtensionUpdateSerializer
 
@@ -127,7 +138,7 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):
 @method_decorator([api_recorder], name="dispatch")
 class GroupAddUserViewSet(UpdateAPIView):
     """控制角色中用户具体为哪些的视图"""
-    queryset = GroupExtension.objects.filter(delete_flag=False)
+    queryset = GroupExtension.objects.filter(delete_flag=False).prefetch_related('user_set', 'permissions')
     serializer_class = GroupUserUpdateSerializer
 
 
@@ -145,7 +156,7 @@ class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = Section.objects.filter(delete_flag=False)
     serializer_class = SectionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
 
 

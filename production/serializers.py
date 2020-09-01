@@ -259,7 +259,6 @@ class WeighInformationSerializer(BaseModelSerializer):
         irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no),
                                                               计划号=object.plan_classes_uid,
                                                               配方号=object.product_no).all()
-        print(irw_queryset)
         if irw_queryset:
             for irw_obj in irw_queryset:
                 weigh_dict = {}

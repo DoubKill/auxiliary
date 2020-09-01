@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -17,7 +17,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
-    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer
+    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer, ProductBatchingSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
     ProductBatchingDetail, ProductProcessDetail, BaseAction, BaseCondition
 
@@ -36,7 +36,7 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = Material.objects.filter(delete_flag=False).select_related('material_type').order_by('-created_date')
     serializer_class = MaterialSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialFilter
 
@@ -62,7 +62,7 @@ class MaterialAttributeViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = MaterialAttribute.objects.filter(delete_flag=False).order_by('-created_date')
     serializer_class = MaterialAttributeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialAttributeFilter
 
@@ -120,7 +120,7 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),)
+            return (IsAuthenticated(),)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -149,16 +149,16 @@ class ProductBatchingViewSet(ModelViewSet):
     queryset = ProductBatching.objects.filter(delete_flag=False).select_related("factory", "site", "dev_type",
                                                                                 "stage", "product_info"
                                                                                 ).order_by('-created_date')
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
 
     def get_permissions(self):
         if self.action == 'partial_update':
             return (ProductBatchingPermissions(),
-                    IsAuthenticatedOrReadOnly())
+                    IsAuthenticated())
         else:
-            return (IsAuthenticatedOrReadOnly(),)
+            return (IsAuthenticated(),)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -195,7 +195,7 @@ class ProcessStepsViewSet(ModelViewSet):
     partial_update:
         修改胶料配料步序
     """
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     queryset = ProductProcess.objects.filter(delete_flag=False
                                              ).select_related("equip", "product_batching").order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
@@ -219,7 +219,7 @@ class ProductProcessDetailViewSet(ModelViewSet):
     delete:
         删除胶料配料步序详情
     """
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     queryset = ProductProcessDetail.objects.filter(delete_flag=False).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProcessDetailSerializer
@@ -227,7 +227,7 @@ class ProductProcessDetailViewSet(ModelViewSet):
 
 @method_decorator([api_recorder], name="dispatch")
 class ActionListView(APIView):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         data = BaseAction.objects.values('id', 'code', 'action')
@@ -236,7 +236,7 @@ class ActionListView(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class ConditionListView(APIView):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         data = BaseCondition.objects.values('id', 'code', 'condition')
@@ -269,3 +269,12 @@ class RecipeObsoleteAPiView(APIView):
         product_batching.used_type = 6
         product_batching.save()
         return Response('弃用成功', status=status.HTTP_200_OK)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductBatchingCopyView(CreateAPIView):
+    """
+    配方新增复制接口
+    """
+    queryset = ProductBatching.objects.all()
+    serializer_class = ProductBatchingSerializer

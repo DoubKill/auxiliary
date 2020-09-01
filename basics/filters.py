@@ -1,6 +1,7 @@
 import django_filters
 
-from basics.models import Equip, GlobalCodeType, WorkSchedule, GlobalCode, EquipCategoryAttribute, ClassesDetail
+from basics.models import Equip, GlobalCodeType, WorkSchedule, GlobalCode, EquipCategoryAttribute, ClassesDetail, \
+    PlanSchedule
 
 
 class EquipFilter(django_filters.rest_framework.FilterSet):
@@ -9,10 +10,11 @@ class EquipFilter(django_filters.rest_framework.FilterSet):
     equip_name = django_filters.CharFilter(field_name='equip_name', lookup_expr='icontains', help_text='设备名')
     equip_process = django_filters.CharFilter(field_name="category__process__global_name", lookup_expr='icontains',
                                               help_text='工序')
+    dev_type = django_filters.NumberFilter(field_name='category_id', help_text='机型id')
 
     class Meta:
         model = Equip
-        fields = ('equip_level', 'equip_name', 'equip_process')
+        fields = ('equip_level', 'equip_name', 'equip_process', 'dev_type')
 
 
 class GlobalCodeTypeFilter(django_filters.rest_framework.FilterSet):
@@ -62,3 +64,12 @@ class ClassDetailFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = ClassesDetail
         fields = ('schedule_name',)
+
+
+class PlanScheduleFilter(django_filters.rest_framework.FilterSet):
+    year = django_filters.NumberFilter(field_name='day_time__year', help_text='年份')
+    month = django_filters.NumberFilter(field_name='day_time__month', help_text='月份')
+
+    class Meta:
+        model = PlanSchedule
+        fields = ('day_time', 'month', 'year')

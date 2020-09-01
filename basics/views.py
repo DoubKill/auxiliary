@@ -2,13 +2,13 @@ from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from basics.filters import EquipFilter, GlobalCodeTypeFilter, WorkScheduleFilter, GlobalCodeFilter, EquipCategoryFilter, \
-    ClassDetailFilter
+    ClassDetailFilter, PlanScheduleFilter
 from basics.models import GlobalCodeType, GlobalCode, WorkSchedule, Equip, SysbaseEquipLevel, \
     WorkSchedulePlan, ClassesDetail, PlanSchedule, EquipCategoryAttribute
 from basics.serializers import GlobalCodeTypeSerializer, GlobalCodeSerializer, WorkScheduleSerializer, \
@@ -35,7 +35,7 @@ class GlobalCodeTypeViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = GlobalCodeType.objects.filter(delete_flag=False)
     serializer_class = GlobalCodeTypeSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
+    permission_classes = (IsAuthenticated,
                           PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = GlobalCodeTypeFilter
@@ -61,7 +61,7 @@ class GlobalCodeViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = GlobalCode.objects.filter(delete_flag=False)
     serializer_class = GlobalCodeSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
+    permission_classes = (IsAuthenticated,
                           PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     pagination_class = SinglePageNumberPagination
@@ -71,12 +71,12 @@ class GlobalCodeViewSet(CommonDeleteMixin, ModelViewSet):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),)
+            return (IsAuthenticated(),)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.values('id', 'global_no', 'global_name', 'global_type__type_name')
+            data = queryset.filter(used_flag=0).values('id', 'global_no', 'global_name', 'global_type__type_name')
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)
@@ -97,7 +97,7 @@ class WorkScheduleViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = WorkSchedule.objects.filter(delete_flag=False).prefetch_related('classesdetail_set__classes')
     serializer_class = WorkScheduleSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
+    permission_classes = (IsAuthenticated,
                           PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = WorkScheduleFilter
@@ -106,7 +106,7 @@ class WorkScheduleViewSet(CommonDeleteMixin, ModelViewSet):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),
+            return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
@@ -152,14 +152,14 @@ class EquipCategoryViewSet(CommonDeleteMixin, ModelViewSet):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),
+            return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.values('id', 'category_no', 'category_name')
-            return Response({'results': data})
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({'results': serializer.data})
         else:
             return super().list(request, *args, **kwargs)
 
@@ -187,13 +187,13 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),
+            return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.values('id', 'equip_no', 'equip_name')
+            data = queryset.filter(used_flag=1).values('id', 'equip_no', 'equip_name', 'category')
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)
@@ -214,7 +214,7 @@ class SysbaseEquipLevelViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = SysbaseEquipLevel.objects.filter(delete_flag=False)
     serializer_class = SysbaseEquipLevelSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
+    permission_classes = (IsAuthenticated,
                           PermissionClass(return_permission_params(model_name)))
 
 
@@ -233,7 +233,7 @@ class WorkSchedulePlanViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = WorkSchedulePlan.objects.filter(delete_flag=False)
     serializer_class = WorkSchedulePlanSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,
+    permission_classes = (IsAuthenticated,
                           PermissionClass(return_permission_params(model_name)))
 
 
@@ -248,7 +248,7 @@ class ClassesDetailViewSet(mixins.ListModelMixin,
     serializer_class = ClassesSimpleSerializer
     model_name = queryset.model.__name__.lower()
     pagination_class = SinglePageNumberPagination
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ClassDetailFilter
 
@@ -265,24 +265,26 @@ class PlanScheduleViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除计划时间
     """
-    queryset = PlanSchedule.objects.filter(delete_flag=False
-                                           ).prefetch_related('work_schedule_plan__classes')
+    queryset = PlanSchedule.objects.filter(
+        delete_flag=False).select_related('work_schedule').prefetch_related('work_schedule_plan__classes',
+                                                                            'work_schedule_plan__group')
     serializer_class = PlanScheduleSerializer
     model_name = queryset.model.__name__.lower()
     filter_fields = ('day_time', )
     filter_backends = (DjangoFilterBackend,)
+    filter_class = PlanScheduleFilter
 
     def get_permissions(self):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),
+            return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.values('id', 'day_time', 'work_schedule')
+            data = queryset.values('id', 'work_schedule__schedule_name', 'day_time')
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)
