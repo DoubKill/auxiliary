@@ -95,7 +95,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
     stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
-    classes = serializers.CharField(source='classes_detail.classes.global_name', read_only=True, help_text='班次')
+    classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
     operation_user = serializers.SerializerMethodField(read_only=True, help_text='操作员')
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
