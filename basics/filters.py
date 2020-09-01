@@ -1,6 +1,7 @@
 import django_filters
 
-from basics.models import Equip, GlobalCodeType, WorkSchedule, GlobalCode, EquipCategoryAttribute, ClassesDetail
+from basics.models import Equip, GlobalCodeType, WorkSchedule, GlobalCode, EquipCategoryAttribute, ClassesDetail, \
+    PlanSchedule
 
 
 class EquipFilter(django_filters.rest_framework.FilterSet):
@@ -62,3 +63,12 @@ class ClassDetailFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = ClassesDetail
         fields = ('schedule_name',)
+
+
+class PlanScheduleFilter(django_filters.rest_framework.FilterSet):
+    year = django_filters.NumberFilter(field_name='day_time__year', help_text='年份')
+    month = django_filters.NumberFilter(field_name='day_time__month', help_text='月份')
+
+    class Meta:
+        model = PlanSchedule
+        fields = ('day_time', 'month', 'year')
