@@ -321,8 +321,8 @@ class IssuedPlan(APIView):
         IssueWorkStation('IfdownShengchanjihua1', Shengchanjihua).issue_to_db()
 
     @atomic()
-    def get(self, request):
-        params = request.query_params
+    def post(self, request):
+        params = request.data
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
