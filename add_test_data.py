@@ -19,7 +19,7 @@ django.setup()
 
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
-from recipe.models import Material, ProductInfo, ProductBatching
+from recipe.models import Material, ProductInfo, ProductBatching, BaseAction, BaseCondition
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from plan.models import ProductDayPlan, ProductClassesPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
@@ -1522,6 +1522,59 @@ def add_product_demo_data():
                     EquipStatus.objects.create(**equip_status_data)
 
 
+def add_condition_action():
+
+    action_add = {
+        "加炭黑":             	2,
+        "加胶料":             	1,
+        "加油1":              	4,
+        "开卸料门":           	256,
+        "关卸料门":           	512,
+        "升上顶栓":           	1024,
+        "加油2":              	8,
+        "降上顶栓":           	2048,
+        "上顶栓清扫":         	4096,
+        "保持":               	16384,
+        "开加料门":           	64,
+        "关加料门":           	128,
+        "加小料":             	16,
+        "上顶栓浮动":         	8192,
+        "升上顶栓开卸料门":   	1280,
+        "加炭黑油1":          	6,
+        "加炭黑油2":          	10,
+        "加炭黑油1油2":       	14,
+        "加油1油2":           	12,
+        "升上顶栓关卸料门":   	1536,
+        "降上顶栓开卸料门":   	2304
+        }
+
+    cond_add = {
+        "时间":                  	1,
+        "温度":                  	2,
+        "能量":                  	4,
+        "时间与温度":            	8,
+        "时间与能量":            	16,
+        "温度与能量":            	32,
+        "时间或能量":            	5,
+        "能量或温度":            	6,
+        "时间或温度":            	3,
+        "同步执行":              	0
+        }
+
+    for key, value in action_add.items():
+        BaseAction.objects.get_or_create(
+            action=key,
+            code=value
+        )
+    print("添加状态信息")
+    # 添加状态信息
+    for key, value in cond_add.items():
+        BaseCondition.objects.get_or_create(
+            condition=key,
+            code=value
+        )
+
+
 def add_system_config():
     SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
     ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
@@ -1553,6 +1606,7 @@ if __name__ == '__main__':
     print("product is ok")
     add_product_batching()
     print("product_batching is ok")
+    add_condition_action()
     # add_plan()
     # print("plan is ok")
     # add_material_day_classes_plan()
