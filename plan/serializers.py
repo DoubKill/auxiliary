@@ -11,6 +11,7 @@ from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownShengchanjihua1
+from work_station import models as md
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -262,36 +263,17 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
 
-        # plan_id = instance.id
-        # equip_name = instance.product_day_plan.equip.equip_name
-        # ps_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
-        # if not ps_obj:
-        #     raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
-        # 计划状态变更表的状态也需要改变
-        # ps_obj.status = '运行中'
-        # ps_obj.save()
-        ifcjh_obj = IfdownShengchanjihua1.objects.filter(id=instance.id).first()
-        if not ifcjh_obj:
-            raise serializers.ValidationError({'trains': '机台计划表里没有数据'})
-        if ifcjh_obj.recstatus == "运行中":
-            temp_data = {
-                'id': instance.id,  # id
-                'setno': instance.plan_trains,  # 设定车次
-                'remark': 'u',
-                'recstatus': '车次需更新'
-            }
-        elif ifcjh_obj.recstatus == "配方需重传":
-            temp_data = {
-                'id': instance.id,  # id
-                'setno': instance.plan_trains,  # 设定车次
-                'remark': 'u',
-                'recstatus': '配方车次需更新'
-            }
         equip_no = instance.product_day_plan.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
+
+        temp_data = {
+            'id': instance.id,  # id
+            'setno': instance.plan_trains,  # 设定车次
+            'remark': 'u',
+        }
         temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
         temp.update_to_db()
         return instance
