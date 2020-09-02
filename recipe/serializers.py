@@ -476,4 +476,4 @@ class ProductBatchingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductBatching
         fields = ('product_batching', 'equip')
-        extra_kwargs = {'equip': {'required': True}}
+        extra_kwargs = {'equip': {'required': True, 'allow_empty': False, 'allow_null': False}}
