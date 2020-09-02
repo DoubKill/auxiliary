@@ -19,7 +19,7 @@ class IfdownPmtRecipe1(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True) # 班日期
     oper = models.CharField(max_length=18, blank=True, null=True)  # 操作人角色
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)  # 配方编号
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)  # 配方编号
     recipe_name = models.CharField(max_length=20)  # 配方名称
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)  # 锁定/解锁
     reuse_time = models.IntegerField(blank=True, null=True)  # 回收时间
@@ -45,7 +45,7 @@ class IfdownPmtRecipe2(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -71,7 +71,7 @@ class IfdownPmtRecipe3(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -97,7 +97,7 @@ class IfdownPmtRecipe4(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -123,7 +123,7 @@ class IfdownPmtRecipe5(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -149,7 +149,7 @@ class IfdownPmtRecipe6(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -175,7 +175,7 @@ class IfdownPmtRecipe7(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -201,7 +201,7 @@ class IfdownPmtRecipe8(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -227,7 +227,7 @@ class IfdownPmtRecipe9(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -253,7 +253,7 @@ class IfdownPmtRecipe10(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -279,7 +279,7 @@ class IfdownPmtRecipe11(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -305,7 +305,7 @@ class IfdownPmtRecipe12(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -331,7 +331,7 @@ class IfdownPmtRecipe13(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -357,7 +357,7 @@ class IfdownPmtRecipe14(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
@@ -383,7 +383,7 @@ class IfdownPmtRecipe15(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     lasttime = models.CharField(max_length=19, blank=True, null=True)
     oper = models.CharField(max_length=18, blank=True, null=True)
-    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_code = models.CharField(max_length=20, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     reuse_time = models.IntegerField(blank=True, null=True)
