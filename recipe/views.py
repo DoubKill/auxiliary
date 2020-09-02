@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from basics.views import CommonDeleteMixin
+from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
-from mes.permissions import ProductBatchingPermissions
+from mes.permissions import ProductBatchingPermissions, PermissionClass
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter, ProcessStepsFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
@@ -36,7 +37,8 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = Material.objects.filter(delete_flag=False).select_related('material_type').order_by('-created_date')
     serializer_class = MaterialSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialFilter
 
@@ -62,7 +64,8 @@ class MaterialAttributeViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = MaterialAttribute.objects.filter(delete_flag=False).order_by('-created_date')
     serializer_class = MaterialAttributeSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialAttributeFilter
 
@@ -115,12 +118,14 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
     serializer_class = ProductInfoSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductInfoFilter
+    model_name = queryset.model.__name__.lower()
 
     def get_permissions(self):
         if self.request.query_params.get('all'):
             return ()
         else:
-            return (IsAuthenticated(),)
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -152,13 +157,15 @@ class ProductBatchingViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
+    model_name = queryset.model.__name__.lower()
 
     def get_permissions(self):
         if self.action == 'partial_update':
             return (ProductBatchingPermissions(),
                     IsAuthenticated())
         else:
-            return (IsAuthenticated(),)
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -195,12 +202,13 @@ class ProcessStepsViewSet(ModelViewSet):
     partial_update:
         修改胶料配料步序
     """
-    permission_classes = (IsAuthenticated,)
     queryset = ProductProcess.objects.filter(delete_flag=False
                                              ).select_related("equip", "product_batching").order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProductProcessSerializer
     filter_class = ProcessStepsFilter
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -219,10 +227,11 @@ class ProductProcessDetailViewSet(ModelViewSet):
     delete:
         删除胶料配料步序详情
     """
-    permission_classes = (IsAuthenticated,)
     queryset = ProductProcessDetail.objects.filter(delete_flag=False).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     serializer_class = ProcessDetailSerializer
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -278,3 +287,6 @@ class ProductBatchingCopyView(CreateAPIView):
     """
     queryset = ProductBatching.objects.all()
     serializer_class = ProductBatchingSerializer
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))

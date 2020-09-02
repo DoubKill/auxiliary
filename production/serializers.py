@@ -177,7 +177,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
             "id", "equip_no", "tank_type", "tank_name", "material_name", "low_value", "advance_value", "adjust_value",
             "dot_time",
             "fast_speed",
-            "low_speed", "used_flag")
+            "low_speed", "use_flag")
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 

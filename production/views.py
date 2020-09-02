@@ -462,7 +462,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name")
-            obj.used_flag = i.get("used_flag")
+            obj.use_flag = i.get("use_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
             obj.adjust_value = i.get("adjust_value")
@@ -470,22 +470,22 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-            temp_data = {
-                "id": id if id else None,
-                "mname": i.get("material_name", ""),
-                "set_weight": None,
-                "error_allow": None,
-                "recipe_name": "配方1",
-                "type": i.get("tank_type"),
-                "recstatus": "None",
-            }
-            temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
-            temp.issue_to_db()
-            serializer = self.get_serializer(data=i)
-            serializer.is_valid(raise_exception=True)
-            # self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-        return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
+            # temp_data = {
+            #     "id": id if id else None,
+            #     "mname": i.get("material_name", ""),
+            #     "set_weight": None,
+            #     "error_allow": None,
+            #     "recipe_name": "配方1",
+            #     "type": i.get("tank_type"),
+            #     "recstatus": "None",
+            # }
+            # temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
+            # temp.issue_to_db()
+            # serializer = self.get_serializer(data=i)
+            # serializer.is_valid(raise_exception=True)
+            # # self.perform_create(serializer)
+            #  headers = self.get_success_headers(serializer.data)
+        return Response("ok", status=status.HTTP_201_CREATED)
 
         # return Response("ok")
 
@@ -509,7 +509,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name", "")
-            obj.used_flag = i.get("used_flag")
+            obj.use_flag = i.get("use_flag")
             obj.low_value = i.get("low_value")
             obj.advance_value = i.get("advance_value")
             obj.adjust_value = i.get("adjust_value")
@@ -517,23 +517,23 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-            mname = i.get("material_name")
-            temp_data = {
-                "id": id if id else None,
-                "mname": mname if mname else "",
-                "set_weight": None,
-                "error_allow": None,
-                "recipe_name": "配方1",
-                "type": i.get("tank_type"),
-                "recstatus": "None",
-            }
-            temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
-            temp.issue_to_db()
-            serializer = self.get_serializer(data=i)
-            serializer.is_valid(raise_exception=True)
-            # self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-        return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
+            # mname = i.get("material_name")
+            # temp_data = {
+            #     "id": id if id else None,
+            #     "mname": mname if mname else "",
+            #     "set_weight": None,
+            #     "error_allow": None,
+            #     "recipe_name": "配方1",
+            #     "type": i.get("tank_type"),
+            #     "recstatus": "None",
+            # }
+            # temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
+            # temp.issue_to_db()
+            # serializer = self.get_serializer(data=i)
+            # serializer.is_valid(raise_exception=True)
+            # # self.perform_create(serializer)
+            # headers = self.get_success_headers(serializer.data)
+        return Response("ok", status=status.HTTP_201_CREATED)
         # ?data[]={}&data[]={}
 
         #     temp_data = {

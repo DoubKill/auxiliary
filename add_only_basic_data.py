@@ -5,25 +5,22 @@ import os
 import string
 import traceback
 
-import time
-import random
-import uuid
+"""
+只添加基础和系统模块数据
+"""
 
+import random
 import django
 
-from production_data_script import pallet_count
 
-# 将mes的脚本复制到上辅机（方便造数据）
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
-from recipe.models import Material, ProductInfo, ProductBatching, BaseAction, BaseCondition
-from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
-from plan.models import ProductDayPlan, ProductClassesPlan
-from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
-from plan.uuidfield import UUidTools
+from recipe.models import Material, ProductInfo, BaseAction, BaseCondition
+from system.models import GroupExtension, User, Section
+
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
               '何', '吕', '施', '张', '孔', '曹', '严', '华', '金', '魏', '陶', '姜', '戚', '谢', '邹', '喻', '柏', '水', '窦', '章',
@@ -87,10 +84,12 @@ first_names = ['的', '一', '是', '了', '我', '不', '人', '在', '他', '�
 
 
 def add_global_codes():
-    names = ['胶料状态', '产地', '包装单位', '原材料类别', '胶料段次', '班组', '班次', '设备类型', '工序', '炼胶机类型', '设备层次',
-             'SITE']
+    names = ['', '产地', '包装单位', '原材料类别', '胶料段次', '班组',
+             '班次', '设备类型', '工序', '炼胶机类型', '设备层次', 'SITE']
     j = 1
     for i, name in enumerate(names):
+        if i == 0:
+            continue
         instance, _ = GlobalCodeType.objects.get_or_create(type_no=str(i + 1), type_name=name, use_flag=1)
         items = []
         if i == 1:
@@ -108,7 +107,7 @@ def add_global_codes():
         elif i == 6:
             items = ["早班", "中班", "晚班"]
         elif i == 7:
-            items = ["密炼设备", "快检设备", "传送设备"]
+            items = ["密炼设备"]
         elif i == 8:
             items = ["一段", "二段", "三段"]
         elif i == 9:
@@ -968,7 +967,6 @@ def add_materials():
         data['material_no'] = x[2]
         data['material_name'] = x[4]
         data['material_type'] = GlobalCode.objects.filter(global_name=x[3]).first()
-        data['use_flag'] = 1
         try:
             Material.objects.create(**data)
         except Exception:
@@ -1120,7 +1118,7 @@ def add_sections():
 def add_users():
     section_ids = list(Section.objects.values_list('id', flat=True))
     group_ids = list(GroupExtension.objects.values_list('id', flat=True))
-    for i in range(100):
+    for i in range(20):
         name = getRandomName()
         try:
             user = User.objects.create_user(
@@ -1143,15 +1141,15 @@ def randomtimes(start, end, n, frmt="%Y-%m-%d"):
 
 
 def add_schedules():
-    for name in ['密炼', '快检', '设备', '机械']:
+    for name in ['密炼倒班', '小料称量倒班']:
         try:
             schedule = WorkSchedule.objects.create(
                 period=2,
                 schedule_no=str(random.randint(100, 999)),
                 schedule_name=name
             )
-            times = ['00:00:01', '08:00:00',
-                     '16:00:00', '23:00:59']
+            times = ['01:00:00', '08:00:00',
+                     '15:00:00', '22:00:00']
             for i in range(3):
                 ClassesDetail.objects.create(
                     work_schedule=schedule,
@@ -1168,12 +1166,13 @@ def add_equip_attribute():
     equip_type_ids = list(GlobalCode.objects.filter(global_type__type_name='设备类型').values_list('id', flat=True))
     process_ids = list(GlobalCode.objects.filter(global_type__type_name='工序').values_list('id', flat=True))
     j = 1000
+    cat_names = ['LB02', 'F370', 'E550', 'G320', 'MN01', 'LB01']
     for i in range(10):
         try:
             EquipCategoryAttribute.objects.create(
                 equip_type_id=random.choice(equip_type_ids),
                 category_no=j,
-                category_name='设备型号{}'.format(i),
+                category_name=random.choice(cat_names),
                 volume=random.choice([400, 500, 600, 700, 800]),
                 process_id=random.choice(process_ids)
             )
@@ -1185,38 +1184,16 @@ def add_equip_attribute():
 def add_equips():
     equip_level_ids = list(GlobalCode.objects.filter(global_type__type_name='设备层次').values_list('id', flat=True))
     attr_ids = list(EquipCategoryAttribute.objects.values_list('id', flat=True))
-    data = [['115A01', '(二期)(诺甲)无转子橡胶硫化仪 1#'], ['115A02', '(二期)(诺甲)无转子橡胶硫化仪 2#'], ['115A03', '(二期)(诺甲)无转子橡胶硫化仪 3#'],
-            ['115A04', '(二期)(诺甲)无转子橡胶硫化仪 4#'], ['115A05', '(二期)(诺甲)无转子橡胶硫化仪 5#'], ['115A06', '(二期)(诺甲)无转子橡胶硫化仪 6#'],
-            ['115A07', '(二期)(诺甲)无转子橡胶硫化仪 7#'], ['115A08', '(二期)(诺甲)无转子橡胶硫化仪 8#'], ['Z01', '混炼机(1#)'],
-            ['Z02', '混炼机(2#)'], ['Z03', '终炼机(3#)'], ['Z04', '终炼机(4#)'], ['Z05', '混炼机(5#)'],
-            ['Z06', '终炼机(6#)'], ['Z07', '混炼机(7#)'], ['Z08', '终炼机(8#)'], ['Z09', '终炼机(9#)'],
-            ['Z10', '混炼机(10#)'], ['Z11', '混炼机(11#)'], ['Z12', '混炼机(12#)'], ['110C01', '黑炭黑解包口()'],
-            ['110C02', '黑炭黑解包口()'], ['110C03', '黑炭黑解包口()'], ['110C04', '白炭黑解包口()'], ['110C05', '黑炭黑解包口()'],
-            ['110C06', '黑炭黑解包口()'], ['110C07', '白炭黑解包口()'], ['110C11', 'A区立体库'], ['110C12', 'B区立体库'],
-            ['115D01', '(二期)(友深)门尼粘度仪器 1#'], ['115D02', '(二期)(友深)门尼粘度仪器 2#'], ['115D03', '(二期)(友深)门尼粘度仪器 3#'],
-            ['115D04', '(二期)(友深)门尼粘度仪器 4#'], ['115D05', '(二期)(友深)门尼粘度仪器 5#'], ['115D06', '(二期)(友深)门尼粘度仪器 6#'],
-            ['115D07', '(二期)(友深)门尼粘度仪器 7#'], ['115D08', '(二期)(友深)门尼粘度仪器 8#'], ['115D09', '(二期)(友深)门尼粘度仪器 9#'],
-            ['115D10', '(二期)(友深)门尼粘度仪器 10#'], ['115D11', '(二期)(友深)门尼粘度仪器 11#'], ['115D12', '(二期)(友深)门尼粘度仪器 12#'],
-            ['115D13', '(二期)(友深)门尼粘度仪器 13#'], ['110G01', '检查(1#)'], ['115G01', '(一期)(诺甲)无转子橡胶硫化仪 1#'],
-            ['115G02', '(一期)(诺甲)无转子橡胶硫化仪 2#'], ['115G03', '(一期)(诺甲)无转子橡胶硫化仪 3#'], ['115G04', '(一期)(诺甲)无转子橡胶硫化仪 4#'],
-            ['115G05', '(一期)(诺甲)无转子橡胶硫化仪 5#'], ['115G06', '(一期)(诺甲)无转子橡胶硫化仪 6#'], ['115G07', '(一期)(诺甲)无转子橡胶硫化仪 7#'],
-            ['115G08', '(一期)(诺甲)无转子橡胶硫化仪 8#'], ['115G09', '(一期)(诺甲)无转子橡胶硫化仪 9#'], ['115G10', '(一期)(诺甲)无转子橡胶硫化仪 10#'],
-            ['115G11', '(一期)(友深)无转子橡胶硫化仪 11#'], ['115G12', '(一期)(友深)无转子橡胶硫化仪 12#'], ['115G13', '(一期)(友深)无转子橡胶硫化仪 13#'],
-            ['115G14', '(一期)(友深)无转子橡胶硫化仪 14#'], ['110H01', '烘胶机(1#)'], ['110H02', '烘胶机(2#)'], ['110H03', '烘胶机(3#)'],
-            ['110H04', '烘胶机(4#)'], ['110H05', '烘胶机(5#)'], ['110H06', '烘胶机(6#)'], ['110H07', '烘胶机(7#)'],
-            ['110H08', '烘胶机(8#)'], ['110H09', '烘胶机(9#)'], ['110H10', '烘胶机(10#)'], ['110H11', '烘胶机(11#)'],
-            ['110H12', '烘胶机(12#)'], ['110H13', '烘胶机(13#)'], ['115K01', '(一期一楼半)(诺甲)门尼粘度仪器 1#'],
-            ['115K02', '(一期一楼半)(友深)门尼粘度仪器 1#'], ['115K03', '(一期一楼半)(友深)门尼粘度仪器 2#'], ['115K04', '(一期一楼半)(友深)门尼粘度仪器 3#'],
-            ['115K05', '(一期一楼半)(友深)门尼粘度仪器 4#'], ['115K06', '(一期一楼半)(友深)门尼粘度仪器 5#'], ['115K07', '(一期一楼半)(友深)门尼粘度仪器 6#'],
-            ['115K08', '(一期一楼半)(友深)门尼粘度仪器 7#'], ['115K09', '(一期一楼半)(友深)门尼粘度仪器 8#'], ['115K10', '(一期一楼半)(友深)门尼粘度仪器 9#'],
-            ['115K11', '(一期一楼半)(友深)门尼粘度仪器 10#'], ['115K12', '(一期一楼半)(友深)门尼粘度仪器 11#'],
-            ['115K13', '(一期一楼半)(友深)门尼粘度仪器 12#'], ['115K14', '(一期一楼半)(友深)门尼粘度仪器 13#'],
-            ['115K15', '(一期一楼半)(友深)门尼粘度仪器 14#'], ['115K16', '(一期一楼)(友深)门尼粘度仪器 1#'], ['115K17', '(一期一楼)(友深)门尼粘度仪器 2#'],
-            ['115K18', '(一期一楼)(友深)门尼粘度仪器 3#'], ['115K19', '(一期一楼)(友深)门尼粘度仪器 4#'], ['115K20', '(一期一楼)(友深)门尼粘度仪器 5#'],
-            ['115K21', '(一期一楼)(友深)门尼粘度仪器 6#'], ['115K22', '(一期一楼)(友深)门尼粘度仪器 7#'], ['115K23', '(一期一楼)(友深)门尼粘度仪器 8#'],
-            ['115K24', '(一期一楼)(友深)门尼粘度仪器 9#'], ['115K25', '(一期一楼半)(友深)门尼粘度仪器 15#'], ['115K26', '(一期一楼)(友深)门尼粘度仪器 10#'],
-            ['110S01', '小料秤(1#硫磺)'], ['110S02', '小料称(2#硫磺)'], ['110S03', '小料称(3#硫磺)'], ['110X01', '小料称(1#细料)'],
-            ['110X02', '小料称(2#细料)'], ['110X03', '小料称(3#细料)'], ['110000', '手工混炼药品虚拟机台'], ['110001', '手工终炼药品虚拟机台']]
+    data = [['115A01', '(二期)(诺甲)无转子橡胶硫化仪 1#'], ['115A02', '(二期)(诺甲)无转子橡胶硫化仪 2#'],
+            ['115A03', '(二期)(诺甲)无转子橡胶硫化仪 3#'], ['115A04', '(二期)(诺甲)无转子橡胶硫化仪 4#'],
+            ['115A05', '(二期)(诺甲)无转子橡胶硫化仪 5#'], ['115A06', '(二期)(诺甲)无转子橡胶硫化仪 6#'],
+            ['115A07', '(二期)(诺甲)无转子橡胶硫化仪 7#'], ['115A08', '(二期)(诺甲)无转子橡胶硫化仪 8#'],
+            ['110B01', '混炼机(1#)'], ['110B02', '混炼机(2#)'], ['110B03', '终炼机(3#)'],
+            ['110B04', '终炼机(4#)'], ['110B05', '混炼机(5#)'],
+            ['110B06', '终炼机(6#)'], ['110B07', '混炼机(7#)'],
+            ['110B08', '终炼机(8#)'], ['110B09', '终炼机(9#)'],
+            ['110B10', '混炼机(10#)'], ['110B11', '混炼机(11#)'],
+            ['110B12', '混炼机(12#)']]
 
     for item in data:
         try:
@@ -1247,29 +1224,32 @@ def add_plan_schedule():
     group_ids = list(GlobalCode.objects.filter(global_type__type_name='班组').values_list('id', flat=True))
 
     classes_ids = list(GlobalCode.objects.filter(global_type__type_name='班次').values_list('id', flat=True))
-    times = ['00:00:01', '08:00:00',
-             '16:00:00', '23:00:59']
+    times = ['01:00:00', '08:00:00', '15:00:00', '22:00:00']
     k = 1
-    for i, day_time in enumerate(day_times):
-        try:
-            instance = PlanSchedule.objects.create(
-                plan_schedule_no=i,
-                day_time=day_time,
-                work_schedule_id=random.choice(ids)
-            )
-            for j in range(3):
-                WorkSchedulePlan.objects.create(
-                    work_schedule_plan_no=k,
-                    classes_id=classes_ids[j],
-                    group_id=group_ids[j],
-                    rest_flag=False,
-                    plan_schedule=instance,
-                    start_time=day_time + ' ' + times[j],
-                    end_time=day_time + ' ' + times[j + 1],
+    f = 1
+
+    for ws_id in ids:
+        for i, day_time in enumerate(day_times):
+            try:
+                instance = PlanSchedule.objects.create(
+                    plan_schedule_no=f,
+                    day_time=day_time,
+                    work_schedule_id=ws_id
                 )
-                k += 1
-        except Exception:
-            pass
+                f += 1
+                for j in range(3):
+                    WorkSchedulePlan.objects.create(
+                        work_schedule_plan_no=k,
+                        classes_id=classes_ids[j],
+                        group_id=group_ids[j],
+                        rest_flag=False,
+                        plan_schedule=instance,
+                        start_time=day_time + ' ' + times[j],
+                        end_time=day_time + ' ' + times[j + 1],
+                    )
+                    k += 1
+            except Exception:
+                pass
 
 
 def add_product():
@@ -1321,233 +1301,43 @@ def add_product():
             pass
 
 
-def add_product_batching():
-    factories = list(GlobalCode.objects.filter(global_type__type_name='产地').values_list('id', flat=True))
-    sites = list(GlobalCode.objects.filter(global_type__type_name='SITE').values_list('id', flat=True))
-    product_infos = list(ProductInfo.objects.values_list('id', flat=True))[:20]
-    dev_types = list(EquipCategoryAttribute.objects.values_list('id', flat=True))
-    stages = list(GlobalCode.objects.filter(global_type__type_name='胶料段次').values_list('id', flat=True))
-
-    for product_info in product_infos:
-        for stage in stages:
-            pb = ProductBatching.objects.create(
-                factory_id=random.choice(factories),
-                site_id=random.choice(sites),
-                product_info_id=product_info,
-                stage_product_batch_no='1',
-                dev_type_id=random.choice(dev_types),
-                stage_id=stage,
-                versions='01'
-            )
-            pb.stage_product_batch_no = pb.site.global_name + '-' + pb.stage.global_name + '-' + \
-                                        pb.product_info.product_name + '-' '01'
-            pb.save()
-
-
-def random_str():
-    a1 = (2020, 4, 12, 0, 0, 0, 0, 0, 0)  # 设置开始日期时间元组（2020-04-12 00：00：00）
-    a2 = (2020, 4, 13, 0, 0, 0, 0, 0, 0)  # 设置结束日期时间元组（2020-04-13 00：00：00）
-    start = time.mktime(a1)  # 生成开始时间戳
-    end = time.mktime(a2)  # 生成结束时间戳
-    t = random.randint(start, end)  # 在开始和结束时间戳中随机取出一个
-    date_touple = time.localtime(t)  # 将时间戳生成时间元组
-    date_str = time.strftime("%H:%M:%S", date_touple)  # 将时间元组转成格式化字符串（1976-05-21）
-    return date_str
-
-
-def add_plan():
-    equips = list(Equip.objects.values_list('id', flat=True))
-    product_batchings = list(ProductBatching.objects.values_list('id', flat=True))[:10]
-    plan_schedules = list(PlanSchedule.objects.values_list('id', flat=True))
-    classes_details = list(ClassesDetail.objects.values_list('id', flat=True))
-    i = 1
-    time_str = random_str()
-    for equip in equips:
-        for product_batching in product_batchings:
-            for plan_schedule in plan_schedules:
-                pp = ProductDayPlan.objects.create(
-                    equip_id=equip,
-                    product_batching_id=product_batching,
-                    plan_schedule_id=plan_schedule
-                )
-                ProductClassesPlan.objects.create(
-                    product_day_plan=pp,
-                    sn=i,
-                    plan_trains=random.randint(1, 20),
-                    time=time_str,
-                    weight=random.randint(100, 500),
-                    unit='kg',
-                    classes_detail_id=random.choice(classes_details),
-                    plan_classes_uid=UUidTools.uuid1_hex()
-                )
-                i += 1
-
-
-def add_material_day_classes_plan():
-    """
-    根据已有信息生成胶料日计划，班次计划
-    :return: None
-    """
-    ProductClassesPlan.objects.filter().delete()
-    ProductDayPlan.objects.filter().delete()
-    actual_feedback = 3
-    equip_set = Equip.objects.filter(equip_name__icontains="混炼")
-    equip_count = equip_set.count()
-    pb_set = ProductBatching.objects.filter(delete_flag=False)
-    pb_count = pb_set.count()
-    ps_set = PlanSchedule.objects.filter(delete_flag=False)
-    # 目前工序只有密炼
-    project_list = ["密炼"]
-    ws_set = WorkSchedule.objects.filter(schedule_name__in=project_list, delete_flag=False)
-    for x in range(actual_feedback):
-        for ps in ps_set:
-            equip = equip_set[random.randint(0, equip_count - 1)]
-            pb = pb_set[random.randint(0, pb_count - 1)]
-            ProductDayPlan.objects.create(equip=equip, product_batching=pb, plan_schedule=ps)
-    day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
-    # sn的规则?
-    sn = 1
-    init_ps_id = None
-    for day_plan in day_plan_set:
-        if init_ps_id == day_plan.plan_schedule:
-            sn += 1
-        else:
-            init_ps_id = day_plan.plan_schedule
-        ws_set = day_plan.plan_schedule.work_schedule_plan.filter(delete_flag=False)
-        for ws in ws_set:
-            cs = ws.classes.global_name
-            ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan,
-                                              plan_classes_uid=UUidTools.uuid1_hex(day_plan.equip.equip_no),
-                                            unit="kg", plan_trains=50, weight=250, work_schedule_plan=ws,
-                                              time=45)
-
-
-def add_product_demo_data():
-    TrainsFeedbacks.objects.all().delete()
-    PalletFeedbacks.objects.all().delete()
-    EquipStatus.objects.all().delete()
-
-    # plan_schedule_set = PlanSchedule.objects.filter(delete_flag=False)
-    # for plan_schedule in plan_schedule_set:
-    #     if plan_schedule:
-    #         day_plan_set = plan_schedule.ps_day_plan.filter(delete_flag=False)
-    #     else:
-    #         continue
-    day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
-    for day_plan in list(day_plan_set):
-        class_plan_set = ProductClassesPlan.objects.filter(product_day_plan=day_plan.id)
-        bath_no = 1
-        for class_plan in list(class_plan_set):
-            plan_trains = class_plan.plan_trains
-            start_time = class_plan.work_schedule_plan.start_time
-            for m in range(1, int(plan_trains) + 1):
-                class_name = class_plan.work_schedule_plan.classes.global_name
-                equip_no = day_plan.equip.equip_no
-                product_no = day_plan.product_batching.stage_product_batch_no
-                plan_weight = class_plan.weight
-                # time_str = '2020-08-01 08:00:00'
-                # time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
-                # if class_name == "早班":
-                #     time = time
-                # elif class_name == "中班":
-                #     time = time + datetime.timedelta(hours=8)
-                # else:
-                #     time = time + datetime.timedelta(hours=16)
-                end_time = start_time + datetime.timedelta(seconds=150)
-                train_data = {
-                    "plan_classes_uid": class_plan.plan_classes_uid,
-                    "plan_trains": plan_trains,
-                    "actual_trains": m,
-                    "bath_no": bath_no,
-                    "equip_no": equip_no,
-                    "product_no": product_no,
-                    "plan_weight": plan_weight,
-                    "actual_weight": m * 5,
-                    "begin_time": start_time,
-                    "end_time": end_time,
-                    "operation_user": "string-user",
-                    "classes": class_name,
-                    "product_time": end_time,
-                }
-                start_time = end_time
-                TrainsFeedbacks.objects.create(**train_data)
-                if m % pallet_count == 0:
-                    end_time = start_time + datetime.timedelta(seconds=150 * 5)
-                    pallet_data = {
-                        "plan_classes_uid": class_plan.plan_classes_uid,
-                        "bath_no": bath_no,
-                        "equip_no": equip_no,
-                        "product_no": product_no,
-                        "plan_weight": plan_weight * 5,
-                        "actual_weight": m * 5 * 5,
-                        "begin_time": start_time,
-                        "end_time": end_time,
-                        "operation_user": "string-user",
-                        "begin_trains": m - (pallet_count - 1),
-                        "end_trains": m,
-                        "pallet_no": f"{bath_no}|test",
-                        "barcode": "KJDL:LKYDFJM<NLIIRD",
-                        "classes": class_name,
-                        "product_time": end_time,
-                    }
-                    start_time = end_time
-                    bath_no += 1
-                    PalletFeedbacks.objects.create(**pallet_data)
-                for x in range(5):
-                    equip_status_data = {
-                        "plan_classes_uid": class_plan.plan_classes_uid,
-                        "equip_no": equip_no,
-                        "temperature": random.randint(300, 700),
-                        "rpm": random.randint(500, 2000),
-                        "energy": random.randint(50, 500),
-                        "power": random.randint(50, 500),
-                        "pressure": random.randint(80, 360),
-                        "status": "running",
-                        "current_trains": m,
-                        "product_time": end_time,
-                        "created_date": end_time + datetime.timedelta(seconds=x),
-                    }
-                    EquipStatus.objects.create(**equip_status_data)
-
-
 def add_condition_action():
-
     action_add = {
-        "加炭黑":             	2,
-        "加胶料":             	1,
-        "加油1":              	4,
-        "开卸料门":           	256,
-        "关卸料门":           	512,
-        "升上顶栓":           	1024,
-        "加油2":              	8,
-        "降上顶栓":           	2048,
-        "上顶栓清扫":         	4096,
-        "保持":               	16384,
-        "开加料门":           	64,
-        "关加料门":           	128,
-        "加小料":             	16,
-        "上顶栓浮动":         	8192,
-        "升上顶栓开卸料门":   	1280,
-        "加炭黑油1":          	6,
-        "加炭黑油2":          	10,
-        "加炭黑油1油2":       	14,
-        "加油1油2":           	12,
-        "升上顶栓关卸料门":   	1536,
-        "降上顶栓开卸料门":   	2304
-        }
+        "加炭黑": 2,
+        "加胶料": 1,
+        "加油1": 4,
+        "开卸料门": 256,
+        "关卸料门": 512,
+        "升上顶栓": 1024,
+        "加油2": 8,
+        "降上顶栓": 2048,
+        "上顶栓清扫": 4096,
+        "保持": 16384,
+        "开加料门": 64,
+        "关加料门": 128,
+        "加小料": 16,
+        "上顶栓浮动": 8192,
+        "升上顶栓开卸料门": 1280,
+        "加炭黑油1": 6,
+        "加炭黑油2": 10,
+        "加炭黑油1油2": 14,
+        "加油1油2": 12,
+        "升上顶栓关卸料门": 1536,
+        "降上顶栓开卸料门": 2304
+    }
 
     cond_add = {
-        "时间":                  	1,
-        "温度":                  	2,
-        "能量":                  	4,
-        "时间与温度":            	8,
-        "时间与能量":            	16,
-        "温度与能量":            	32,
-        "时间或能量":            	5,
-        "能量或温度":            	6,
-        "时间或温度":            	3,
-        "同步执行":              	0
-        }
+        "时间": 1,
+        "温度": 2,
+        "能量": 4,
+        "时间与温度": 8,
+        "时间与能量": 16,
+        "温度与能量": 32,
+        "时间或能量": 5,
+        "能量或温度": 6,
+        "时间或温度": 3,
+        "同步执行": 0
+    }
 
     for key, value in action_add.items():
         BaseAction.objects.get_or_create(
@@ -1563,41 +1353,25 @@ def add_condition_action():
         )
 
 
-def add_system_config():
-    SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
-    ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
-    ChildSystemInfo.objects.create(link_address="10.4.10.55", system_type="gz", system_name="上辅机群控", status="联网")
-    ChildSystemInfo.objects.create(link_address="10.4.10.56", system_type="gz", system_name="上辅机工作站1", status="联网")
-
-
 if __name__ == '__main__':
-    # add_system_config()
-    # add_global_codes()
-    # print("global_codes is ok")
-    # add_materials()
-    # print("materials is ok")
-    # add_groups()
-    # print("groups is ok")
-    # add_sections()
-    # print("sections is ok")
-    # add_users()
-    # print("users is ok")
-    # add_schedules()
-    # print("schedules is ok")
-    # add_equip_attribute()
-    # print("equip_attribute is ok")
-    # add_equips()
-    # print("equips is ok")
-    # add_plan_schedule()
-    # print("plan_schedule is ok")
-    # add_product()
-    # print("product is ok")
-    # add_product_batching()
-    # print("product_batching is ok")
-    # add_condition_action()
-    # add_plan()
-    # print("plan is ok")
-    add_material_day_classes_plan()
-    print("material_day_classes_plan is ok")
-    # add_product_demo_data()
-    print("product_demo_data is ok")
+    add_global_codes()
+    print("global_codes is ok")
+    add_materials()
+    print("materials is ok")
+    add_groups()
+    print("groups is ok")
+    add_sections()
+    print("sections is ok")
+    add_users()
+    print("users is ok")
+    add_schedules()
+    print("schedules is ok")
+    add_equip_attribute()
+    print("equip_attribute is ok")
+    add_equips()
+    print("equips is ok")
+    add_plan_schedule()
+    print("plan_schedule is ok")
+    add_product()
+    print("product is ok")
+    add_condition_action()

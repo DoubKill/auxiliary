@@ -13,7 +13,7 @@ class Material(AbstractEntity):
                                       on_delete=models.DO_NOTHING, related_name='mt_materials')
     package_unit = models.ForeignKey(GlobalCode, help_text='包装单位', verbose_name='包装单位',
                                      on_delete=models.DO_NOTHING, related_name='pu_materials', blank=True, null=True)
-    used_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
+    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.material_name
@@ -162,7 +162,7 @@ class ProductProcess(AbstractEntity):
     xlm_temp = models.PositiveIntegerField(help_text='卸料门水温', blank=True, null=True)
     cb_temp = models.PositiveIntegerField(help_text='侧壁水温', blank=True, null=True)
     temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
-    used_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
+    use_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
     batching_error = models.PositiveIntegerField(help_text='胶料总误差', blank=True, null=True)
     sp_num = models.PositiveSmallIntegerField(help_text='收皮', blank=True, null=True)
 
