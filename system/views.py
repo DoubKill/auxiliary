@@ -298,9 +298,9 @@ class LoginView(ObtainJSONWebToken):
                 else:
                     permissions_tree["system"] = auth
             if permissions_tree.get("recipe", {}).get("material"):
-                masterial = permissions_tree["recipe"].pop("material")
+                material = permissions_tree["recipe"].pop("material")
                 if permissions_tree.get("production"):
-                    permissions_tree["production"].update(masterial=masterial)
+                    permissions_tree["production"].update(material=material)
             return Response({"results": permissions_tree,
                              "username": user.username,
                              "token": token})
