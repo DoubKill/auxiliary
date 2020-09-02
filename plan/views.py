@@ -21,7 +21,7 @@ from recipe.models import Material, ProductProcess, ProductBatchingDetail, Produ
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1, IfdownRecipeCb1, IfdownRecipeOil11, \
     IfdownRecipePloy1, IfdownRecipeMix1
-from production.models import PlanStatus
+from production.models import PlanStatus, TrainsFeedbacks
 from work_station.api import IssueWorkStation
 
 
@@ -286,7 +286,7 @@ class IssuedPlan(APIView):
     def _map_Shengchanjihua(self, params, pcp_obj):
         data = {
             'id': pcp_obj.id,  # id
-            'recipe': params.get("stage_product_batch_no", None),   # 配方名
+            'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
             'lasttime': params.get("day_time", None),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
@@ -306,30 +306,30 @@ class IssuedPlan(APIView):
     def _sync(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe'+ext_str, PmtRecipe).issue_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).issue_to_db()
         RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeCb'+ext_str, RecipeCb).batch_to_db()
+        IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_to_db()
         RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeOil1'+ext_str, RecipeOil1).batch_to_db()
+        IssueWorkStation('IfdownRecipeOil1' + ext_str, RecipeOil1).batch_to_db()
         RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipePloy'+ext_str, RecipePloy).batch_to_db()
+        IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix'+ext_str, RecipeMix).batch_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_to_db()
         Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
-        IssueWorkStation('IfdownShengchanjihua'+ext_str, Shengchanjihua).issue_to_db()
+        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).issue_to_db()
 
     def _sync_update(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe'+ext_str, PmtRecipe).update_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).update_to_db()
         RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeCb'+ext_str, RecipeCb).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_update_to_db()
         RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeOil1'+ext_str, RecipeOil1).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeOil1' + ext_str, RecipeOil1).batch_update_to_db()
         RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipePloy'+ext_str, RecipePloy).batch_update_to_db()
+        IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix'+ext_str, RecipeMix).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_update_to_db()
         # 重传逻辑不需要修改计划
         # Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
         # IssueWorkStation('IfdownShengchanjihua'+ext_str, Shengchanjihua).update_to_db()
@@ -341,6 +341,26 @@ class IssuedPlan(APIView):
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+
+        """
+        # 通过id去取相关数据
+        params = {}
+        params['stage_product_batch_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
+        params['day_time'] = pcp_obj.product_day_plan.plan_schedule.day_time
+        params['plan_classes_uid'] = pcp_obj.plan_classes_uid
+        params['begin_time'] = pcp_obj.work_schedule_plan.start_time
+        params['end_time'] = pcp_obj.work_schedule_plan.end_time
+        params['classes'] = pcp_obj.work_schedule_plan.classes.global_name
+        params['group'] = pcp_obj.work_schedule_plan.group.global_name
+        params['plan_trains'] = pcp_obj.plan_trains
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).last()
+        if tfb_obj:
+            params['actual_trains'] = tfb_obj.actual_trains
+            params['operation_user'] = tfb_obj.operation_user
+        else:
+            params['actual_trains'] = None
+            params['operation_user'] = None
+        """
         # 校验计划与配方完整性
 
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
@@ -384,7 +404,6 @@ class IssuedPlan(APIView):
         # ps_obj.status = '运行'
         # ps_obj.save()
         return Response({'_': '重传成功'}, status=200)
-
 
 
 @method_decorator([api_recorder], name="dispatch")
