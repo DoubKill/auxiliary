@@ -281,7 +281,7 @@ class IssuedPlan(APIView):
         for ppd in product_process_details:
             data = {
                 "id": ppd.id,
-                "set_condition": ppd.condition.condition,  # ? 条件名称还是条件代码
+                "set_condition": ppd.condition.condition if ppd and ppd.condition else None,  # ? 条件名称还是条件代码
                 "set_time": int(ppd.time),
                 "set_temp": int(ppd.temperature),
                 "set_ener": ppd.energy,
