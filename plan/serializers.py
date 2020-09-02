@@ -287,7 +287,12 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 'remark': 'u',
                 'recstatus': '配方车次需更新'
             }
-        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
+        equip_no = instance.product_day_plan.equip.equip_no
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
+        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
         temp.update_to_db()
         return instance
 
