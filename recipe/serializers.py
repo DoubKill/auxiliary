@@ -438,6 +438,7 @@ class ProductBatchingSerializer(serializers.ModelSerializer):
                                                            'standard_error', 'auto_flag')
 
         product_batching_dict['equip'] = equip
+        product_batching_dict['used_type'] = 1
         # 复制配方和配方详情
         product_batching = ProductBatching.objects.create(**product_batching_dict)
         batching_detail_list = [None] * len(batching_details)

@@ -25,6 +25,34 @@ class IfdownPmtRecipe2Serializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
+class IfdownPmtRecipe3Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownPmtRecipe3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownPmtRecipe4Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownPmtRecipe4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownPmtRecipe5Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownPmtRecipe5
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownPmtRecipe6Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownPmtRecipe6
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
 
 class IfdownRecipeCb1Serializer(serializers.ModelSerializer):
 
@@ -42,6 +70,29 @@ class IfdownRecipeCb2Serializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
+class IfdownRecipeCb3Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeCb3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeCb4Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeCb4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeCb5Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeCb5
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
 class IfdownRecipeMix1Serializer(serializers.ModelSerializer):
 
     class Meta:
@@ -54,6 +105,30 @@ class IfdownRecipeMix2Serializer(serializers.ModelSerializer):
 
     class Meta:
         model = IfdownRecipeMix2
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeMix3Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeMix3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeMix4Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeMix4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeMix5Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeMix5
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
@@ -74,6 +149,29 @@ class IfdownRecipeOil12Serializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
+class IfdownRecipeOil13Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeOil13
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownRecipeOil14Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeOil14
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeOil15Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeOil15
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
 class IfdownRecipePloy1Serializer(serializers.ModelSerializer):
 
     class Meta:
@@ -90,6 +188,30 @@ class IfdownRecipePloy2Serializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
+class IfdownRecipePloy3Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipePloy3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipePloy4Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipePloy4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipePloy5Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipePloy5
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
 class IfdownShengchanjihua1Serializer(serializers.ModelSerializer):
 
     class Meta:
@@ -102,6 +224,28 @@ class IfdownShengchanjihua2Serializer(serializers.ModelSerializer):
 
     class Meta:
         model = IfdownShengchanjihua2
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownShengchanjihua3Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownShengchanjihua3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+class IfdownShengchanjihua4Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownShengchanjihua4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownShengchanjihua5Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownShengchanjihua5
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 

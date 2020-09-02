@@ -219,16 +219,16 @@ LOGGING = {
 }
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#         'NAME': os.getenv('DATABASE_NAME', 'GZSFJ'),  # 数据库名称
-#         'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
-#         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
-#         'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
-#         'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('DATABASE_NAME', 'GZSFJ'),  # 数据库名称
+        'USER': os.getenv('DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
+        'PORT': os.getenv('MONOCLE_API_PORT', '3306'),  # 端口
+    }
+}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

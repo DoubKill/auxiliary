@@ -14,7 +14,7 @@ from system.models import User
 
 def main():
     print('开始迁移数据库')
-    apps = ('system', 'basics', 'plan', 'production', 'recipe')
+    apps = ('system', 'basics', 'plan', 'production', 'recipe', 'work_station')
 
     for app in apps:
         try:
