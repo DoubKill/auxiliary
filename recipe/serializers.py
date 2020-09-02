@@ -433,7 +433,7 @@ class ProductBatchingSerializer(serializers.ModelSerializer):
             id=base_product_batching.id).values('factory_id', 'site_id', 'product_info_id', 'precept',
                                                 'stage_product_batch_no', 'dev_type_id', 'stage_id', 'versions',
                                                 'used_type', 'batching_weight', 'manual_material_weight',
-                                                'auto_material_weight')[0]
+                                                'auto_material_weight', 'production_time_interval')[0]
         batching_details = ProductBatchingDetail.objects.filter(
             product_batching=base_product_batching).values('sn', 'material_id', 'actual_weight',
                                                            'standard_error', 'auto_flag')
