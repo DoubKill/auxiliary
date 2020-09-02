@@ -146,6 +146,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
         validated_data['dev_type'] = validated_data['equip'].category
+        validated_data['created_user'] = self.context["request"].user
         instance = super().create(validated_data)
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details:
@@ -439,6 +440,7 @@ class ProductBatchingSerializer(serializers.ModelSerializer):
 
         product_batching_dict['equip'] = equip
         product_batching_dict['used_type'] = 1
+        product_batching_dict['created_user'] = self.context["request"].user
         # 复制配方和配方详情
         product_batching = ProductBatching.objects.create(**product_batching_dict)
         batching_detail_list = [None] * len(batching_details)
