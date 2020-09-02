@@ -299,6 +299,11 @@ class ProductProcessSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
+        product_batching = validated_data['product_batching']
+        if not product_batching.equip:
+            # 给配方加上机台
+            product_batching.equip = validated_data['equip']
+            product_batching.save()
         validated_data['created_user'] = self.context['request'].user
         process_details = validated_data.pop('process_details', None)
         instance = super().create(validated_data)
