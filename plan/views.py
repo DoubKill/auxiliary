@@ -210,7 +210,7 @@ class IssuedPlan(APIView):
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
             "tempuse": product_process.temp_use_flag,
-            "usenot": product_process.used_flag,
+            "usenot": product_process.use_flag,
             "recstatus": "待更新",
         }
         return data
