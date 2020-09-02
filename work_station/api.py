@@ -57,6 +57,14 @@ class IssueWorkStation(object):
         """
         id = self.data.get("id")
         instance = self.model.objects.filter(id=id).first()
+        if instance.recstatus == "车次需更新":
+            self.data["recstatus"] = "配方车次需更新"
+        elif instance.recstatus == "运行中":
+            self.data["recstatus"] = "配方需重传"
+        elif instance.recstatus == "配方车次需更新":
+            pass
+        else:
+            raise ValidationError("异常接收状态,仅运行中状态允许重传")
         serializer = self.model_serializer(instance, data=self.data, partial="partial")
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -76,7 +84,7 @@ class IssueWorkStation(object):
                 pass
             else:
                 raise ValidationError("异常接收状态,仅运行中状态允许重传")
-            serializer = self.model_serializer(instance, data=self.data, partial="partial")
+            serializer = self.model_serializer(instance, _ , partial="partial")
             serializer.is_valid(raise_exception=True)
             serializer.save()
 

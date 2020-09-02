@@ -173,8 +173,6 @@ class IssuedPlan(APIView):
             product_batching = pcp_obj.product_day_plan.product_batching
         except:
             raise ValidationError("无对应日计划胶料配料标准")
-        # 胶料对应机台
-        equip = product_batching.equip
         # 胶料配料详情，一份胶料对应多个配料
         product_batching_details = product_batching.batching_details.filter(delete_flag=False)
         if not product_batching_details:
@@ -208,7 +206,7 @@ class IssuedPlan(APIView):
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
             "tempuse": 1 if product_process.temp_use_flag else 0,
-            "usenot": 1 if product_process.used_flag else 0,
+            "usenot": 1 if product_process.use_flag else 0,
             "recstatus": "等待",
         }
         return data
@@ -355,7 +353,7 @@ class IssuedPlan(APIView):
             return Response({'_': "只有等待中的计划才能下达！"}, status=400)
         self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
-        ps_obj.status = '运行'
+        ps_obj.status = '运行中'
         ps_obj.save()
         return Response({'_': '下达成功'}, status=200)
 
@@ -376,9 +374,9 @@ class IssuedPlan(APIView):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
-        if ps_obj.status != '运行':
+        if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能下达！"}, status=400)
-        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
+        self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
