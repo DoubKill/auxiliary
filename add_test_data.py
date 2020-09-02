@@ -1413,25 +1413,13 @@ def add_material_day_classes_plan():
             sn += 1
         else:
             init_ps_id = day_plan.plan_schedule
+        ws_set = day_plan.plan_schedule.work_schedule_plan.filter(delete_flag=False)
         for ws in ws_set:
-            mn_uid = None
-            an_uid = None
-            nt_uid = None
-            for cs in ws.classesdetail_set.filter(delete_flag=False):
-                cs_name = cs.classes.global_name
-                if cs_name == "早班":
-                    uid = mn_uid if mn_uid else uuid.uuid1()
-                elif cs_name == "中班":
-                    uid = an_uid if an_uid else uuid.uuid1()
-                elif cs_name == "晚班":
-                    uid = nt_uid if nt_uid else uuid.uuid1()
-                else:
-                    # 暂不做其他班次的处理
-                    continue
-                ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan,
-                                                  plan_classes_uid=UUidTools.uuid1_hex(),
-                                                  classes_detail=cs, unit="kg", plan_trains=50, weight=250,
-                                                  time=45)
+            cs = ws.classes.global_name
+            ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan,
+                                              plan_classes_uid=UUidTools.uuid1_hex(day_plan.equip.equip_no),
+                                            unit="kg", plan_trains=50, weight=250, work_schedule_plan=ws,
+                                              time=45)
 
 
 def add_product_demo_data():
@@ -1583,33 +1571,33 @@ def add_system_config():
 
 
 if __name__ == '__main__':
-    add_system_config()
-    add_global_codes()
-    print("global_codes is ok")
-    add_materials()
-    print("materials is ok")
-    add_groups()
-    print("groups is ok")
-    add_sections()
-    print("sections is ok")
-    add_users()
-    print("users is ok")
-    add_schedules()
-    print("schedules is ok")
-    add_equip_attribute()
-    print("equip_attribute is ok")
-    add_equips()
-    print("equips is ok")
-    add_plan_schedule()
-    print("plan_schedule is ok")
-    add_product()
-    print("product is ok")
-    add_product_batching()
-    print("product_batching is ok")
-    add_condition_action()
+    # add_system_config()
+    # add_global_codes()
+    # print("global_codes is ok")
+    # add_materials()
+    # print("materials is ok")
+    # add_groups()
+    # print("groups is ok")
+    # add_sections()
+    # print("sections is ok")
+    # add_users()
+    # print("users is ok")
+    # add_schedules()
+    # print("schedules is ok")
+    # add_equip_attribute()
+    # print("equip_attribute is ok")
+    # add_equips()
+    # print("equips is ok")
+    # add_plan_schedule()
+    # print("plan_schedule is ok")
+    # add_product()
+    # print("product is ok")
+    # add_product_batching()
+    # print("product_batching is ok")
+    # add_condition_action()
     # add_plan()
     # print("plan is ok")
-    # add_material_day_classes_plan()
+    add_material_day_classes_plan()
     print("material_day_classes_plan is ok")
     # add_product_demo_data()
     print("product_demo_data is ok")

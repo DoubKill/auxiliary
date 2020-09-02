@@ -17,8 +17,6 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from rest_framework.views import APIView
 
 # Create your views here.
-from plan.uuidfield import UUidTools
-from production.models import PalletFeedbacks, PlanStatus
 from recipe.models import Material, ProductProcess, ProductBatchingDetail, ProductProcessDetail
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1, IfdownRecipeCb1, IfdownRecipeOil11, \
