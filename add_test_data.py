@@ -1187,10 +1187,10 @@ def add_equips():
     attr_ids = list(EquipCategoryAttribute.objects.values_list('id', flat=True))
     data = [['115A01', '(二期)(诺甲)无转子橡胶硫化仪 1#'], ['115A02', '(二期)(诺甲)无转子橡胶硫化仪 2#'], ['115A03', '(二期)(诺甲)无转子橡胶硫化仪 3#'],
             ['115A04', '(二期)(诺甲)无转子橡胶硫化仪 4#'], ['115A05', '(二期)(诺甲)无转子橡胶硫化仪 5#'], ['115A06', '(二期)(诺甲)无转子橡胶硫化仪 6#'],
-            ['115A07', '(二期)(诺甲)无转子橡胶硫化仪 7#'], ['115A08', '(二期)(诺甲)无转子橡胶硫化仪 8#'], ['110B01', '混炼机(1#)'],
-            ['110B02', '混炼机(2#)'], ['110B03', '终炼机(3#)'], ['110B04', '终炼机(4#)'], ['110B05', '混炼机(5#)'],
-            ['110B06', '终炼机(6#)'], ['110B07', '混炼机(7#)'], ['110B08', '终炼机(8#)'], ['110B09', '终炼机(9#)'],
-            ['110B10', '混炼机(10#)'], ['110B11', '混炼机(11#)'], ['110B12', '混炼机(12#)'], ['110C01', '黑炭黑解包口()'],
+            ['115A07', '(二期)(诺甲)无转子橡胶硫化仪 7#'], ['115A08', '(二期)(诺甲)无转子橡胶硫化仪 8#'], ['Z01', '混炼机(1#)'],
+            ['Z02', '混炼机(2#)'], ['Z03', '终炼机(3#)'], ['Z04', '终炼机(4#)'], ['Z05', '混炼机(5#)'],
+            ['Z06', '终炼机(6#)'], ['Z07', '混炼机(7#)'], ['Z08', '终炼机(8#)'], ['Z09', '终炼机(9#)'],
+            ['Z10', '混炼机(10#)'], ['Z11', '混炼机(11#)'], ['Z12', '混炼机(12#)'], ['110C01', '黑炭黑解包口()'],
             ['110C02', '黑炭黑解包口()'], ['110C03', '黑炭黑解包口()'], ['110C04', '白炭黑解包口()'], ['110C05', '黑炭黑解包口()'],
             ['110C06', '黑炭黑解包口()'], ['110C07', '白炭黑解包口()'], ['110C11', 'A区立体库'], ['110C12', 'B区立体库'],
             ['115D01', '(二期)(友深)门尼粘度仪器 1#'], ['115D02', '(二期)(友深)门尼粘度仪器 2#'], ['115D03', '(二期)(友深)门尼粘度仪器 3#'],
@@ -1413,25 +1413,13 @@ def add_material_day_classes_plan():
             sn += 1
         else:
             init_ps_id = day_plan.plan_schedule
+        ws_set = day_plan.plan_schedule.work_schedule_plan.filter(delete_flag=False)
         for ws in ws_set:
-            mn_uid = None
-            an_uid = None
-            nt_uid = None
-            for cs in ws.classesdetail_set.filter(delete_flag=False):
-                cs_name = cs.classes.global_name
-                if cs_name == "早班":
-                    uid = mn_uid if mn_uid else uuid.uuid1()
-                elif cs_name == "中班":
-                    uid = an_uid if an_uid else uuid.uuid1()
-                elif cs_name == "晚班":
-                    uid = nt_uid if nt_uid else uuid.uuid1()
-                else:
-                    # 暂不做其他班次的处理
-                    continue
-                ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan,
-                                                  plan_classes_uid=UUidTools.uuid1_hex(),
-                                                  classes_detail=cs, unit="kg", plan_trains=50, weight=250,
-                                                  time=45)
+            cs = ws.classes.global_name
+            ProductClassesPlan.objects.create(sn=sn, product_day_plan=day_plan,
+                                              plan_classes_uid=UUidTools.uuid1_hex(day_plan.equip.equip_no),
+                                            unit="kg", plan_trains=50, weight=250, work_schedule_plan=ws,
+                                              time=45)
 
 
 def add_product_demo_data():
@@ -1583,33 +1571,33 @@ def add_system_config():
 
 
 if __name__ == '__main__':
-    add_system_config()
-    add_global_codes()
-    print("global_codes is ok")
-    add_materials()
-    print("materials is ok")
-    add_groups()
-    print("groups is ok")
-    add_sections()
-    print("sections is ok")
-    add_users()
-    print("users is ok")
-    add_schedules()
-    print("schedules is ok")
-    add_equip_attribute()
-    print("equip_attribute is ok")
-    add_equips()
-    print("equips is ok")
-    add_plan_schedule()
-    print("plan_schedule is ok")
-    add_product()
-    print("product is ok")
-    add_product_batching()
-    print("product_batching is ok")
-    add_condition_action()
+    # add_system_config()
+    # add_global_codes()
+    # print("global_codes is ok")
+    # add_materials()
+    # print("materials is ok")
+    # add_groups()
+    # print("groups is ok")
+    # add_sections()
+    # print("sections is ok")
+    # add_users()
+    # print("users is ok")
+    # add_schedules()
+    # print("schedules is ok")
+    # add_equip_attribute()
+    # print("equip_attribute is ok")
+    # add_equips()
+    # print("equips is ok")
+    # add_plan_schedule()
+    # print("plan_schedule is ok")
+    # add_product()
+    # print("product is ok")
+    # add_product_batching()
+    # print("product_batching is ok")
+    # add_condition_action()
     # add_plan()
     # print("plan is ok")
-    # add_material_day_classes_plan()
+    add_material_day_classes_plan()
     print("material_day_classes_plan is ok")
     # add_product_demo_data()
     print("product_demo_data is ok")
