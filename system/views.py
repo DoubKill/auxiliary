@@ -337,57 +337,66 @@ class SystemStatusSwitch(APIView):
         child_system.save()
         return Response("ok")
 
-
+from django.db.models import Q
 class Synchronization(APIView):
-    def get(self, request, *args, **kwargs):
-        auxliary_dict = {'计划': [], '配方': []}
-        csi_obj = ChildSystemInfo.objects.filter(status='独立').last()
-        lost_time = csi_obj.lost_time
-        # 胶料日计划
-        pdp_set = ProductDayPlan.objects.filter(last_updated_date__gte=lost_time)
-        if pdp_set:
-            for pdp_obj in pdp_set:
-                auxliary_dict['计划'].append(pdp_obj.id)  # TODO 胶料日计划应该有一个编号字段，暂时用id代替
-        # 胶料日班次计划
-        pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
-        if pcp_set:
-            for pcp_obj in pcp_set:
-                auxliary_dict['计划'].append(pcp_obj.plan_classes_uid)
-        # 原材料需求量表
-        md_set = MaterialDemanded.objects.filter(last_updated_date__gte=lost_time)
-        if md_set:
-            for md_obj in md_set:
-                auxliary_dict['配方'].append(md_obj.id)# TODO 原材料需求量表应该有一个编号字段，暂时用id代替
-        # 计划状态变更
-        ps_set = PlanStatus.objects.filter(last_updated_date__gte=lost_time)
-        # if
-        # 排班详情
-        wsp_set = WorkSchedulePlan.objects.filter(last_updated_date__gte=lost_time)
-        # 设备表
-        e_set = Equip.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料配料标准
-        pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-        # 排班管理
-        pss_set = PlanSchedule.objects.filter(last_updated_date__gte=lost_time)
-        # 原材料信息
-        m_set = Material.objects.filter(last_updated_date__gte=lost_time)
-        # 原材料属性
-        ma_set = MaterialAttribute.objects.filter(last_updated_date__gte=lost_time)
-        # 原材料供应商
-        ms_set = MaterialSupplier.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料工艺信息
-        pi_set = ProductInfo.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料段次配方标准
-        pr_set = ProductRecipe.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料配料标准详情
-        pbd_set = ProductBatchingDetail.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料配方步序
-        pp_set = ProductProcess.objects.filter(last_updated_date__gte=lost_time)
-        # 基本条件
-        bc_set = BaseCondition.objects.filter(last_updated_date__gte=lost_time)
-        # 基本动作
-        ba_set = BaseAction.objects.filter(last_updated_date__gte=lost_time)
-        # 胶料配料标准步序详情
-        ba_set = ProductProcessDetail.objects.filter(last_updated_date__gte=lost_time)
+    """mes和上辅机同步接口"""
 
-        return None
+    def get(self, request, *args, **kwargs):
+        auxliary_dict = {'计划': [], '配方': []}  # 上辅机
+        mes_dict = {'计划': [], '配方': []}  # mes
+        # 获取断网时间
+        csi_obj = ChildSystemInfo.objects.filter(status='独立').last()
+        if csi_obj:
+            lost_time = csi_obj.lost_time
+            # 上辅机断网证之后新增或者修改的数据
+            # 胶料日计划
+            pdp_set = ProductDayPlan.objects.filter(last_updated_date__gte=lost_time)
+            if pdp_set:
+                for pdp_obj in pdp_set:
+                    auxliary_dict['计划'].append(pdp_obj.id)  # TODO 胶料日计划应该有一个编号字段，暂时用id代替
+            # 胶料日班次计划
+            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
+            if pcp_set:
+                for pcp_obj in pcp_set:
+                    auxliary_dict['计划'].append(pcp_obj.plan_classes_uid)
+            # 原材料需求量表
+            md_set = MaterialDemanded.objects.filter(last_updated_date__gte=lost_time)
+            if md_set:
+                for md_obj in md_set:
+                    auxliary_dict['计划'].append(md_obj.id)  # TODO 原材料需求量表应该有一个编号字段，暂时用id代替
+            # 计划状态变更
+            ps_set = PlanStatus.objects.filter(last_updated_date__gte=lost_time)
+            if ps_set:
+                for ps_obj in ps_set:
+                    auxliary_dict['计划'].append(ps_obj.plan_classes_uid)
+            # if
+            # 排班详情
+            wsp_set = WorkSchedulePlan.objects.filter(last_updated_date__gte=lost_time)
+            # 设备表
+            e_set = Equip.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料配料标准
+            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
+            # 排班管理
+            pss_set = PlanSchedule.objects.filter(last_updated_date__gte=lost_time)
+            # 原材料信息
+            m_set = Material.objects.filter(last_updated_date__gte=lost_time)
+            # 原材料属性
+            ma_set = MaterialAttribute.objects.filter(last_updated_date__gte=lost_time)
+            # 原材料供应商
+            ms_set = MaterialSupplier.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料工艺信息
+            pi_set = ProductInfo.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料段次配方标准
+            pr_set = ProductRecipe.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料配料标准详情
+            pbd_set = ProductBatchingDetail.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料配方步序
+            pp_set = ProductProcess.objects.filter(last_updated_date__gte=lost_time)
+            # 基本条件
+            bc_set = BaseCondition.objects.filter(last_updated_date__gte=lost_time)
+            # 基本动作
+            ba_set = BaseAction.objects.filter(last_updated_date__gte=lost_time)
+            # 胶料配料标准步序详情
+            ba_set = ProductProcessDetail.objects.filter(last_updated_date__gte=lost_time)
+
+        return Response({'MES系统': mes_dict, '上辅机群控系统': auxliary_dict}, status=200)
