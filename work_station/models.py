@@ -67,6 +67,344 @@ class IfdownPmtRecipe2(models.Model):
         db_table = 'ifdown_pmt_recipe_2'
 
 
+class IfdownPmtRecipe3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_3'
+
+
+class IfdownPmtRecipe4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_4'
+
+
+class IfdownPmtRecipe5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_5'
+
+
+class IfdownPmtRecipe6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_6'
+
+
+class IfdownPmtRecipe7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_7'
+
+
+class IfdownPmtRecipe8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_8'
+
+
+class IfdownPmtRecipe9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_9'
+
+
+class IfdownPmtRecipe10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_10'
+
+
+class IfdownPmtRecipe11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_11'
+
+
+class IfdownPmtRecipe12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_12'
+
+
+class IfdownPmtRecipe13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_13'
+
+
+class IfdownPmtRecipe14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_14'
+
+
+class IfdownPmtRecipe15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    recipe_code = models.CharField(max_length=14, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    reuse_time = models.IntegerField(blank=True, null=True)
+    mini_time = models.IntegerField(blank=True, null=True)
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # Field name made lowercase.
+    mini_temp = models.IntegerField(blank=True, null=True)
+    max_temp = models.IntegerField(blank=True, null=True)
+    over_temp = models.IntegerField(blank=True, null=True)
+    if_not = models.IntegerField(blank=True, null=True)
+    temp_zz = models.IntegerField(blank=True, null=True)
+    temp_xlm = models.IntegerField(blank=True, null=True)
+    temp_cb = models.IntegerField(blank=True, null=True)
+    tempuse = models.IntegerField(blank=True, null=True)
+    usenot = models.IntegerField(blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_pmt_recipe_15'
+
+
 class IfdownRecipeCb1(models.Model):
     """1号机台配方炭黑表"""
     id = models.BigIntegerField(db_column='ID', primary_key=True, )  # Field name made lowercase.
@@ -96,6 +434,201 @@ class IfdownRecipeCb2(models.Model):
     class Meta:
         # managed = False
         db_table = 'ifdown_recipe_cb_2'
+
+
+class IfdownRecipeCb3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_3'
+
+
+class IfdownRecipeCb4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_4'
+
+
+class IfdownRecipeCb5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_5'
+
+
+class IfdownRecipeCb6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_6'
+
+
+class IfdownRecipeCb7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_7'
+
+
+class IfdownRecipeCb8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_8'
+
+
+class IfdownRecipeCb9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_9'
+
+
+class IfdownRecipeCb10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_10'
+
+
+class IfdownRecipeCb11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_11'
+
+
+class IfdownRecipeCb12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_12'
+
+
+class IfdownRecipeCb13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_13'
+
+
+class IfdownRecipeCb14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_14'
+
+
+class IfdownRecipeCb15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_cb_15'
 
 
 class IfdownRecipeMix1(models.Model):
@@ -135,6 +668,241 @@ class IfdownRecipeMix2(models.Model):
         db_table = 'ifdown_recipe_mix_2'
 
 
+class IfdownRecipeMix3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_3'
+
+
+class IfdownRecipeMix4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_4'
+
+
+class IfdownRecipeMix5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_5'
+
+
+class IfdownRecipeMix6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_6'
+
+
+class IfdownRecipeMix7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_7'
+
+
+class IfdownRecipeMix8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_8'
+
+
+class IfdownRecipeMix9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_9'
+
+
+class IfdownRecipeMix10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_10'
+
+
+
+class IfdownRecipeMix11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_11'
+
+
+class IfdownRecipeMix12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_12'
+
+
+class IfdownRecipeMix13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_13'
+
+
+class IfdownRecipeMix14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_14'
+
+
+class IfdownRecipeMix15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    set_condition = models.CharField(max_length=22, blank=True, null=True)
+    set_time = models.IntegerField(blank=True, null=True)
+    set_temp = models.IntegerField(blank=True, null=True)
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField(blank=True, null=True)
+    set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20, blank=True, null=True)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_mix_15'
+
+
 class IfdownRecipeOil11(models.Model):
     """1号机台配方油料表"""
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
@@ -166,6 +934,201 @@ class IfdownRecipeOil12(models.Model):
         db_table = 'ifdown_recipe_oil1_2'
 
 
+class IfdownRecipeOil13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_3'
+
+
+class IfdownRecipeOil14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_4'
+
+
+class IfdownRecipeOil15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_5'
+
+
+class IfdownRecipeOil16(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_6'
+
+
+class IfdownRecipeOil17(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_7'
+
+
+class IfdownRecipeOil18(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_8'
+
+
+class IfdownRecipeOil19(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_9'
+
+
+class IfdownRecipeOil110(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_10'
+
+
+class IfdownRecipeOil111(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_11'
+
+
+class IfdownRecipeOil112(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_12'
+
+
+class IfdownRecipeOil113(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_13'
+
+
+class IfdownRecipeOil114(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_14'
+
+
+class IfdownRecipeOil115(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_oil1_15'
+
+
 class IfdownRecipePloy1(models.Model):
     """1号机台配方胶料表"""
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
@@ -195,6 +1158,203 @@ class IfdownRecipePloy2(models.Model):
     class Meta:
         # managed = False
         db_table = 'ifdown_recipe_ploy_2'
+
+
+class IfdownRecipePloy3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_3'
+
+
+class IfdownRecipePloy4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_4'
+
+
+class IfdownRecipePloy5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_5'
+
+
+class IfdownRecipePloy6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_6'
+
+
+class IfdownRecipePloy7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_7'
+
+
+class IfdownRecipePloy8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_8'
+
+
+class IfdownRecipePloy9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_9'
+
+
+
+class IfdownRecipePloy10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_10'
+
+
+class IfdownRecipePloy11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_11'
+
+
+class IfdownRecipePloy12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_12'
+
+
+class IfdownRecipePloy13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_13'
+
+
+class IfdownRecipePloy14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_14'
+
+
+class IfdownRecipePloy15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField(blank=True, null=True)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_ploy_15'
+
 
 
 class IfdownShengchanjihua1(models.Model):
@@ -240,6 +1400,292 @@ class IfdownShengchanjihua2(models.Model):
     class Meta:
         # managed = False
         db_table = 'ifdown_shengchanjihua_2'
+
+
+class IfdownShengchanjihua3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_3'
+
+
+class IfdownShengchanjihua4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_4'
+
+
+class IfdownShengchanjihua5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_5'
+
+
+class IfdownShengchanjihua6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_6'
+
+
+class IfdownShengchanjihua7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_7'
+
+
+class IfdownShengchanjihua8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_8'
+
+
+class IfdownShengchanjihua9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_9'
+
+
+class IfdownShengchanjihua10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_10'
+
+
+class IfdownShengchanjihua11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_11'
+
+
+class IfdownShengchanjihua12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_12'
+
+
+class IfdownShengchanjihua13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_13'
+
+
+class IfdownShengchanjihua14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_14'
+
+
+class IfdownShengchanjihua15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    recipe = models.CharField(max_length=19)
+    recipeid = models.CharField(max_length=19, blank=True, null=True)
+    lasttime = models.CharField(max_length=19, blank=True, null=True)
+    planid = models.CharField(max_length=19)
+    startime = models.CharField(max_length=19, blank=True, null=True)
+    stoptime = models.CharField(max_length=19, blank=True, null=True)
+    grouptime = models.CharField(max_length=10, blank=True, null=True)
+    groupoper = models.CharField(max_length=10, blank=True, null=True)
+    setno = models.IntegerField()
+    actno = models.IntegerField(blank=True, null=True)
+    oper = models.CharField(max_length=18, blank=True, null=True)
+    state = models.CharField(max_length=8, blank=True, null=True)
+    remark = models.CharField(max_length=4)
+    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_shengchanjihua_15'
 
 
 class IfupMachineStatus(models.Model):

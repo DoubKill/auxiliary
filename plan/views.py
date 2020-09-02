@@ -305,20 +305,20 @@ class IssuedPlan(APIView):
         }
         return data
 
-    def _sync(self, *args, params=None):
+    def _sync(self, *args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe1', PmtRecipe).issue_to_db()
+        IssueWorkStation('IfdownPmtRecipe'+ext_str, PmtRecipe).issue_to_db()
         RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeCb1', RecipeCb).batch_to_db()
+        IssueWorkStation('IfdownRecipeCb'+ext_str, RecipeCb).batch_to_db()
         RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeOil11', RecipeOil1).batch_to_db()
+        IssueWorkStation('IfdownRecipeOil1'+ext_str, RecipeOil1).batch_to_db()
         RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipePloy1', RecipePloy).batch_to_db()
+        IssueWorkStation('IfdownRecipePloy'+ext_str, RecipePloy).batch_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix1', RecipeMix).batch_to_db()
+        IssueWorkStation('IfdownRecipeMix'+ext_str, RecipeMix).batch_to_db()
         Shengchanjihua = self._map_Shengchanjihua(params)
-        IssueWorkStation('IfdownShengchanjihua1', Shengchanjihua).issue_to_db()
+        IssueWorkStation('IfdownShengchanjihua'+ext_str, Shengchanjihua).issue_to_db()
 
     @atomic()
     def post(self, request):
@@ -326,16 +326,20 @@ class IssuedPlan(APIView):
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
-        equip_name = params.get("equip_name", None)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         # 校验计划与配方完整性
 
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
+        equip_no = ps_obj.equip_no
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
         if ps_obj.status != '等待':
             return Response({'_': "只有等待中的计划才能下达！"}, status=400)
-        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params)
+        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '运行'
         ps_obj.save()
