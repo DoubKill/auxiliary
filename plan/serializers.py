@@ -69,14 +69,14 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                                  plan_schedule=instance.plan_schedule).first()
             if not work_schedule_plan:
                 raise serializers.ValidationError('暂无该班次排班数据')
-            detail['plan_classes_uid'] = UUidTools.uuid1_hex()
+            detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,
-                                      status='等待', operation_user=' ')
+                                      status='等待', operation_user=self.context['request'].user.username)
             for pbd_obj in instance.product_batching.batching_details.all():
                 MaterialDemanded.objects.create(product_classes_plan=pcp_obj,
                                                 work_schedule_plan=pcp_obj.work_schedule_plan,
@@ -317,7 +317,7 @@ class PlanReceiveSerializer(BaseModelSerializer):
         for pcp_obj in pcp_obj_list:
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,
-                                      status='等待', operation_user=' ')
+                                      status='等待', operation_user=self.context['request'].user.username)
 
         return instance
 

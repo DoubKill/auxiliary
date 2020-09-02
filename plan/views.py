@@ -384,8 +384,9 @@ class PlanReceive(CreateAPIView):
     """
         接受上辅机计划数据接口
         """
-    permission_classes = ()
-    authentication_classes = ()
+    # permission_classes = ()
+    # authentication_classes = ()
+    permission_classes = (IsAuthenticated,)
     serializer_class = PlanReceiveSerializer
     queryset = ProductDayPlan.objects.all()
 
