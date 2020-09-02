@@ -14,6 +14,7 @@ import functools
 import django
 import logging
 
+from django.db.transaction import atomic
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -21,7 +22,8 @@ django.setup()
 from django.db.models.base import ModelBase
 from work_station import models as md
 from plan.models import ProductClassesPlan
-from production.models import EquipStatus, TrainsFeedbacks
+from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
+    IfupReportCurveBackups, IfupReportMixBackups
 from work_station.models import IfupReportMix
 
 logger = logging.getLogger(__name__)
@@ -135,15 +137,17 @@ def main():
         temp_model = getattr(md, m)
         if isinstance(temp_model, ModelBase) and m.startswith("Ifup"):
             # try:
-            temp_model_set = temp_model.objects.filter(recstatus="等待")
-            temp_model_set_copy = copy.deepcopy(temp_model_set)
+            temp_model_set = temp_model.objects.filter(recstatus="待更新")
             temp_model_set_copy_over = copy.deepcopy(temp_model_set)
-            temp_model_set_copy.update(recstatus="运行中")
             if m == "IfupMachineStatus":
+                """设备状态表"""
+                # 每次循环最后检测，补充修改设备状态
                 for temp in temp_model_set:
                     EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
                                                equip_no=temp.机台号).update(status=temp.运行状态)
+
             elif m == "IfupReportBasis":
+                """车次报表主信息"""
                 sync_data_list = []
                 for temp in temp_model_set:
                     uid = temp.计划号
@@ -155,14 +159,16 @@ def main():
                     end_time_str = temp.存盘时间
                     if len(begin_time_str) == 15:
                         begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M")
-                    elif len(begin_time_str) ==18:
-                        begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M:%S")
+                    elif len(begin_time_str) ==19:
+                        # begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M:%S")
+                        begin_time = datetime.datetime.strptime(begin_time_str, "%Y-%m-%d %H:%M:%S")
                     else:
                         continue
                     if len(end_time_str) == 15:
                         end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                    elif len(end_time_str) ==18:
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    elif len(end_time_str) ==19:
+                        # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                        end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                     else:
                         continue
                     adapt_data_trains = {
@@ -177,20 +183,23 @@ def main():
                         "begin_time": begin_time, # 2020/4/15 16:08
                         "end_time": end_time,
                         "operation_user": temp.员工代号,
-                        "classes": pcp.classes_detail.classes.global_name,
+                        "classes": pcp.work_schedule_plan.classes.global_name,
                         "product_time": end_time
                     }
                     sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
                 TrainsFeedbacks.objects.bulk_create(sync_data_list)
+                IfupReportBasisBackups.objects.bulk_create(list(temp_model_set))
             elif m == "IfupReportCurve":
+                """车次报表工艺曲线数据表"""
                 sync_data_list = []
                 for temp in temp_model_set:
                     uid = temp.计划号
                     end_time_str = temp.存盘时间
                     if len(end_time_str) == 15:
                         end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                    elif len(end_time_str) == 18:
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    elif len(end_time_str) == 19:
+                        # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                        end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                     else:
                         continue
                     current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
@@ -209,12 +218,13 @@ def main():
                     }
                     sync_data_list.append(EquipStatus(**adapt_data))
                 EquipStatus.objects.bulk_create(sync_data_list)
+                IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
             elif m == "IfupReportMix":
-                pass
+                """车次报表步序表"""
+                IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
             elif m == "IfupReportWeight":
-                #TODO
-                # 暂时不熟悉原材料管理8.22补充
-                pass
+                """车次报表材料重量表"""
+                IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
             else:
                 # 该分支正常情况执行，若执行需告警
                 print("出现未知同步表，请立即检查")
@@ -224,7 +234,7 @@ def main():
             # else:
                 # logger.info(f"{datetime.datetime.now()}|上行同步完成")
             print(f"{m}|上行同步完成")
-            temp_model_set_copy_over.update(recstatus="完成")
+            temp_model_set_copy_over.update(recstatus="更新完成")
             # 适配器模式作废，直接if elif搞
             # 获取映射model
             # 生成model对应data
@@ -243,7 +253,7 @@ def run():
         # logger.info("同步开始")
         print("同步开始")
         main()
-        time.sleep(1)
+        time.sleep(5)
 
 if __name__ == "__main__":
     # 问题1 recstatus字段是否要修改 文档1中是字符，sql建的表是整型
