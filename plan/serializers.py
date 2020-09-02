@@ -253,6 +253,8 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
+        if int(validated_data.get('trains')) - int(instance.plan_trains) <= 2:
+            raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
         p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
         if not p_status:
             raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
