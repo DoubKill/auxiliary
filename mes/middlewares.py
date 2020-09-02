@@ -1,7 +1,6 @@
 import json
 
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from jwt import DecodeError
@@ -91,7 +90,7 @@ class JwtTokenUserMiddleware(MiddlewareMixin):
         jwt_token = request.META.get("HTTP_AUTHORIZATION")
         if jwt_token:
             if "JWT " not in jwt_token:
-                raise ValidationError("非法token")
+                return HttpResponse("非法token")
             token = jwt_token.split(" ")[1]
             token_dict = {"token": token}
             try:
