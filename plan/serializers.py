@@ -271,6 +271,8 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         # ps_obj.status = '运行中'
         # ps_obj.save()
         ifcjh_obj = IfdownShengchanjihua1.objects.filter(id=instance.id).first()
+        if not ifcjh_obj:
+            raise serializers.ValidationError({'trains': '机台计划表里没有数据'})
         if ifcjh_obj.recstatus == "运行中":
             temp_data = {
                 'id': instance.id,  # id
