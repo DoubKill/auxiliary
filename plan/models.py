@@ -2,7 +2,6 @@ from django.db import models
 from system.models import AbstractEntity
 from basics.models import Equip, PlanSchedule, ClassesDetail, WorkSchedulePlan
 from recipe.models import ProductBatching, Material
-import uuid
 
 
 # Create your models here.
