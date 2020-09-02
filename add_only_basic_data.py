@@ -20,6 +20,7 @@ from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetai
     Equip, WorkSchedulePlan
 from recipe.models import Material, ProductInfo, BaseAction, BaseCondition
 from system.models import GroupExtension, User, Section
+from production.models import MaterialTankStatus
 
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
@@ -1352,6 +1353,47 @@ def add_condition_action():
         )
 
 
+def add_tanks():
+    materials = Material.objects.filter(material_type__global_name='炭黑')
+    print(materials.count())
+    for i in range(1, 10):
+        m = materials[i]
+        MaterialTankStatus.objects.get_or_create(
+            equip_no='Z0{}'.format(i),
+            tank_type='1',
+            tank_name='{}号炭黑罐'.format(i),
+            tank_no=str(i),
+            material_no=m.material_no,
+            material_type=m.material_type.global_name,
+            material_name=m.material_name,
+            use_flag=True,
+            low_value=2,
+            advance_value=2,
+            adjust_value=2,
+            dot_time=2,
+            fast_speed=2,
+            low_speed=2,
+        )
+    for i in range(1, 6):
+        m = materials[i+10]
+        MaterialTankStatus.objects.get_or_create(
+            equip_no='Z0{}'.format(i),
+            tank_type='2',
+            tank_name='{}号油料罐'.format(i),
+            tank_no=str(i),
+            material_no=m.material_no,
+            material_type=m.material_type.global_name,
+            material_name=m.material_name,
+            use_flag=True,
+            low_value=2,
+            advance_value=2,
+            adjust_value=2,
+            dot_time=2,
+            fast_speed=2,
+            low_speed=2,
+        )
+
+
 if __name__ == '__main__':
     add_global_codes()
     print("global_codes is ok")
@@ -1374,3 +1416,4 @@ if __name__ == '__main__':
     add_product()
     print("product is ok")
     add_condition_action()
+    add_tanks()
