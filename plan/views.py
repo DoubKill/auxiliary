@@ -91,6 +91,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter
 
+    @atomic()
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
@@ -99,6 +100,13 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
         instance.delete_flag = True
         instance.delete_user = request.user
         instance.save()
+        # 删除原材料需求量
+        for md_obj in instance.m_product_classes_plan.all():
+            md_obj.delete_flag = True
+            md_obj.save()
+        # 删除计划状态表
+        plan_status.delete_flag = True
+        plan_status.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

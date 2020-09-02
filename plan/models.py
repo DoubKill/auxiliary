@@ -94,7 +94,7 @@ class ProductBatchingClassesPlan(AbstractEntity):
 class MaterialDemanded(AbstractEntity):
     """原材料需求量表"""
     product_classes_plan = models.ForeignKey(ProductClassesPlan, on_delete=models.DO_NOTHING, help_text='胶料日班次计划表id',
-                                             verbose_name='胶料日班次计划表id')
+                                             verbose_name='胶料日班次计划表id', related_name='m_product_classes_plan')
     work_schedule_plan = models.ForeignKey(WorkSchedulePlan, on_delete=models.DO_NOTHING, help_text='班次id',
                                            verbose_name='排班详情id')
     material = models.ForeignKey(Material, on_delete=models.DO_NOTHING, help_text='原材料id',
