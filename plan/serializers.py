@@ -284,7 +284,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 'recstatus': '配方车次需更新'
             }
         temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
-        temp.issue_to_db()
+        temp.update_to_db()
         return instance
 
 
