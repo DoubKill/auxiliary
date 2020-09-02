@@ -9,6 +9,8 @@ from mes.base_serializer import BaseModelSerializer
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
+from work_station.api import IssueWorkStation
+from work_station.models import IfdownShengchanjihua1
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -240,7 +242,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
 
 class UpdateTrainsSerializer(BaseModelSerializer):
-    '''修改车次'''
+    '''修改车次和重传'''
     trains = serializers.IntegerField(write_only=True, help_text='修改车次')
 
     class Meta:
@@ -248,6 +250,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         fields = ('trains',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
+    @atomic()
     def update(self, instance, validated_data):
         p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
         for p_obj in p_status:
@@ -256,6 +259,32 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         trains = validated_data.get('trains')
         instance.plan_trains = trains
         instance.save()
+
+        plan_id = instance.id
+        equip_name = instance.product_day_plan.equip.equip_name
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        if not ps_obj:
+            raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
+        # 计划状态变更表的状态也需要改变
+        ps_obj.status = '运行中'
+        ps_obj.save()
+        ifcjh_obj = IfdownShengchanjihua1.objects.filter(id=instance.id).first()
+        if ifcjh_obj.recstatus == "运行中":
+            temp_data = {
+                'id': instance.id,  # id
+                'setno': instance.plan_trains,  # 设定车次
+                'remark': 'u',
+                'recstatus': '车次需更新'
+            }
+        elif ifcjh_obj.recstatus == "配方需重传":
+            temp_data = {
+                'id': instance.id,  # id
+                'setno': instance.plan_trains,  # 设定车次
+                'remark': 'u',
+                'recstatus': '配方车次需更新'
+            }
+        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
+        temp.issue_to_db()
         return instance
 
 
