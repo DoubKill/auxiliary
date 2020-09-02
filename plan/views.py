@@ -163,8 +163,13 @@ class StopPlan(APIView):
             'remark': 'u',
             'recstatus': '等待'
         }
-        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
-        temp.issue_to_db()
+        equip_no = pcp_obj.product_day_plan.equip.equip_no
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
+        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
+        temp.update_to_db()
 
         return Response({'_': '修改成功'}, status=200)
 
