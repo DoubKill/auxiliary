@@ -253,6 +253,8 @@ class UpdateTrainsSerializer(BaseModelSerializer):
     @atomic()
     def update(self, instance, validated_data):
         p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
+        if not p_status:
+            raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
         for p_obj in p_status:
             if p_obj.status != '运行中':
                 raise serializers.ValidationError({'trains': '只有运行中的计划才可以修改车次'})
@@ -260,14 +262,14 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
 
-        plan_id = instance.id
-        equip_name = instance.product_day_plan.equip.equip_name
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
-        if not ps_obj:
-            raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
+        # plan_id = instance.id
+        # equip_name = instance.product_day_plan.equip.equip_name
+        # ps_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        # if not ps_obj:
+        #     raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
         # 计划状态变更表的状态也需要改变
-        ps_obj.status = '运行中'
-        ps_obj.save()
+        # ps_obj.status = '运行中'
+        # ps_obj.save()
         ifcjh_obj = IfdownShengchanjihua1.objects.filter(id=instance.id).first()
         if ifcjh_obj.recstatus == "运行中":
             temp_data = {
