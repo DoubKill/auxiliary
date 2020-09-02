@@ -149,6 +149,8 @@ class StopPlan(APIView):
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        if not pcp_obj:
+            return Response({'_': "胶料班次日计划没有数据"}, status=400)
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
@@ -170,7 +172,6 @@ class StopPlan(APIView):
             ext_str = equip_no[1:]
         temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
         temp.update_to_db()
-
         return Response({'_': '修改成功'}, status=200)
 
 
