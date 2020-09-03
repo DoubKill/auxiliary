@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from plan.views import PalletFeedbackViewSet, UpRegulation, DownRegulation, \
-    UpdateTrains, StopPlan, IssuedPlan, RetransmissionPlan, PlanReceive, ProductDayPlanViewSet, ProductDayPlanManyCreate
+    UpdateTrains, StopPlan, IssuedPlan, PlanReceive, ProductDayPlanViewSet, ProductDayPlanManyCreate
 
 router = DefaultRouter()
 
@@ -21,6 +21,6 @@ urlpatterns = [
     path('product-day-plan-manycreate/', ProductDayPlanManyCreate.as_view()),  # 群增胶料日计划
     path('stop-plan/', StopPlan.as_view()),  # 计划停止
     path('issued-plan/', IssuedPlan.as_view()),  # 计划下达
-    path('retransmission-plan/', RetransmissionPlan.as_view()),  # 计划重传
+    # path('retransmission-plan/', RetransmissionPlan.as_view()),  # 计划重传，前端用的重传接口是计划下达的put方法，此接口暂时没用了
     path('plan-receive/', PlanReceive.as_view()),  # mes下达到上辅机
 ]
