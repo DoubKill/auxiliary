@@ -126,7 +126,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
             return None
 
     def get_status(self, obj):
-        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).last()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('product_time').last()
         if plan_status:
             return plan_status.status
         else:
@@ -153,7 +153,7 @@ class UpRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_name': '只有等待中的计划才能上调'})
@@ -205,7 +205,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_name': '只有等待中的计划才能下调'})
@@ -255,12 +255,11 @@ class UpdateTrainsSerializer(BaseModelSerializer):
     def update(self, instance, validated_data):
         if int(validated_data.get('trains')) - int(instance.plan_trains) <= 2:
             raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).all()
-        if not p_status:
+        p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
+        if not p_obj:
             raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
-        for p_obj in p_status:
-            if p_obj.status != '运行中':
-                raise serializers.ValidationError({'trains': '只有运行中的计划才可以修改车次'})
+        if p_obj.status != '运行中':
+            raise serializers.ValidationError({'trains': '只有运行中的计划才可以修改车次'})
         trains = validated_data.get('trains')
         instance.plan_trains = trains
         instance.save()
