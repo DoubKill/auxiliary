@@ -30,7 +30,7 @@ def main():
         ext_str = equip_no[-1]
     else:
         ext_str = equip_no[1:]
-    ifdown_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
+    ifdown_list = ["IfdownPmtRecipe", "IfdownRecipeCb", "IfdownRecipeMix", "IfdownRecipeOil1", "IfdownRecipePloy", "IfdownShengchanjihua"]
     for x in ifdown_list:
         down_model = getattr(md, x+ ext_str)
         down_model.objects.filter(recstatus="等待").update(recstatus="运行中")
