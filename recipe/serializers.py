@@ -33,7 +33,7 @@ class MaterialSerializer(BaseModelSerializer):
     update_user_name = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
 
     def create(self, validated_data):
-        validated_data['last_updated_user'] = self.context['request'].user
+        validated_data['created_user'] = self.context['request'].user
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -60,7 +60,7 @@ class ProductInfoSerializer(BaseModelSerializer):
     update_username = serializers.CharField(source='last_updated_user.username', read_only=True)
 
     def create(self, validated_data):
-        validated_data['last_updated_user'] = self.context['request'].user
+        validated_data['created_user'] = self.context['request'].user
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

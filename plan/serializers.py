@@ -10,8 +10,6 @@ from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
 from work_station.api import IssueWorkStation
-from work_station.models import IfdownShengchanjihua1
-from work_station import models as md
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -61,6 +59,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         details = validated_data.pop('pdp_product_classes_plan', None)
+        validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
         instance = super().create(validated_data)
         # 创建胶料日班次班次计划和原材料需求量
