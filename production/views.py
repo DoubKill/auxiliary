@@ -2,6 +2,7 @@ import datetime
 import re
 
 import requests
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import mixins, status
@@ -21,7 +22,8 @@ from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl, MaterialTankStatus, IfupReportBasisBackups
+    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
+    IfupReportCurveBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -711,36 +713,76 @@ group by equip_status.status;
         return Response(ret_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """称量信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = IfupReportWeightBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
+    # pagination_class = SinglePageNumberPagination
     serializer_class = WeighInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                                  计划号=tfb_obk.plan_classes_uid,
+                                                                  配方号=tfb_obk.product_no)
+        except:
+            raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
 
+        return irw_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """密炼信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = IfupReportMixBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
+    # pagination_class = SinglePageNumberPagination
     serializer_class = MixerInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                               计划号=tfb_obk.plan_classes_uid,
+                                                               配方号=tfb_obk.product_no)
+        except:
+            raise ValidationError('车次产出反馈或车次报表步序表没有数据')
 
+        return irm_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """工艺曲线信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = IfupReportCurveBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
+    # pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                                 计划号=tfb_obk.plan_classes_uid,
+                                                                 配方号=tfb_obk.product_no)
+        except:
+            raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
+        return irc_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""

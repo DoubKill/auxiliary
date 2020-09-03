@@ -12,6 +12,7 @@ from production.utils import strtoint
 from recipe.models import ProductBatching
 from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     IfupReportCurveBackups
+from django.db.models import Sum, Max
 
 
 class EquipStatusSerializer(BaseModelSerializer):
@@ -250,91 +251,28 @@ class MaterialStatisticsSerializer(BaseModelSerializer):
 #             'id', 'equip_no', 'status_current_trains', 'product_no_classes', 'group_product', 'statusinfo')
 
 
-class WeighInformationSerializer(BaseModelSerializer):
+class WeighInformationSerializer(serializers.ModelSerializer):
     """称量信息"""
-    weigh_info = serializers.SerializerMethodField(read_only=True)
-
-    def get_weigh_info(self, object):
-        weigh_info = []
-        irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                              计划号=object.plan_classes_uid,
-                                                              配方号=object.product_no).all()
-        if irw_queryset:
-            for irw_obj in irw_queryset:
-                weigh_dict = {}
-                weigh_dict['id'] = irw_obj.序号
-                weigh_dict['物料名称'] = irw_obj.物料名称
-                weigh_dict['设定重量'] = irw_obj.设定重量
-                weigh_dict['实际重量'] = irw_obj.实际重量
-                weigh_dict['秤状态'] = irw_obj.秤状态
-                weigh_dict['物料类型'] = irw_obj.物料类型
-                weigh_info.append(weigh_dict)
-            return weigh_info
-        else:
-            return None
 
     class Meta:
-        model = TrainsFeedbacks
-        fields = ('weigh_info',)
+        model = IfupReportWeightBackups
+        fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class MixerInformationSerializer(BaseModelSerializer):
+class MixerInformationSerializer(serializers.ModelSerializer):
     """密炼信息"""
-    mixer_info = serializers.SerializerMethodField(read_only=True)
-
-    def get_mixer_info(self, object):
-        mixer_info = []
-        irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                           计划号=object.plan_classes_uid,
-                                                           配方号=object.product_no).all()
-        if irm_queryset:
-            for irm_obj in irm_queryset:
-                mixer_dict = {}
-                mixer_dict['id'] = irm_obj.序号
-                mixer_dict['条件'] = irm_obj.条件
-                mixer_dict['时间'] = irm_obj.时间
-                mixer_dict['温度'] = irm_obj.温度
-                mixer_dict['功率'] = irm_obj.功率
-                mixer_dict['能量'] = irm_obj.能量
-                mixer_dict['动作'] = irm_obj.动作
-                mixer_dict['转速'] = irm_obj.转速
-                mixer_dict['压力'] = irm_obj.压力
-                mixer_info.append(mixer_dict)
-            return mixer_info
-        else:
-            return None
 
     class Meta:
-        model = TrainsFeedbacks
-        fields = ('mixer_info',)
+        model = IfupReportMixBackups
+        fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class CurveInformationSerializer(BaseModelSerializer):
+class CurveInformationSerializer(serializers.ModelSerializer):
     """工艺曲线信息"""
-    curve_info = serializers.SerializerMethodField(read_only=True)
-
-    def get_curve_info(self, object):
-        curve_info = []
-        irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(object.equip_no),
-                                                             计划号=object.plan_classes_uid,
-                                                             配方号=object.product_no).all()
-        if irc_queryset:
-            for irc_obj in irc_queryset:
-                curve_dict = {}
-                curve_dict['id'] = irc_obj.序号
-                curve_dict['温度'] = irc_obj.温度
-                curve_dict['功率'] = irc_obj.功率
-                curve_dict['转速'] = irc_obj.转速
-                curve_dict['压力'] = irc_obj.压力
-                curve_dict['时间'] = irc_obj.存盘时间
-                curve_info.append(curve_dict)
-            return curve_info
-        else:
-            return None
 
     class Meta:
-        model = TrainsFeedbacks
-        fields = ('curve_info',)
+        model = IfupReportCurveBackups
+        fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
