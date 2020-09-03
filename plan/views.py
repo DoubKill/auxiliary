@@ -387,7 +387,7 @@ class IssuedPlan(APIView):
             return Response({'_': "只有等待中的计划才能下达！"}, status=400)
         self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
-        ps_obj.status = '运行中'
+        ps_obj.status = '下达成功'
         ps_obj.save()
         return Response({'_': '下达成功'}, status=200)
 
