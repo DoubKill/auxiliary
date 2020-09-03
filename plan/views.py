@@ -8,6 +8,8 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
+
+from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
@@ -262,7 +264,8 @@ class IssuedPlan(APIView):
 
     def _map_RecipePloy(self, product_batching, product_batching_details):
         datas = []
-        product_batching_details = product_batching_details.filter(material__material_type__global_name="胶料")
+        gum_list = GlobalCode.objects.filter(global_type__type_name="胶料").values_list("global_name", flat=True)
+        product_batching_details = product_batching_details.filter(material__material_type__global_name__in=gum_list)
         for pbd in product_batching_details:
             data = {
                 "id": pbd.id,
