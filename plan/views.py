@@ -1,3 +1,4 @@
+from django.db.models import Max
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -380,7 +381,8 @@ class IssuedPlan(APIView):
         """
         # 校验计划与配方完整性
         uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
-        status_list = PlanStatus.objects.values("plan_classes_uid").annotate().filter(plan_classes_uid__in=uid_list).values_list("status", flat=True)
+        id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id", flat=True)
+        status_list = PlanStatus.objects.filter(id__in=id_list)
         if "运行中" in status_list:
             raise ValidationError("该机台当前已有运行中计划,无法下达新计划")
         elif "已下达" in status_list:

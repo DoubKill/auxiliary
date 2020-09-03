@@ -69,7 +69,7 @@ class IssueWorkStation(object):
             elif instance.recstatus == "运行中":
                 self.data["recstatus"] = "车次需更新"
             elif instance.recstatus == "配方车次需更新":
-                pass
+                self.data["recstatus"] = "配方车次需更新"
             elif instance.recstatus == '配方需重传':
                 self.data["recstatus"] = "配方车次需更新"
             else:
@@ -80,7 +80,7 @@ class IssueWorkStation(object):
             elif instance.recstatus == "运行中":
                 self.data["recstatus"] = '配方需重传'
             elif instance.recstatus == "配方车次需更新":
-                pass
+                self.data["recstatus"] = "配方车次需更新"
             elif instance.recstatus == '配方需重传':
                 self.data["recstatus"] = '配方需重传'
             else:
@@ -101,8 +101,10 @@ class IssueWorkStation(object):
                     _["recstatus"] = "配方车次需更新"
                 elif instance.recstatus == "运行中":
                     _["recstatus"] = "配方需重传"
+                elif instance.recstatus == "配方需重传":
+                    _["recstatus"] = "配方需重传"
                 elif instance.recstatus == "配方车次需更新":
-                    pass
+                    _["recstatus"] = "配方车次需更新"
                 else:
                     raise ValidationError("异常接收状态,仅运行中状态允许重传")
             serializer = self.model_serializer(instance, _, partial="partial")
