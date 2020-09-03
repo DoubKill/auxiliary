@@ -152,7 +152,7 @@ class StopPlan(APIView):
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         if not pcp_obj:
             return Response({'_': "胶料班次日计划没有数据"}, status=400)
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
@@ -376,7 +376,7 @@ class IssuedPlan(APIView):
         """
         # 校验计划与配方完整性
 
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
@@ -401,7 +401,7 @@ class IssuedPlan(APIView):
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         # 校验计划与配方完整性
 
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
