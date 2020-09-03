@@ -375,7 +375,12 @@ class IssuedPlan(APIView):
             params['operation_user'] = None
         """
         # 校验计划与配方完整性
-
+        uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
+        status_list = PlanStatus.objects.values("plan_classes_uid").annotate().filter(plan_classes_uid__in=uid_list).values_list("status", flat=True)
+        if "运行中" in status_list:
+            raise ValidationError("该机台当前已有运行中计划,无法下达新计划")
+        elif "已下达" in status_list:
+            raise ValidationError("该机台当前已有已下达计划,无法下达新计划")
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)

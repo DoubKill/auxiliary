@@ -34,6 +34,7 @@ def main():
     for x in ifdown_list:
         down_model = getattr(md, x+ ext_str)
         down_model.objects.filter(recstatus="等待").update(recstatus="运行中")
+        down_model.objects.filter(recstatus="等待")
     n = 1
     temp_list = [IfupReportCurve, IfupReportBasis, IfupReportMix, IfupReportWeight, IfupMachineStatus]
     product_time = datetime.datetime.now()
@@ -134,6 +135,7 @@ def main():
         else:
             data = {}
         m.objects.create(**data)
+        n += 1
 
 def run():
     while True:
