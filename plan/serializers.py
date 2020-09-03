@@ -13,7 +13,7 @@ from work_station.api import IssueWorkStation
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
-    classes_name = serializers.CharField(source='classes_detail.classes.global_name', read_only=True)
+    classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
     classes = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.all(),
                                                  help_text='班次id（公共代码）', write_only=True)
 
@@ -214,7 +214,7 @@ class DownRegulationSerializer(BaseModelSerializer):
             update_dict['product_day_plan__equip__equip_name'] = equip_name
         classes = validated_data.get('classes', None)
         if classes:
-            update_dict['classes_detail__classes__global_name'] = classes
+            update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
             update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
