@@ -157,7 +157,7 @@ class StopPlan(APIView):
             return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
-        ps_obj.status = '等待'
+        ps_obj.status = '已下达'
         ps_obj.save()
 
         temp_data = {
