@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 """
 auther: 
@@ -50,19 +49,25 @@ class IssueWorkStation(object):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-
     def update_to_db(self):
         """
         对接中间表用于修改数据
         """
         id = self.data.get("id")
         instance = self.model.objects.filter(id=id).first()
+        if not instance:
+            raise ValidationError(f"未检测到该计划/配方|{self.model_name}|下达")
         if instance.recstatus == "车次需更新":
             self.data["recstatus"] = "配方车次需更新"
         elif instance.recstatus == "运行中":
-            self.data["recstatus"] = "配方需重传"
+            if "IfdownShengchanjihua" in self.model_name:
+                self.data["recstatus"] = "车次需更新"
+            else:
+                self.data["recstatus"] = "配方需重传"
         elif instance.recstatus == "配方车次需更新":
             pass
+        elif instance.recstatus == '配方需重传':
+            self.data["recstatus"] = "配方车次需更新"
         else:
             raise ValidationError("异常接收状态,仅运行中状态允许重传")
         serializer = self.model_serializer(instance, data=self.data, partial="partial")
@@ -84,7 +89,7 @@ class IssueWorkStation(object):
                 pass
             else:
                 raise ValidationError("异常接收状态,仅运行中状态允许重传")
-            serializer = self.model_serializer(instance, _ , partial="partial")
+            serializer = self.model_serializer(instance, _, partial="partial")
             serializer.is_valid(raise_exception=True)
             serializer.save()
 

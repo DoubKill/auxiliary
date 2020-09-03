@@ -149,6 +149,8 @@ class StopPlan(APIView):
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        if not pcp_obj:
+            return Response({'_': "胶料班次日计划没有数据"}, status=400)
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
@@ -163,9 +165,13 @@ class StopPlan(APIView):
             'remark': 'u',
             'recstatus': '等待'
         }
-        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
-        temp.issue_to_db()
-
+        equip_no = pcp_obj.product_day_plan.equip.equip_no
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
+        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
+        temp.update_to_db()
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -275,7 +281,7 @@ class IssuedPlan(APIView):
         for ppd in product_process_details:
             data = {
                 "id": ppd.id,
-                "set_condition": ppd.condition.condition,  # ? 条件名称还是条件代码
+                "set_condition": ppd.condition.condition if ppd and ppd.condition else None,  # ? 条件名称还是条件代码
                 "set_time": int(ppd.time),
                 "set_temp": int(ppd.temperature),
                 "set_ener": ppd.energy,
@@ -381,7 +387,7 @@ class IssuedPlan(APIView):
             return Response({'_': "只有等待中的计划才能下达！"}, status=400)
         self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
-        ps_obj.status = '运行中'
+        ps_obj.status = '下达成功'
         ps_obj.save()
         return Response({'_': '下达成功'}, status=200)
 

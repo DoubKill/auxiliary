@@ -20,6 +20,7 @@ from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetai
     Equip, WorkSchedulePlan
 from recipe.models import Material, ProductInfo, BaseAction, BaseCondition
 from system.models import GroupExtension, User, Section
+from production.models import MaterialTankStatus
 
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
@@ -1184,16 +1185,15 @@ def add_equip_attribute():
 def add_equips():
     equip_level_ids = list(GlobalCode.objects.filter(global_type__type_name='设备层次').values_list('id', flat=True))
     attr_ids = list(EquipCategoryAttribute.objects.values_list('id', flat=True))
-    data = [['115A01', '(二期)(诺甲)无转子橡胶硫化仪 1#'], ['115A02', '(二期)(诺甲)无转子橡胶硫化仪 2#'],
-            ['115A03', '(二期)(诺甲)无转子橡胶硫化仪 3#'], ['115A04', '(二期)(诺甲)无转子橡胶硫化仪 4#'],
-            ['115A05', '(二期)(诺甲)无转子橡胶硫化仪 5#'], ['115A06', '(二期)(诺甲)无转子橡胶硫化仪 6#'],
-            ['115A07', '(二期)(诺甲)无转子橡胶硫化仪 7#'], ['115A08', '(二期)(诺甲)无转子橡胶硫化仪 8#'],
-            ['110B01', '混炼机(1#)'], ['110B02', '混炼机(2#)'], ['110B03', '终炼机(3#)'],
-            ['110B04', '终炼机(4#)'], ['110B05', '混炼机(5#)'],
-            ['110B06', '终炼机(6#)'], ['110B07', '混炼机(7#)'],
-            ['110B08', '终炼机(8#)'], ['110B09', '终炼机(9#)'],
-            ['110B10', '混炼机(10#)'], ['110B11', '混炼机(11#)'],
-            ['110B12', '混炼机(12#)']]
+    data = [
+            ['Z01', '混炼机(1#)'], ['Z02', '混炼机(2#)'],
+            ['Z03', '终炼机(3#)'], ['Z04', '混炼机(4#)'],
+            ['Z05', '终炼机(5#)'], ['Z06', '混炼机(6#)'],
+            ['Z07', '终炼机(7#)'], ['Z08', '终炼机(8#)'],
+            ['Z09', '混炼机(9#)'], ['Z10', '混炼机(10#)'],
+            ['Z11', '混炼机(11#)'], ['Z12', '终炼机(12#)'],
+            ['Z13', '混炼机(13#)'], ['Z14', '终炼机(14#)'],
+            ['Z15', '混炼机(15#)']]
 
     for item in data:
         try:
@@ -1353,6 +1353,47 @@ def add_condition_action():
         )
 
 
+def add_tanks():
+    materials = Material.objects.filter(material_type__global_name='炭黑')
+    print(materials.count())
+    for i in range(1, 10):
+        m = materials[i]
+        MaterialTankStatus.objects.get_or_create(
+            equip_no='Z0{}'.format(i),
+            tank_type='1',
+            tank_name='{}号炭黑罐'.format(i),
+            tank_no=str(i),
+            material_no=m.material_no,
+            material_type=m.material_type.global_name,
+            material_name=m.material_name,
+            use_flag=True,
+            low_value=2,
+            advance_value=2,
+            adjust_value=2,
+            dot_time=2,
+            fast_speed=2,
+            low_speed=2,
+        )
+    for i in range(1, 6):
+        m = materials[i+10]
+        MaterialTankStatus.objects.get_or_create(
+            equip_no='Z0{}'.format(i),
+            tank_type='2',
+            tank_name='{}号油料罐'.format(i),
+            tank_no=str(i),
+            material_no=m.material_no,
+            material_type=m.material_type.global_name,
+            material_name=m.material_name,
+            use_flag=True,
+            low_value=2,
+            advance_value=2,
+            adjust_value=2,
+            dot_time=2,
+            fast_speed=2,
+            low_speed=2,
+        )
+
+
 if __name__ == '__main__':
     add_global_codes()
     print("global_codes is ok")
@@ -1375,3 +1416,4 @@ if __name__ == '__main__':
     add_product()
     print("product is ok")
     add_condition_action()
+    add_tanks()

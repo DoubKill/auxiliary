@@ -146,6 +146,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
         validated_data['dev_type'] = validated_data['equip'].category
+        validated_data['created_user'] = self.context["request"].user
         instance = super().create(validated_data)
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details:
@@ -432,13 +433,14 @@ class ProductBatchingSerializer(serializers.ModelSerializer):
             id=base_product_batching.id).values('factory_id', 'site_id', 'product_info_id', 'precept',
                                                 'stage_product_batch_no', 'dev_type_id', 'stage_id', 'versions',
                                                 'used_type', 'batching_weight', 'manual_material_weight',
-                                                'auto_material_weight')[0]
+                                                'auto_material_weight', 'production_time_interval')[0]
         batching_details = ProductBatchingDetail.objects.filter(
             product_batching=base_product_batching).values('sn', 'material_id', 'actual_weight',
                                                            'standard_error', 'auto_flag')
 
         product_batching_dict['equip'] = equip
         product_batching_dict['used_type'] = 1
+        product_batching_dict['created_user'] = self.context["request"].user
         # 复制配方和配方详情
         product_batching = ProductBatching.objects.create(**product_batching_dict)
         batching_detail_list = [None] * len(batching_details)
