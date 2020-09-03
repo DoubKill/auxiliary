@@ -94,7 +94,8 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     @atomic()
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).last()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by(
+            'product_time').last()
         if plan_status.status != '等待':
             return Response({'_': "只有等待的计划才能删除"}, status=400)
         instance.delete_flag = True
@@ -151,7 +152,7 @@ class StopPlan(APIView):
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
         if not pcp_obj:
             return Response({'_': "胶料班次日计划没有数据"}, status=400)
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
@@ -375,7 +376,7 @@ class IssuedPlan(APIView):
         """
         # 校验计划与配方完整性
 
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
@@ -400,7 +401,7 @@ class IssuedPlan(APIView):
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         # 校验计划与配方完整性
 
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).first()
+        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('product_time').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
@@ -418,6 +419,8 @@ class IssuedPlan(APIView):
         return Response({'_': '重传成功'}, status=200)
 
 
+'''
+前端现有的重传计划接口调用的是下达计划的put方法，这个重传计划的接口基本没用了，先注释掉
 @method_decorator([api_recorder], name="dispatch")
 class RetransmissionPlan(APIView):
     """重传计划"""
@@ -449,6 +452,7 @@ class RetransmissionPlan(APIView):
         temp.issue_to_db()
 
         return Response({'_': '修改成功'}, status=200)
+'''
 
 
 @method_decorator([api_recorder], name="dispatch")

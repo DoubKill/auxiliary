@@ -1355,43 +1355,44 @@ def add_condition_action():
 
 def add_tanks():
     materials = Material.objects.filter(material_type__global_name='炭黑')
-    print(materials.count())
-    for i in range(1, 10):
-        m = materials[i]
-        MaterialTankStatus.objects.get_or_create(
-            equip_no='Z0{}'.format(i),
-            tank_type='1',
-            tank_name='{}号炭黑罐'.format(i),
-            tank_no=str(i),
-            material_no=m.material_no,
-            material_type=m.material_type.global_name,
-            material_name=m.material_name,
-            use_flag=True,
-            low_value=2,
-            advance_value=2,
-            adjust_value=2,
-            dot_time=2,
-            fast_speed=2,
-            low_speed=2,
-        )
-    for i in range(1, 6):
-        m = materials[i+10]
-        MaterialTankStatus.objects.get_or_create(
-            equip_no='Z0{}'.format(i),
-            tank_type='2',
-            tank_name='{}号油料罐'.format(i),
-            tank_no=str(i),
-            material_no=m.material_no,
-            material_type=m.material_type.global_name,
-            material_name=m.material_name,
-            use_flag=True,
-            low_value=2,
-            advance_value=2,
-            adjust_value=2,
-            dot_time=2,
-            fast_speed=2,
-            low_speed=2,
-        )
+    equips = Equip.objects.all()[:10]
+    for equip in equips:
+        for i in range(1, 10):
+            m = materials[i]
+            MaterialTankStatus.objects.get_or_create(
+                equip_no=equip.equip_no,
+                tank_type='1',
+                tank_name='{}号炭黑罐'.format(i),
+                tank_no=str(i),
+                material_no=m.material_no,
+                material_type=m.material_type.global_name,
+                material_name=m.material_name,
+                use_flag=True,
+                low_value=2,
+                advance_value=2,
+                adjust_value=2,
+                dot_time=2,
+                fast_speed=2,
+                low_speed=2,
+            )
+        for i in range(1, 6):
+            m = materials[i+10]
+            MaterialTankStatus.objects.get_or_create(
+                equip_no=equip.equip_no,
+                tank_type='2',
+                tank_name='{}号油料罐'.format(i),
+                tank_no=str(i),
+                material_no=m.material_no,
+                material_type=m.material_type.global_name,
+                material_name=m.material_name,
+                use_flag=True,
+                low_value=2,
+                advance_value=2,
+                adjust_value=2,
+                dot_time=2,
+                fast_speed=2,
+                low_speed=2,
+            )
 
 
 if __name__ == '__main__':

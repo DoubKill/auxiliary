@@ -32,6 +32,10 @@ class MaterialSerializer(BaseModelSerializer):
     created_user_name = serializers.CharField(source='created_user.username', read_only=True)
     update_user_name = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
 
+    def create(self, validated_data):
+        validated_data['created_user'] = self.context['request'].user
+        return super().create(validated_data)
+
     def update(self, instance, validated_data):
         validated_data['last_updated_user'] = self.context['request'].user
         return super().update(instance, validated_data)
@@ -54,6 +58,14 @@ class MaterialAttributeSerializer(BaseModelSerializer):
 
 class ProductInfoSerializer(BaseModelSerializer):
     update_username = serializers.CharField(source='last_updated_user.username', read_only=True)
+
+    def create(self, validated_data):
+        validated_data['created_user'] = self.context['request'].user
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['last_updated_user'] = self.context['request'].user
+        return super().update(instance, validated_data)
 
     class Meta:
         model = ProductInfo
@@ -203,6 +215,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         if instance.used_type != 1:
             raise serializers.ValidationError('只有编辑状态的配方才可修改')
         batching_details = validated_data.pop('batching_details', None)
+        validated_data['last_updated_user'] = self.context['request'].user
         instance = super().update(instance, validated_data)
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details is not None:
@@ -318,6 +331,7 @@ class ProductProcessSerializer(BaseModelSerializer):
     @atomic()
     def update(self, instance, validated_data):
         process_details = validated_data.pop('process_details', None)
+        validated_data['last_updated_user'] = self.context['request'].user
         instance = super().update(instance, validated_data)
         if process_details:
             instance.process_details.all().delete()
