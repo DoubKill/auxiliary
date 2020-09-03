@@ -275,7 +275,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             'remark': 'u',
         }
         temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
-        temp.update_to_db()
+        temp.update_to_db(flag=True)
         return instance
 
 

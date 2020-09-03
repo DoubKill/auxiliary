@@ -157,22 +157,29 @@ class StopPlan(APIView):
             return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
-        ps_obj.status = '已下达'
+        ps_obj.status = '完成'
         ps_obj.save()
 
-        temp_data = {
-            'id': params.get("id", None),  # id
-            'state': '等待',  # 计划状态：等待，运行中，完成
-            'remark': 'u',
-            'recstatus': '等待'
-        }
+        # temp_data = {
+        #     'id': params.get("id", None),  # id
+        #     'state': '完成',  # 计划状态：等待，运行中，完成
+        #     'remark': 'u',
+        #     'recstatus': '完成'
+        # }
         equip_no = pcp_obj.product_day_plan.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
-        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
-        temp.update_to_db()
+        # temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
+        # temp.update_to_db()
+
+        from work_station import models as md
+        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
+                      'IfdownRecipeCb', 'IfdownPmtRecipe']
+        for model_str in model_list:
+            model_name = getattr(md, model_str + ext_str)
+            model_name.objects.all().update(recstatus='完成')
         return Response({'_': '修改成功'}, status=200)
 
 
