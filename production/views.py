@@ -576,6 +576,7 @@ class EquipStatusPlanList(mixins.ListModelMixin,
         air = '''SELECT equip.id,
        equip.equip_no,
        global_code.global_name,
+       global_code.id AS classes_id,
        trains_feedbacks.product_no,
        equip_status.status,
        SUM(distinct product_classes_plan.plan_trains) AS plan_num,
@@ -593,10 +594,13 @@ GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
 
         ret_data = {}
+        print(equip_set)
         for _ in equip_set:
+            print(_)
             # if ret_data[_.equip_no] :
             if _.equip_no in ret_data.keys():
-                ret_data[_.equip_no].append({"global_name": _.global_name,
+                ret_data[_.equip_no].append({"classes_id": _.classes_id,
+                                             "global_name": _.global_name,
                                              "plan_num": _.plan_num,
                                              "actual_num": _.actual_num,
                                              "product_no": _.product_no,
@@ -605,7 +609,8 @@ GROUP BY equip.equip_no, global_code.global_name;'''
                                              "id": _.id})
             else:
                 ret_data[_.equip_no] = []
-                ret_data[_.equip_no].append({"global_name": _.global_name,
+                ret_data[_.equip_no].append({"classes_id": _.classes_id,
+                                             "global_name": _.global_name,
                                              "plan_num": _.plan_num,
                                              "actual_num": _.actual_num,
                                              "product_no": _.product_no,
@@ -764,14 +769,12 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
-        tf_queryset = TrainsFeedbacks.objects.values('plan_classes_uid', 'equip_no', 'product_no').annotate(
-            Max('product_time')).filter(**filter_dict).values()
+        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values('plan_classes_uid', 'equip_no',
+                                                                           'product_no').annotate(
+            max_id=Max('id')).values_list('max_id', flat=True)
+        tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
-        # if count % page_size:
-        #     counts = count // page_size + 1
-        # else:
-        #     counts = count // page_size
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
