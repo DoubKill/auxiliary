@@ -38,9 +38,24 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = Material.objects.filter(delete_flag=False).select_related('material_type').order_by('-created_date')
     serializer_class = MaterialSerializer
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialFilter
+
+    def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
+        else:
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.filter(use_flag=1).values('id', 'material_no',
+                                                      'material_name', 'material_type__global_name')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
