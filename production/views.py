@@ -435,6 +435,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialTankStatusSerializer
+    pagination_class = SinglePageNumberPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
@@ -498,6 +499,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="2")
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = MaterialTankStatusSerializer
+    pagination_class = SinglePageNumberPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
