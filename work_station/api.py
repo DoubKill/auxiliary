@@ -32,11 +32,13 @@ class IssueWorkStation(object):
         对接万隆中间表
         将数据存入到中间表
         """
-        # TODO 判断recstatus进行分支处理
+        self.model.objects.filter(recstatus="完成").delete()
         serializer = self.model_serializer(data=self.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        # self.model.objects.create(**self.data)
+        serializer.is_valid()
+        try:
+            serializer.save()
+        except:
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
 
     def batch_to_db(self):
         """
@@ -45,11 +47,15 @@ class IssueWorkStation(object):
         """
         # model_data = [self.model(**_) for _ in self.data]
         # self.model.objects.bulk_create(model_data)
+        self.model.objects.filter(recstatus="完成").delete()
         serializer = self.model_serializer(data=self.data, many=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.is_valid()
+        try:
+            serializer.save()
+        except:
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
 
-    def update_to_db(self):
+    def update_to_db(self, flag=False):
         """
         对接中间表用于修改数据
         """
@@ -57,19 +63,28 @@ class IssueWorkStation(object):
         instance = self.model.objects.filter(id=id).first()
         if not instance:
             raise ValidationError(f"未检测到该计划/配方|{self.model_name}|下达")
-        if instance.recstatus == "车次需更新":
-            self.data["recstatus"] = "配方车次需更新"
-        elif instance.recstatus == "运行中":
-            if "IfdownShengchanjihua" in self.model_name:
+        if flag:
+            if instance.recstatus == "车次需更新":
                 self.data["recstatus"] = "车次需更新"
+            elif instance.recstatus == "运行中":
+                self.data["recstatus"] = "车次需更新"
+            elif instance.recstatus == "配方车次需更新":
+                pass
+            elif instance.recstatus == '配方需重传':
+                self.data["recstatus"] = "配方车次需更新"
             else:
-                self.data["recstatus"] = "配方需重传"
-        elif instance.recstatus == "配方车次需更新":
-            pass
-        elif instance.recstatus == '配方需重传':
-            self.data["recstatus"] = "配方车次需更新"
+                raise ValidationError("等待状态中的计划，无法修改工作站车次")
         else:
-            raise ValidationError("异常接收状态,仅运行中状态允许重传")
+            if instance.recstatus == "车次需更新":
+                self.data["recstatus"] = "配方车次需更新"
+            elif instance.recstatus == "运行中":
+                self.data["recstatus"] = '配方需重传'
+            elif instance.recstatus == "配方车次需更新":
+                pass
+            elif instance.recstatus == '配方需重传':
+                self.data["recstatus"] = '配方需重传'
+            else:
+                raise ValidationError("等待状态中的计划，无法重传配方")
         serializer = self.model_serializer(instance, data=self.data, partial="partial")
         serializer.is_valid(raise_exception=True)
         serializer.save()

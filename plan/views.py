@@ -144,6 +144,7 @@ class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
 class StopPlan(APIView):
     """计划停止"""
 
+
     @atomic()
     def get(self, request):
         params = request.query_params
