@@ -219,6 +219,7 @@ LOGGING = {
 }
 
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
@@ -229,13 +230,6 @@ DATABASES = {
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     }
 }
-#
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 
 # DATABASES = {
 #     'default': {
