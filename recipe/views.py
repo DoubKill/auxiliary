@@ -174,7 +174,17 @@ class ProductBatchingViewSet(ModelViewSet):
     filter_class = ProductBatchingFilter
     model_name = queryset.model.__name__.lower()
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.values('id', 'stage_product_batch_no', 'batching_weight', 'production_time_interval')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
+
     def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
         if self.action == 'partial_update':
             return (ProductBatchingPermissions(),
                     IsAuthenticated())
