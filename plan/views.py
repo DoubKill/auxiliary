@@ -312,7 +312,7 @@ class IssuedPlan(APIView):
             'oper': params.get("operation_user", None),  # 操作员角色
             'state': '运行中',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
-            'recstatus': '等待',  # 等待， 进行中， 完成
+            'recstatus': '等待',  # 等待， 运行中， 完成
         }
         return data
 

@@ -253,7 +253,7 @@ def main():
         actual_trains = temp.车次号
         plan_trains = pcp.plan_trains
         if actual_trains < plan_trains:
-            status = "进行中"
+            status = "运行中"
         #elif: 这里预留一个分支判断，当满足时可能计划被删除
         else:
             status = "已完成"
