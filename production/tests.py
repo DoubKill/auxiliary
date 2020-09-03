@@ -51,7 +51,7 @@ def add_product_plan():
                 for ws_obj in ws_set:
                     pcp_obj = ProductClassesPlan.objects.create(product_day_plan=pdp_obj, sn=i, plan_trains=i, time=i,
                                                                 weight=i, unit='包', work_schedule_plan=ws_obj,
-                                                                plan_classes_uid=UUidTools.uuid1_hex(), note='备注')
+                                                                plan_classes_uid=UUidTools.uuid1_hex(e_obj.equip_no), note='备注')
 
                     i += 1
 
@@ -93,7 +93,7 @@ def add_product():
                                                operation_user=user_name,
                                                begin_trains=i, end_trains=1,
                                                pallet_no='托盘（虽然我也不知道是啥意思）',
-                                               barcode=i * 100,
+                                               # barcode=i * 100,
                                                classes=pcp_obj.work_schedule_plan.classes.global_name,
                                                lot_no='追踪号'
                                                )
