@@ -81,7 +81,8 @@ class EquipStatus(AbstractEntity):
     energy = models.DecimalField(decimal_places=2, max_digits=8, help_text='能量', verbose_name='能量')
     power = models.DecimalField(decimal_places=2, max_digits=8, help_text='功率', verbose_name='功率')
     pressure = models.DecimalField(decimal_places=2, max_digits=8, help_text='压力', verbose_name='压力')
-    status = models.CharField(max_length=64, help_text='状态：运行中、等待、故障', verbose_name='状态')
+    status = models.CharField(max_length=64, help_text='状态：运行中、等待、故障', verbose_name='状态',
+                              choices=(('运行中', '运行中'), ('等待', '等待'), ('故障', '故障')))
     current_trains = models.IntegerField(help_text='当前车次', verbose_name='当前车次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 
@@ -95,10 +96,12 @@ class EquipStatus(AbstractEntity):
 
 class PlanStatus(AbstractEntity):
     """计划状态变更"""
+
     plan_classes_uid = models.CharField(help_text='班次计划唯一码', verbose_name='班次计划唯一码', max_length=64)
     equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
     product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
-    status = models.CharField(max_length=64, help_text='状态:等待、下达成功、运行中、完成', verbose_name='状态')
+    status = models.CharField(max_length=64, help_text='状态:等待、已下达、运行中、完成', verbose_name='状态',
+                              choices=(('等待', '等待'), ('已下达', '已下达'), ('运行中', '运行中'), ('完成', '完成')))
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 
