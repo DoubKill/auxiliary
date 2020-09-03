@@ -13,7 +13,7 @@ from work_station.api import IssueWorkStation
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
-    classes_name = serializers.CharField(source='classes_detail.classes.global_name', read_only=True)
+    classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
     classes = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.all(),
                                                  help_text='班次id（公共代码）', write_only=True)
 
@@ -125,7 +125,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
             return None
 
     def get_status(self, obj):
-        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('product_time').last()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
         if plan_status:
             return plan_status.status
         else:
@@ -152,7 +152,7 @@ class UpRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_name': '只有等待中的计划才能上调'})
@@ -204,7 +204,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
+        p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_name': '只有等待中的计划才能下调'})
@@ -214,7 +214,7 @@ class DownRegulationSerializer(BaseModelSerializer):
             update_dict['product_day_plan__equip__equip_name'] = equip_name
         classes = validated_data.get('classes', None)
         if classes:
-            update_dict['classes_detail__classes__global_name'] = classes
+            update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
             update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
@@ -254,7 +254,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
     def update(self, instance, validated_data):
         if int(validated_data.get('trains')) - int(instance.plan_trains) <= 2:
             raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
-        p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('product_time').last()
+        p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         if not p_obj:
             raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
         if p_obj.status != '运行中':
