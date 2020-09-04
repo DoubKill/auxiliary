@@ -9,6 +9,7 @@ from basics.models import GlobalCode, EquipCategoryAttribute, Equip
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
     MaterialAttribute, ProductProcess, ProductProcessDetail
+from production.models import PlanStatus
 from mes.conf import COMMON_READ_ONLY_FIELDS
 
 logger = logging.getLogger('api_log')
@@ -266,6 +267,9 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_time = datetime.now()
         else:
             if instance.used_type == 4:  # 弃用
+                if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
+                                             status__in=('已下达', '运行中')).exists():
+                    raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
                 instance.obsolete_user = self.context['request'].user
                 instance.used_type = 6
                 instance.obsolete_time = datetime.now()
