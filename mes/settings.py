@@ -214,10 +214,9 @@ LOGGING = {
         'async_log': {
             'handlers': ['asyncFile'],
             'level': 'INFO',
-            }
+        }
     },
 }
-
 
 DATABASES = {
     'default': {
@@ -229,13 +228,6 @@ DATABASES = {
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     }
 }
-#
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 
 # DATABASES = {
 #     'default': {
@@ -289,7 +281,6 @@ LANGUAGES = (
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'locale'),
 )
-
 
 # 跨域允许的请求方式，可以使用默认值，默认的请求方式为:
 # from corsheaders.defaults import default_methods
