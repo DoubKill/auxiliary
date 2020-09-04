@@ -596,9 +596,7 @@ GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
 
         ret_data = {}
-        print(equip_set)
         for _ in equip_set:
-            print(_)
             # if ret_data[_.equip_no] :
             if _.equip_no in ret_data.keys():
                 ret_data[_.equip_no].append({"classes_id": _.classes_id,
