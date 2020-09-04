@@ -6,7 +6,7 @@ from system.models import AbstractEntity, User
 
 class Material(AbstractEntity):
     """原材料信息"""
-    material_no = models.CharField(max_length=64, help_text='原材料编码', verbose_name='原材料编码')
+    material_no = models.CharField(max_length=64, help_text='原材料编码', verbose_name='原材料编码', unique=True)
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
     for_short = models.CharField(max_length=64, help_text='原材料简称', verbose_name='原材料简称', blank=True, null=True)
     material_type = models.ForeignKey(GlobalCode, help_text='原材料类别', verbose_name='原材料类别',
@@ -36,7 +36,7 @@ class MaterialAttribute(AbstractEntity):
 class MaterialSupplier(AbstractEntity):
     """原材料供应商"""
     material = models.ForeignKey(Material, help_text='原材料', verbose_name='原材料', on_delete=models.DO_NOTHING)
-    supplier_no = models.IntegerField(help_text='供应商编码', verbose_name='供应商编码')
+    supplier_no = models.IntegerField(help_text='供应商编码', verbose_name='供应商编码', unique=True)
 
     class Meta:
         db_table = 'material_supplier'
@@ -45,7 +45,7 @@ class MaterialSupplier(AbstractEntity):
 
 class ProductInfo(AbstractEntity):
     """胶料工艺信息"""
-    product_no = models.CharField(max_length=64, help_text='胶料编码', verbose_name='胶料编码')
+    product_no = models.CharField(max_length=64, help_text='胶料编码', verbose_name='胶料编码', unique=True)
     product_name = models.CharField(max_length=64, help_text='胶料名称', verbose_name='胶料名称')
 
     def __str__(self):

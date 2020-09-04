@@ -42,6 +42,7 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     serializer_class = PermissionSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = SinglePageNumberPagination
+    # filter_backends = (DjangoFilterBackend,)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -61,14 +62,6 @@ class UserViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        if self.request.query_params.get('all'):
-            data = queryset.filter(is_active=1).values('id', 'username')
-            return Response({'results': data})
-        else:
-            return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         # 账号停用和启用
@@ -106,7 +99,7 @@ class UserGroupsViewSet(mixins.ListModelMixin,
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(ModelViewSet):
+class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除，现在改为是启用就改为禁用 是禁用就改为启用
     """
     list:
         角色列表,xxx?all=1查询所有

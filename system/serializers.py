@@ -13,7 +13,7 @@ from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
-from system.models import GroupExtension, Group, User, Section, SystemConfig, ChildSystemInfo
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 
 
 class PermissionSerializer(BaseModelSerializer):
