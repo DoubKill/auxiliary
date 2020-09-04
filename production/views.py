@@ -596,9 +596,7 @@ GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
 
         ret_data = {}
-        print(equip_set)
         for _ in equip_set:
-            print(_)
             # if ret_data[_.equip_no] :
             if _.equip_no in ret_data.keys():
                 ret_data[_.equip_no].append({"classes_id": _.classes_id,
@@ -765,7 +763,7 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     """工艺曲线信息"""
     queryset = IfupReportCurveBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    # pagination_class = SinglePageNumberPagination
+    pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
