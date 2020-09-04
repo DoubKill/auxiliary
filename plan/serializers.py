@@ -243,7 +243,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
 class UpdateTrainsSerializer(BaseModelSerializer):
     '''修改车次和重传'''
-    trains = serializers.DecimalField(write_only=True, help_text='修改车次',decimal_places=1, max_digits=8)
+    trains = serializers.DecimalField(write_only=True, help_text='修改车次', decimal_places=1, max_digits=8)
 
     class Meta:
         model = ProductClassesPlan
@@ -269,13 +269,25 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         else:
             ext_str = equip_no[1:]
 
-        temp_data = {
-            'id': instance.id,  # id
-            'setno': instance.plan_trains,  # 设定车次
-            'remark': 'u',
-        }
-        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
-        temp.update_to_db(flag=True)
+        from work_station import models as md
+        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
+                      'IfdownRecipeCb', 'IfdownPmtRecipe']
+        for model_str in model_list:
+            model_name = getattr(md, model_str + ext_str)
+            instance = model_name.objects.get(id=instance.id)
+            if not instance:
+                raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
+            if instance.recstatus == "车次需更新":
+                recstatus = "车次需更新"
+            elif instance.recstatus == "运行中":
+                recstatus = "车次需更新"
+            elif instance.recstatus == "配方车次需更新":
+                recstatus = "配方车次需更新"
+            elif instance.recstatus == '配方需重传':
+                recstatus = "配方车次需更新"
+            else:
+                raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
+            model_name.objects.all().update(recstatus=recstatus)
         return instance
 
 
