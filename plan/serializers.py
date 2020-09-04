@@ -242,7 +242,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
 
 class UpdateTrainsSerializer(BaseModelSerializer):
-    '''修改车次和重传'''
+    '''修改车次'''
     trains = serializers.DecimalField(write_only=True, help_text='修改车次',decimal_places=1, max_digits=8)
 
     class Meta:
@@ -252,6 +252,8 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
+        if instance.product_day_plan.product_batching.used_type != 4: # 4对应配方的启用状态
+            raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         if validated_data.get('trains') - instance.plan_trains <= 2:
             raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
         p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()

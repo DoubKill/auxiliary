@@ -60,6 +60,7 @@ class IssueWorkStation(object):
         对接中间表用于修改数据
         """
         id = self.data.get("id")
+        recstatus = self.data.get("recstatus")
         instance = self.model.objects.filter(id=id).first()
         if not instance:
             raise ValidationError(f"未检测到该计划/配方|{self.model_name}|下达")

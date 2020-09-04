@@ -154,6 +154,8 @@ class StopPlan(APIView):
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
+        if pcp_obj.product_day_plan.product_batching.used_type != 4: # 4对应配方的启用状态
+            raise ValidationError("该计划对应配方未启用,无法下达")
         if not pcp_obj:
             return Response({'_': "胶料班次日计划没有数据"}, status=400)
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
@@ -355,9 +357,12 @@ class IssuedPlan(APIView):
         IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
         IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_update_to_db()
-        # 重传逻辑不需要修改计划
-        # Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
-        # IssueWorkStation('IfdownShengchanjihua'+ext_str, Shengchanjihua).update_to_db()
+        # 重传逻辑只修改计划状态
+        Shengchanjihua = {
+            'id': params.get("id"),  # id
+            'recstatus': '配方需重传',  # 等待， 运行中， 完成
+        }
+        IssueWorkStation('IfdownShengchanjihua'+ext_str, Shengchanjihua).update_to_db()
 
     @atomic()
     def post(self, request):
@@ -366,6 +371,8 @@ class IssuedPlan(APIView):
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+        if pcp_obj.product_day_plan.product_batching.used_type != 4: # 4对应配方的启用状态
+            raise ValidationError("该计划对应配方未启用,无法下达")
 
         """
         # 通过id去取相关数据
@@ -417,8 +424,8 @@ class IssuedPlan(APIView):
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
-        # 校验计划与配方完整性
-
+        if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
+            raise ValidationError("该计划对应配方未启用,无法重传")
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
@@ -428,7 +435,7 @@ class IssuedPlan(APIView):
         else:
             ext_str = equip_no[1:]
         if ps_obj.status != '运行中':
-            return Response({'_': "只有运行中的计划才能下达！"}, status=400)
+            return Response({'_': "只有运行中的计划才能重传！"}, status=400)
         self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
         # 模型类的名称需根据设备编号来拼接
         # 重传默认不修改plan_status

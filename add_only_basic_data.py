@@ -19,7 +19,7 @@ django.setup()
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, PlanSchedule, \
     Equip, WorkSchedulePlan
 from recipe.models import Material, ProductInfo, BaseAction, BaseCondition
-from system.models import GroupExtension, User, Section
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from production.models import MaterialTankStatus
 
 
@@ -85,12 +85,10 @@ first_names = ['的', '一', '是', '了', '我', '不', '人', '在', '他', '�
 
 
 def add_global_codes():
-    names = ['', '产地', '包装单位', '原材料类别', '胶料段次', '班组',
-             '班次', '设备类型', '工序', '炼胶机类型', '设备层次', 'SITE']
+    names = ['胶料状态', '产地', '包装单位', '原材料类别', '胶料段次', '班组', '班次', '设备类型', '工序', '炼胶机类型', '设备层次',
+             'SITE', '胶料']
     j = 1
     for i, name in enumerate(names):
-        if i == 0:
-            continue
         instance, _ = GlobalCodeType.objects.get_or_create(type_no=str(i + 1), type_name=name, use_flag=1)
         items = []
         if i == 1:
@@ -108,7 +106,7 @@ def add_global_codes():
         elif i == 6:
             items = ["早班", "中班", "晚班"]
         elif i == 7:
-            items = ["密炼设备"]
+            items = ["密炼设备", "快检设备", "传送设备"]
         elif i == 8:
             items = ["一段", "二段", "三段"]
         elif i == 9:
@@ -117,6 +115,8 @@ def add_global_codes():
             items = ['1', '2', '3']
         elif i == 11:
             items = ['C', 'L', 'K']
+        elif i == 12:
+            items = ['天然胶', '合成胶', '再生胶', 'CMB', 'FM', 'HMB', 'NF', 'RE', 'RFM', 'RMB', '1MB', '2MB', '3MB']
         for item in items:
             GlobalCode.objects.get_or_create(global_no=str(j), global_name=item, global_type=instance)
             j += 1
@@ -1395,6 +1395,13 @@ def add_tanks():
             )
 
 
+def add_system_config():
+    SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
+    ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
+    ChildSystemInfo.objects.create(link_address="10.4.10.55", system_type="gz", system_name="上辅机群控", status="联网")
+    ChildSystemInfo.objects.create(link_address="10.4.10.56", system_type="gz", system_name="上辅机工作站1", status="联网")
+
+
 if __name__ == '__main__':
     add_global_codes()
     print("global_codes is ok")
@@ -1418,3 +1425,4 @@ if __name__ == '__main__':
     print("product is ok")
     add_condition_action()
     add_tanks()
+    add_system_config()
