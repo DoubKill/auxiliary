@@ -8,7 +8,7 @@ class GlobalCodeType(AbstractEntity):
     type_no = models.CharField(max_length=64, help_text=_('类型编号'), verbose_name=_('类型编号'), unique=True)
     type_name = models.CharField(max_length=64, help_text='类型名称', verbose_name='类型名称')
     description = models.CharField(max_length=256, blank=True, null=True, help_text='说明', verbose_name='说明')
-    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用')
+    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.type_name
@@ -22,11 +22,11 @@ class GlobalCode(AbstractEntity):
     """公共代码表"""
     global_type = models.ForeignKey('GlobalCodeType', models.DO_NOTHING, related_name="global_codes",
                                     help_text='全局类型ID', verbose_name='全局类型ID')
-    global_no = models.CharField(max_length=64, help_text='公共代码编号', verbose_name='公共代码编号')
+    global_no = models.CharField(max_length=64, help_text='公共代码编号', verbose_name='公共代码编号', unique=True)
     global_name = models.CharField(max_length=64, help_text='公用代码名称', verbose_name='公用代码名称')
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='说明', verbose_name='说明')
-    use_flag = models.IntegerField(help_text='是否启用', verbose_name='是否删除', default=0)
+    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.global_name
@@ -43,6 +43,7 @@ class WorkSchedule(AbstractEntity):
     period = models.PositiveIntegerField(help_text='周期天数', verbose_name='周期天数', default=0)
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='说明', verbose_name='说明')
+    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.schedule_name
@@ -54,6 +55,10 @@ class WorkSchedule(AbstractEntity):
 
 class ClassesDetail(AbstractEntity):
     """倒班条目"""
+    TYPE_CHOICE = (
+        ('normal', '正常'),
+        ('rest', '休假'),
+    )
     work_schedule = models.ForeignKey('WorkSchedule', models.DO_NOTHING,
                                       help_text='工作日程id', verbose_name='工作日程id', related_name="classesdetail_set")
     classes = models.ForeignKey('GlobalCode', models.DO_NOTHING,
@@ -75,13 +80,14 @@ class EquipCategoryAttribute(AbstractEntity):
     """设备种类属性"""
     equip_type = models.ForeignKey('GlobalCode', models.DO_NOTHING, related_name='equip_category_attribute_t',
                                    help_text='设备类型', verbose_name='设备类型')
-    category_no = models.CharField(max_length=64, help_text='机型编号', verbose_name='机型编号')
+    category_no = models.CharField(max_length=64, help_text='机型编号', verbose_name='机型编号', unique=True)
     category_name = models.CharField(max_length=64, help_text='机型名称', verbose_name='机型名称')
     volume = models.IntegerField(help_text='容积', verbose_name='容积')
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='设备说明', verbose_name='设备说明')
     process = models.ForeignKey('GlobalCode', models.DO_NOTHING, related_name='equip_category_attribute_p',
                                 help_text='工序', verbose_name='工序')
+    use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     def __str__(self):
         return self.category_name
@@ -98,7 +104,7 @@ class Equip(AbstractEntity):
     parent = models.ForeignKey('self', blank=True, null=True,
                                help_text='上层设备', verbose_name='上层设备', on_delete=models.DO_NOTHING,
                                related_name="equip_p")
-    equip_no = models.CharField(max_length=64, help_text='设备编号', verbose_name='设备编号')
+    equip_no = models.CharField(max_length=64, help_text='设备编号', verbose_name='设备编号', unique=True)
     equip_name = models.CharField(max_length=64, help_text='设备名称', verbose_name='设备名称')
     use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用')
     description = models.CharField(max_length=256, blank=True, null=True,
@@ -120,7 +126,7 @@ class SysbaseEquipLevel(AbstractEntity):
     """设备层次"""
     parent = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True,
                                help_text='上层设备层次', verbose_name='上层设备层次', related_name='sysbase_equip_level')
-    equip_level_no = models.CharField(max_length=64, help_text='编号', verbose_name='编号')
+    equip_level_no = models.CharField(max_length=64, help_text='编号', verbose_name='编号', unique=True)
     equip_level_name = models.CharField(max_length=64, help_text='名称', verbose_name='名称')
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='说明', verbose_name='说明')
