@@ -765,7 +765,7 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     """工艺曲线信息"""
     queryset = IfupReportCurveBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    # pagination_class = SinglePageNumberPagination
+    pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
