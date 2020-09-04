@@ -14,19 +14,17 @@ import functools
 import django
 import logging
 
-from django.db.transaction import atomic
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
-from django.db.models.base import ModelBase
 from work_station import models as md
 from plan.models import ProductClassesPlan
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
-    IfupReportCurveBackups, IfupReportMixBackups
+    IfupReportCurveBackups, IfupReportMixBackups, PlanStatus
 from work_station.models import IfupReportMix
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
 sync_model_map = {
     "IfupMachineStatus": EquipStatus,
@@ -102,9 +100,7 @@ field_map = {
         "物料编码": "",
         "物料类型": "",
         "存盘时间": "",
-
     }
-
 }
 
 
@@ -122,7 +118,7 @@ def one_instance(func):
             host = socket.gethostname()
             s.bind((host, 60123))
         except:
-            print('already has an instance, this script will not be excuted')
+            logger.info('already has an instance, this script will not be excuted')
             return
         return func(*args,**kwargs)
     return f
@@ -132,126 +128,152 @@ def main():
     # temp_list = dir(md)  # 原计划动态导入中间表，改为写死
     # 手动对中间表模型进行排序确保业务逻辑正确
     bath_no = 1 # 没有批次号编码,暂时写死
-    temp_list = ["IfupReportCurve", "IfupReportBasis", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus"]
+    temp_model_set = None
+    temp_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
     for m in temp_list:
         temp_model = getattr(md, m)
-        if isinstance(temp_model, ModelBase) and m.startswith("Ifup"):
             # try:
-            temp_model_set = temp_model.objects.filter(recstatus="待更新")
-            temp_model_set_copy_over = copy.deepcopy(temp_model_set)
-            if m == "IfupMachineStatus":
-                """设备状态表"""
-                # 每次循环最后检测，补充修改设备状态
-                for temp in temp_model_set:
-                    EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
-                                               equip_no=temp.机台号).update(status=temp.运行状态)
+        temp_model_set = temp_model.objects.filter(recstatus="待更新")
+        if m == "IfupMachineStatus":
+            """设备状态表"""
+            # 每次循环最后检测，补充修改设备状态
+            for temp in temp_model_set:
+                EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
+                                           equip_no=temp.机台号).update(status=temp.运行状态)
 
-            elif m == "IfupReportBasis":
-                """车次报表主信息"""
-                sync_data_list = []
-                for temp in temp_model_set:
-                    uid = temp.计划号
-                    equip_no = temp.机台号
-                    product_no = temp.配方号  # 这里不确定是否一致
-                    # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
-                    pcp = ProductClassesPlan.objects.filter(plan_classes_uid=uid).first()
-                    begin_time_str = temp.开始时间
-                    end_time_str = temp.存盘时间
-                    if len(begin_time_str) == 15:
-                        begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M")
-                    elif len(begin_time_str) ==19:
-                        # begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M:%S")
-                        begin_time = datetime.datetime.strptime(begin_time_str, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        continue
-                    if len(end_time_str) == 15:
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                    elif len(end_time_str) ==19:
-                        # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        continue
-                    adapt_data_trains = {
-                        "plan_classes_uid": uid,
-                        "plan_trains": pcp.plan_trains,
-                        "actual_trains": temp.车次号,
-                        "bath_no": bath_no,
-                        "equip_no": equip_no,
-                        "product_no": product_no,
-                        "plan_weight": pcp.weight,
-                        "actual_weight": temp.总重量,
-                        "begin_time": begin_time, # 2020/4/15 16:08
-                        "end_time": end_time,
-                        "operation_user": temp.员工代号,
-                        "classes": pcp.work_schedule_plan.classes.global_name,
-                        "product_time": end_time
-                    }
-                    sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
-                TrainsFeedbacks.objects.bulk_create(sync_data_list)
-                IfupReportBasisBackups.objects.bulk_create(list(temp_model_set))
-            elif m == "IfupReportCurve":
-                """车次报表工艺曲线数据表"""
-                sync_data_list = []
-                for temp in temp_model_set:
-                    uid = temp.计划号
-                    end_time_str = temp.存盘时间
-                    if len(end_time_str) == 15:
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                    elif len(end_time_str) == 19:
-                        # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
-                        end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        continue
-                    current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
-                                                                  机台号=temp.机台号).first().密炼车次
-                    adapt_data = {
-                        "plan_classes_uid": uid,
-                        "equip_no": temp.机台号,  # 机台号可能需要根据规则格式化
-                        "temperature": temp.温度,
-                        "rpm": temp.转速,
-                        "energy": temp.能量,
-                        "power": temp.功率,
-                        "pressure": temp.压力,
-                        "current_trains": current_trains,
-                        "status": "等待",
-                        "product_time": end_time,
-                    }
-                    sync_data_list.append(EquipStatus(**adapt_data))
-                EquipStatus.objects.bulk_create(sync_data_list)
-                IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
-            elif m == "IfupReportMix":
-                """车次报表步序表"""
-                IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
-            elif m == "IfupReportWeight":
-                """车次报表材料重量表"""
-                IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
-            else:
-                # 该分支正常情况执行，若执行需告警
-                print("出现未知同步表，请立即检查")
-                pass
-            # except Exception as e:
-            #     logger.error(f"同步过程出现异常，参考异常:{e}，请及时修正")
-            # else:
-                # logger.info(f"{datetime.datetime.now()}|上行同步完成")
-            print(f"{m}|上行同步完成")
-            temp_model_set_copy_over.update(recstatus="更新完成")
-            # 适配器模式作废，直接if elif搞
-            # 获取映射model
-            # 生成model对应data
-            # 进行更新
-            # temp_plan_no_list = temp_model.objects.filter(recstatus=2)
-            # temp_set = temp_model.objects.filter(recstatus="按照涉及改为中文的话这部分状态对应的字段需要改为字符类型")
-            # 获取映射model
-            # sync_model = sync_model_map.get(m)
-            # sync_data = {}
-            # sync_model, data = mid_model_map.get(m)
-            # sync_model.objects.create(**data)
+        elif m == "IfupReportBasis":
+            """车次报表主信息"""
+            sync_data_list = []
+            for temp in temp_model_set:
+                uid = temp.计划号
+                equip_no = temp.机台号
+                product_no = temp.配方号  # 这里不确定是否一致
+                # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
+                pcp = ProductClassesPlan.objects.filter(plan_classes_uid=uid).first()
+                begin_time_str = temp.开始时间
+                end_time_str = temp.存盘时间
+                if len(begin_time_str) == 15:
+                    begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M")
+                elif len(begin_time_str) ==19:
+                    # begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M:%S")
+                    begin_time = datetime.datetime.strptime(begin_time_str, "%Y-%m-%d %H:%M:%S")
+                else:
+                    continue
+                if len(end_time_str) == 15:
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+                elif len(end_time_str) ==19:
+                    # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                else:
+                    continue
+                adapt_data_trains = {
+                    "plan_classes_uid": uid,
+                    "plan_trains": pcp.plan_trains,
+                    "actual_trains": temp.车次号,
+                    "bath_no": bath_no,
+                    "equip_no": equip_no,
+                    "product_no": product_no,
+                    "plan_weight": pcp.weight,
+                    "actual_weight": temp.总重量,
+                    "begin_time": begin_time, # 2020/4/15 16:08
+                    "end_time": end_time,
+                    "operation_user": temp.员工代号,
+                    "classes": pcp.work_schedule_plan.classes.global_name,
+                    "product_time": end_time
+                }
+                sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
+            TrainsFeedbacks.objects.bulk_create(sync_data_list)
+            IfupReportBasisBackups.objects.bulk_create(list(temp_model_set))
+        elif m == "IfupReportCurve":
+            """车次报表工艺曲线数据表"""
+            sync_data_list = []
+            for temp in temp_model_set:
+                uid = temp.计划号
+                end_time_str = temp.存盘时间
+                if len(end_time_str) == 15:
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+                elif len(end_time_str) == 19:
+                    # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                else:
+                    continue
+                current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
+                                                              机台号=temp.机台号).first().密炼车次
+                adapt_data = {
+                    "plan_classes_uid": uid,
+                    "equip_no": temp.机台号,  # 机台号可能需要根据规则格式化
+                    "temperature": temp.温度,
+                    "rpm": temp.转速,
+                    "energy": temp.能量,
+                    "power": temp.功率,
+                    "pressure": temp.压力,
+                    "current_trains": current_trains,
+                    "status": "等待",
+                    "product_time": end_time,
+                }
+                sync_data_list.append(EquipStatus(**adapt_data))
+            EquipStatus.objects.bulk_create(sync_data_list)
+            IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
+        elif m == "IfupReportMix":
+            """车次报表步序表"""
+            IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
+        elif m == "IfupReportWeight":
+            """车次报表材料重量表"""
+            IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
+        else:
+            # 该分支正常情况执行，若执行需告警
+            logger.error("出现未知同步表，请立即检查")
+            pass
+        # except Exception as e:
+        #     logger.error(f"同步过程出现异常，参考异常:{e}，请及时修正")
+        # else:
+            # logger.info(f"{datetime.datetime.now()}|上行同步完成")
+        logger.info(f"{m}|上行同步完成")
+        temp_model_set.update(recstatus="更新完成")
+        # 适配器模式作废，直接if elif搞
+        # 获取映射model
+        # 生成model对应data
+        # 进行更新
+        # temp_plan_no_list = temp_model.objects.filter(recstatus=2)
+        # temp_set = temp_model.objects.filter(recstatus="按照涉及改为中文的话这部分状态对应的字段需要改为字符类型")
+        # 获取映射model
+        # sync_model = sync_model_map.get(m)
+        # sync_data = {}
+        # sync_model, data = mid_model_map.get(m)
+        # sync_model.objects.create(**data)
+    if temp:
+        plan_no = temp.计划号
+        product_no = temp.配方号
+        equip_no = str(temp.机台号)
+        if len(equip_no) == 1:
+            equip_no = "Z0" + equip_no
+        else:
+            equip_no = "Z" + equip_no
+        product_time = temp.存盘时间
+        actual_trains = temp.车次号
+        plan_trains = pcp.plan_trains
+        if actual_trains < plan_trains:
+            status = "运行中"
+        #elif: 这里预留一个分支判断，当满足时可能计划被删除
+        else:
+            status = "已完成"
+        operation_user = temp.员工代号
+        if not operation_user:
+            operation_user = ""
+        PlanStatus.objects.create(plan_classes_uid=plan_no,
+                                       product_no=product_no,
+                                       equip_no=equip_no,
+                                       operation_user=operation_user,
+                                       product_time=product_time,
+                                       status=status
+                                       )
+
+
 
 @one_instance
 def run():
     while True:
-        # logger.info("同步开始")
-        print("同步开始")
+        logger.info("同步开始")
         main()
         time.sleep(5)
 

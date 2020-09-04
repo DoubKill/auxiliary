@@ -9,25 +9,38 @@ import os
 import time
 
 import django
-import logging
 
-from django.db.transaction import atomic
 
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from production.models import PlanStatus
 from work_station.models import IfupReportCurve, IfupReportBasis, IfupReportMix, IfupReportWeight, IfupMachineStatus
+from work_station import models as md
+
 
 def main():
+    ps = PlanStatus.objects.filter(status="已下达").order_by("created_date").last()
+    if not ps:
+        return
+    equip_no = ps.equip_no
+    if "0" in equip_no:
+        ext_str = equip_no[-1]
+    else:
+        ext_str = equip_no[1:]
+    ifdown_list = ["IfdownPmtRecipe", "IfdownRecipeCb", "IfdownRecipeMix", "IfdownRecipeOil1", "IfdownRecipePloy", "IfdownShengchanjihua"]
+    for x in ifdown_list:
+        down_model = getattr(md, x+ ext_str)
+        down_model.objects.filter(recstatus="等待").update(recstatus="运行中")
     n = 1
     temp_list = [IfupReportCurve, IfupReportBasis, IfupReportMix, IfupReportWeight, IfupMachineStatus]
     product_time = datetime.datetime.now()
     recstatus = "待更新"
-    plan_no = "2020090210271501Z05"
-    recipe_no = "K-2MB-C150-01"
-    equip_no = 5
+    plan_no = ps.plan_classes_uid
+    recipe_no = ps.product_no
+    equip_no = int(ext_str)
     status = 1
     for m in temp_list:
         if m.__name__ == "IfupMachineStatus":
