@@ -214,7 +214,7 @@ LOGGING = {
         'async_log': {
             'handlers': ['asyncFile'],
             'level': 'INFO',
-            }
+        }
     },
 }
 
@@ -282,7 +282,6 @@ LANGUAGES = (
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'locale'),
 )
-
 
 # 跨域允许的请求方式，可以使用默认值，默认的请求方式为:
 # from corsheaders.defaults import default_methods
