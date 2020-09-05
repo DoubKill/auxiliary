@@ -273,6 +273,6 @@ class CurveInformationSerializer(serializers.ModelSerializer):
     """工艺曲线信息"""
 
     class Meta:
-        model = IfupReportCurveBackups
+        model = EquipStatus
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS

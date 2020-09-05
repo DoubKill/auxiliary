@@ -578,36 +578,55 @@ class EquipStatusPlanList(mixins.ListModelMixin,
     permission_classes = (IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
-        air = """with equipstatus as(
-	select * from (select equip_no,status,current_trains,row_number() over(partition by equip_no order by created_date desc) as num from equip_status)
-	as t where t.num =1
+        air = """with equipstatus as (select *
+                     from (select plan_classes_uid,
+                                  equip_no,
+                                  status,
+                                  current_trains,
+                                  row_number() over (partition by equip_no order by created_date desc) as num
+                           from equip_status
+                           where delete_flag = 0)
+                              as t
+                     where t.num = 1
 ),
-trainsfeedbacks as(
-    select *  from (select equip_no,product_no,row_number() over (partition by equip_no,plan_classes_uid order by created_date) as num from trains_feedbacks)
-    as t where t.num=1 group by equip_no),
-actuallist as (
-    SELECT equip_no,
-           classes,
-           sum(plan_trains) as sum_plan_trains,
-           sum(actual_trains) as sum_actual_trains
-    from (
-             select id, equip_no, classes, plan_classes_uid, plan_trains, actual_trains
-             from (select id,
-                          equip_no,
-                          classes,
-                          product_no,
-                          plan_classes_uid,
-                          plan_trains,
-                          actual_trains,
-                          row_number() over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
-                   from trains_feedbacks
-                  )
-                      as t
-             where t.num = 1
-         ) as c
-    group by c.equip_no, c.classes
-)
-select equip.id as id,
+     trainsfeedbacks as (
+         select *
+         from (select plan_classes_uid,
+                      equip_no,
+                      product_no,
+                      row_number() over (partition by equip_no,plan_classes_uid order by created_date) as num
+               from trains_feedbacks
+               where delete_flag = 0)
+                  as t
+         where t.num = 1
+         group by equip_no),
+     actuallist as (
+         SELECT equip_no,
+                classes,
+                sum(plan_trains)   as sum_plan_trains,
+                sum(actual_trains) as sum_actual_trains,
+                plan_classes_uid
+         from (
+                  select id, equip_no, classes, plan_classes_uid, plan_trains, actual_trains
+                  from (select id,
+                               equip_no,
+                               classes,
+                               product_no,
+                               plan_classes_uid,
+                               plan_trains,
+                               actual_trains,
+                               row_number()
+                                       over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
+                        from trains_feedbacks
+                        where plan_classes_uid in (select plan_classes_uid
+                                                   from product_classes_plan where delete_flag=0)
+                       )
+                           as t
+                  where t.num = 1
+              ) as c
+         group by c.equip_no, c.classes
+     )
+select equip.id       as id,
        equip.equip_no,
        equipstatus.status,
        equipstatus.current_trains,
@@ -617,10 +636,10 @@ select equip.id as id,
        actuallist.sum_plan_trains,
        actuallist.sum_actual_trains
 from equip
-left join  equipstatus on equipstatus.equip_no = equip.equip_no
-left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
-left join actuallist on actuallist.equip_no = equip.equip_no
-left join global_code on actuallist.classes = global_code.global_name;
+         left join equipstatus on equipstatus.equip_no = equip.equip_no
+         left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
+         left join actuallist on actuallist.equip_no = equip.equip_no
+         left join global_code on actuallist.classes = global_code.global_name;
 """
 
         conn = pymysql.connect(DATABASES['default']['HOST'], DATABASES['default']['USER'],
@@ -761,7 +780,8 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
             irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
                                                                   计划号=tfb_obk.plan_classes_uid,
-                                                                  配方号=tfb_obk.product_no)
+                                                                  配方号=tfb_obk.product_no,
+                                                                  车次号=tfb_obk.actual_trains)
         except:
             raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
 
@@ -784,7 +804,8 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
             irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
                                                                计划号=tfb_obk.plan_classes_uid,
-                                                               配方号=tfb_obk.product_no)
+                                                               配方号=tfb_obk.product_no,
+                                                               密炼车次=tfb_obk.actual_trains)
         except:
             raise ValidationError('车次产出反馈或车次报表步序表没有数据')
 
@@ -795,7 +816,7 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """工艺曲线信息"""
-    queryset = IfupReportCurveBackups.objects.filter()
+    queryset = EquipStatus.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
@@ -805,9 +826,9 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         feed_back_id = self.request.query_params.get('feed_back_id')
         try:
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            irc_queryset = IfupReportCurveBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
-                                                                 计划号=tfb_obk.plan_classes_uid,
-                                                                 配方号=tfb_obk.product_no)
+            irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
+                                                      plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                      current_trains=tfb_obk.actual_trains)
         except:
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
@@ -843,17 +864,19 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
-        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values('plan_classes_uid', 'equip_no',
-                                                                           'product_no').annotate(
-            max_id=Max('id')).values_list('max_id', flat=True)
-        tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
+        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
+        #     .values('plan_classes_uid', 'equip_no',
+        #                                                                    'product_no').annotate(
+        #     max_id=Max('id')).values_list('max_id', flat=True)
+        # tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
                                                             计划号=tf_obj['plan_classes_uid'],
-                                                            配方号=tf_obj['product_no']).order_by('存盘时间').last()
+                                                            配方号=tf_obj['product_no'],
+                                                            车次号=tf_obj['actual_trains']).order_by('存盘时间').last()
             if irb_obj:
                 production_details['控制方式'] = irb_obj.控制方式  # 本远控
                 production_details['作业方式'] = irb_obj.作业方式  # 手自动
@@ -869,7 +892,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             else:
                 tf_obj['production_details'] = None
             ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'], plan_classes_uid=tf_obj['plan_classes_uid'],
-                                               product_no=tf_obj['product_no']).last()
+                                               product_no=tf_obj['product_no'],
+                                               actual_trains=tf_obj['actual_trains']).order_by('product_time').last()
             if ps_obj:
                 tf_obj['status'] = ps_obj.status
             else:
