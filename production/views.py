@@ -2,6 +2,7 @@ import datetime
 import re
 
 import requests
+from django.db import connection
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -619,7 +620,8 @@ class EquipStatusPlanList(mixins.ListModelMixin,
                                        over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
                         from trains_feedbacks
                         where plan_classes_uid in (select plan_classes_uid
-                                                   from product_classes_plan where delete_flag=0)
+                                                   from product_classes_plan
+                                                   where delete_flag = 0)
                        )
                            as t
                   where t.num = 1
@@ -628,7 +630,7 @@ class EquipStatusPlanList(mixins.ListModelMixin,
      )
 select equip.id       as id,
        equip.equip_no,
-       equipstatus.status,
+       (case when equipstatus.status is NULL then "正常" else equipstatus.status end),
        equipstatus.current_trains,
        trainsfeedbacks.product_no,
        actuallist.classes,
@@ -639,17 +641,14 @@ from equip
          left join equipstatus on equipstatus.equip_no = equip.equip_no
          left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
          left join actuallist on actuallist.equip_no = equip.equip_no
-         left join global_code on actuallist.classes = global_code.global_name;
+         left join global_code on actuallist.classes = global_code.global_name
+order by id;
 """
-
-        conn = pymysql.connect(DATABASES['default']['HOST'], DATABASES['default']['USER'],
-                               DATABASES['default']['PASSWORD'], DATABASES['default']['NAME'])
-        cur = conn.cursor()
-        cur.execute(air)
-        equip_set = cur.fetchall()
-        cur.close()
-        conn.close()
         ret_data = {}
+        cursor = connection.cursor()
+        cursor.execute(air)
+        equip_set = cursor.fetchall()
+        print(equip_set)
         for _ in equip_set:
             if _[1] in ret_data.keys():
                 ret_data[_[1]].append({"classes_id": _[6],
