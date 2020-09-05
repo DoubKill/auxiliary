@@ -631,12 +631,12 @@ class EquipStatusPlanList(mixins.ListModelMixin,
 select equip.id       as id,
        equip.equip_no,
        (case when equipstatus.status is NULL then "正常" else equipstatus.status end),
-       equipstatus.current_trains,
-       trainsfeedbacks.product_no,
+       (case when equipstatus.current_trains is NULL then 0 else equipstatus.current_trains end),
+       (case when trainsfeedbacks.product_no is NULL then " " else trainsfeedbacks.product_no end),
        actuallist.classes,
        global_code.id as classes_id,
-       actuallist.sum_plan_trains,
-       actuallist.sum_actual_trains
+       (case when actuallist.sum_plan_trains is NULL then 0 else actuallist.sum_plan_trains end),
+       (case when actuallist.sum_actual_trains is NULL then 0 else actuallist.sum_actual_trains end)
 from equip
          left join equipstatus on equipstatus.equip_no = equip.equip_no
          left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
