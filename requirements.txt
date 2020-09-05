@@ -8,5 +8,5 @@ xlrd==1.2.0
 drf-yasg==1.17.1
 mysqlclient==2.0.1
 django-cors-headers==3.4.0
-PyMySQ==0.10.0
+PyMySQL==0.10.0
 
