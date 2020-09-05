@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
@@ -573,51 +573,82 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
+    permission_classes = (IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
-        air = '''SELECT equip.id,
+        air = """with equipstatus as(
+	select * from (select equip_no,status,current_trains,row_number() over(partition by equip_no order by created_date desc) as num from equip_status)
+	as t where t.num =1
+),
+trainsfeedbacks as(
+    select *  from (select equip_no,product_no,row_number() over (partition by equip_no,plan_classes_uid order by created_date) as num from trains_feedbacks)
+    as t where t.num=1 group by equip_no),
+actuallist as (
+    SELECT equip_no,
+           classes,
+           sum(plan_trains) as sum_plan_trains,
+           sum(actual_trains) as sum_actual_trains
+    from (
+             select id, equip_no, classes, plan_classes_uid, plan_trains, actual_trains
+             from (select id,
+                          equip_no,
+                          classes,
+                          product_no,
+                          plan_classes_uid,
+                          plan_trains,
+                          actual_trains,
+                          row_number() over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
+                   from trains_feedbacks
+                  )
+                      as t
+             where t.num = 1
+         ) as c
+    group by c.equip_no, c.classes
+)
+select equip.id as id,
        equip.equip_no,
-       global_code.global_name,
-       global_code.id AS classes_id,
-       trains_feedbacks.product_no,
-       equip_status.status,
-       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
-       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num,
-       max(equip_status.current_trains)               as current_trains
+       equipstatus.status,
+       equipstatus.current_trains,
+       trainsfeedbacks.product_no,
+       actuallist.classes,
+       global_code.id as classes_id,
+       actuallist.sum_plan_trains,
+       actuallist.sum_actual_trains
 from equip
-         left join product_day_plan on equip.id = product_day_plan.equip_id
-         left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id and product_classes_plan.delete_flag = FALSE
-         left JOIN work_schedule_plan ON (product_classes_plan.work_schedule_plan_id = work_schedule_plan.id)
-         left JOIN trains_feedbacks
-                   ON (trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = FALSE)
-         left JOIN global_code ON (work_schedule_plan.classes_id = global_code.id)
-         left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and equip_status.delete_flag = FALSE
-GROUP BY equip.equip_no, global_code.global_name;'''
-        equip_set = Equip.objects.raw(air)
-
+left join  equipstatus on equipstatus.equip_no = equip.equip_no
+left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
+left join actuallist on actuallist.equip_no = equip.equip_no
+left join global_code on actuallist.classes = global_code.global_name;
+"""
+        import pymysql
+        conn = pymysql.connect('10.4.14.6', 'root', 'mes', 'MMM')
+        cur = conn.cursor()
+        cur.execute(air)
+        equip_set = cur.fetchall()
+        cur.close()
+        conn.close()
         ret_data = {}
         for _ in equip_set:
-            # if ret_data[_.equip_no] :
-            if _.equip_no in ret_data.keys():
-                ret_data[_.equip_no].append({"classes_id": _.classes_id,
-                                             "global_name": _.global_name,
-                                             "plan_num": _.plan_num,
-                                             "actual_num": _.actual_num,
-                                             "product_no": _.product_no,
-                                             "status": _.status,
-                                             "current_trains": _.current_trains,
-                                             "id": _.id})
+            if _[1] in ret_data.keys():
+                ret_data[_[1]].append({"classes_id": _[6],
+                                       "global_name": _[5],
+                                       "plan_num": _[7],
+                                       "actual_num": _[8],
+                                       "product_no": _[4],
+                                       "status": _[2],
+                                       "current_trains": _[3],
+                                       "id": _[0]})
             else:
-                ret_data[_.equip_no] = []
-                ret_data[_.equip_no].append({"classes_id": _.classes_id,
-                                             "global_name": _.global_name,
-                                             "plan_num": _.plan_num,
-                                             "actual_num": _.actual_num,
-                                             "product_no": _.product_no,
-                                             "status": _.status,
-                                             "current_trains": _.current_trains,
-                                             "id": _.id
-                                             })
+                ret_data[_[1]] = []
+                ret_data[_[1]].append({"classes_id": _[6],
+                                       "global_name": _[5],
+                                       "plan_num": _[7],
+                                       "actual_num": _[8],
+                                       "product_no": _[4],
+                                       "status": _[2],
+                                       "current_trains": _[3],
+                                       "id": _[0]
+                                       })
 
         return Response(ret_data)
 
