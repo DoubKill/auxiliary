@@ -110,6 +110,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
 
+
     def get_actual_trains(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
         if tfb_obj:

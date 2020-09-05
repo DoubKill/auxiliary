@@ -32,6 +32,8 @@ from production.utils import strtoint
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 from django.db.models import Sum, Max
+import pymysql
+from mes.settings import DATABASES
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -620,8 +622,9 @@ left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
 left join actuallist on actuallist.equip_no = equip.equip_no
 left join global_code on actuallist.classes = global_code.global_name;
 """
-        import pymysql
-        conn = pymysql.connect('10.4.14.6', 'root', 'mes', 'MMM')
+
+        conn = pymysql.connect(DATABASES['default']['HOST'], DATABASES['default']['USER'],
+                               DATABASES['default']['PASSWORD'], DATABASES['default']['NAME'])
         cur = conn.cursor()
         cur.execute(air)
         equip_set = cur.fetchall()
