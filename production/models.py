@@ -103,6 +103,7 @@ class PlanStatus(AbstractEntity):
     status = models.CharField(max_length=64, help_text='状态:等待、已下达、运行中、完成', verbose_name='状态',
                               choices=(('等待', '等待'), ('已下达', '已下达'), ('运行中', '运行中'), ('完成', '完成')))
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
+    actual_trains = models.IntegerField(blank=True, null=True, help_text='实际车次', verbose_name='实际车次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 
     def __str__(self):
@@ -269,7 +270,7 @@ class IfupReportMixBackups(models.Model):
         db_table = 'ifup_report_mix_backups'
 
 
-class IfupReportCurveBackups(models.Model):
+class IfupReportCurveBackups(models.Model):#TODO 既然是车次报表怎么能没车次呢
     """车次报表工艺曲线数据表"""
     序号 = models.BigAutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
