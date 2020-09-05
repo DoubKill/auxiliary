@@ -1400,6 +1400,7 @@ def add_system_config():
     ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
     ChildSystemInfo.objects.create(link_address="10.4.10.55", system_type="gz", system_name="上辅机群控", status="联网")
     ChildSystemInfo.objects.create(link_address="10.4.10.56", system_type="gz", system_name="上辅机工作站1", status="联网")
+    ChildSystemInfo.objects.create(link_address="10.4.10.100", system_type="gz", system_name="收皮终端", status="联网")
 
 
 if __name__ == '__main__':

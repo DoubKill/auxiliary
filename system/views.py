@@ -98,7 +98,7 @@ class UserGroupsViewSet(mixins.ListModelMixin,
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(ModelViewSet):
+class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     list:
         角色列表,xxx?all=1查询所有
@@ -138,6 +138,8 @@ class GroupExtensionViewSet(ModelViewSet):
             return GroupExtensionUpdateSerializer
         if self.action == 'partial_update':
             return GroupExtensionUpdateSerializer
+        else:
+            return GroupExtensionSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")

@@ -32,7 +32,7 @@ class IssueWorkStation(object):
         对接万隆中间表
         将数据存入到中间表
         """
-        self.model.objects.filter(recstatus="完成").delete()
+        self.model.objects.filter(recstatus__in=["完成", "停止"]).delete()
         serializer = self.model_serializer(data=self.data)
         serializer.is_valid()
         try:
@@ -47,7 +47,7 @@ class IssueWorkStation(object):
         """
         # model_data = [self.model(**_) for _ in self.data]
         # self.model.objects.bulk_create(model_data)
-        self.model.objects.filter(recstatus="完成").delete()
+        self.model.objects.filter(recstatus__in=["完成", "停止"]).delete()
         serializer = self.model_serializer(data=self.data, many=True)
         serializer.is_valid()
         try:

@@ -9,6 +9,14 @@ from rest_framework import serializers
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from work_station.models import *
 
+# 新增万龙需求表的序列化器
+class IfdownRecipeWeigh6Serializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IfdownRecipeWeigh6
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
 
 class IfdownPmtRecipe1Serializer(serializers.ModelSerializer):
     class Meta:
