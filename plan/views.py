@@ -117,13 +117,13 @@ class PlanStatusList(APIView):
     def get(self, request):
         params = request.query_params
         equip_no = params.get('equip_no')
-        try:
-            ps_obj = PlanStatus.objects.get(equip_no=equip_no, status='运行中')
-            print()
-            pcp_obj = ProductClassesPlan.objects.get(plan_classes_uid=ps_obj.plan_classes_uid)
-        except Exception as e:
-            raise ValidationError("参数不全/数据库里数据不全")
+        ps_obj = PlanStatus.objects.filter(equip_no=equip_no, status='运行中').first()
         plan_status_list = {}
+        if not ps_obj:
+            return Response({'results': plan_status_list}, 200)
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=ps_obj.plan_classes_uid).first()
+        if not pcp_obj:
+            return Response({'results': plan_status_list}, 200)
         plan_status_list['equip_no'] = equip_no
         plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
         plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
