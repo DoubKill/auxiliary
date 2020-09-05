@@ -1,3 +1,5 @@
+import json
+
 import xlrd
 from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
@@ -345,66 +347,34 @@ class SystemStatusSwitch(APIView):
         child_system.save()
         return Response("ok")
 
+
 from django.db.models import Q
+
+
 class Synchronization(APIView):
     """mes和上辅机同步接口"""
 
     def get(self, request, *args, **kwargs):
-        auxliary_dict = {'计划': [], '配方': []}  # 上辅机
-        mes_dict = {'计划': [], '配方': []}  # mes
+        auxliary_dict = {'lost_time': None, }  # 上辅机
         # 获取断网时间
-        csi_obj = ChildSystemInfo.objects.filter(status='独立').last()
+        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
         if csi_obj:
             lost_time = csi_obj.lost_time
-            # 上辅机断网证之后新增或者修改的数据
-            # 胶料日计划
-            pdp_set = ProductDayPlan.objects.filter(last_updated_date__gte=lost_time)
-            if pdp_set:
-                for pdp_obj in pdp_set:
-                    auxliary_dict['计划'].append(pdp_obj.id)  # TODO 胶料日计划应该有一个编号字段，暂时用id代替
-            # 胶料日班次计划
+            auxliary_dict['lost_time'] = lost_time
+            # 胶料诶班次计划表
             pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
             if pcp_set:
+                auxliary_dict['ProductClassesPlan'] = []
                 for pcp_obj in pcp_set:
-                    auxliary_dict['计划'].append(pcp_obj.plan_classes_uid)
-            # 原材料需求量表
-            md_set = MaterialDemanded.objects.filter(last_updated_date__gte=lost_time)
-            if md_set:
-                for md_obj in md_set:
-                    auxliary_dict['计划'].append(md_obj.id)  # TODO 原材料需求量表应该有一个编号字段，暂时用id代替
-            # 计划状态变更
-            ps_set = PlanStatus.objects.filter(last_updated_date__gte=lost_time)
-            if ps_set:
-                for ps_obj in ps_set:
-                    auxliary_dict['计划'].append(ps_obj.plan_classes_uid)
-            # if
-            # 排班详情
-            wsp_set = WorkSchedulePlan.objects.filter(last_updated_date__gte=lost_time)
-            # 设备表
-            e_set = Equip.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料配料标准
+                    pcp_dict = pcp_obj.__dict__
+                    pcp_dict.pop('_state')
+                    auxliary_dict['ProductClassesPlan'].append(pcp_dict)
+            # 胶料配料标准表
             pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-            # 排班管理
-            pss_set = PlanSchedule.objects.filter(last_updated_date__gte=lost_time)
-            # 原材料信息
-            m_set = Material.objects.filter(last_updated_date__gte=lost_time)
-            # 原材料属性
-            ma_set = MaterialAttribute.objects.filter(last_updated_date__gte=lost_time)
-            # 原材料供应商
-            ms_set = MaterialSupplier.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料工艺信息
-            pi_set = ProductInfo.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料段次配方标准
-            pr_set = ProductRecipe.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料配料标准详情
-            pbd_set = ProductBatchingDetail.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料配方步序
-            pp_set = ProductProcess.objects.filter(last_updated_date__gte=lost_time)
-            # 基本条件
-            bc_set = BaseCondition.objects.filter(last_updated_date__gte=lost_time)
-            # 基本动作
-            ba_set = BaseAction.objects.filter(last_updated_date__gte=lost_time)
-            # 胶料配料标准步序详情
-            ba_set = ProductProcessDetail.objects.filter(last_updated_date__gte=lost_time)
-
-        return Response({'MES系统': mes_dict, '上辅机群控系统': auxliary_dict}, status=200)
+            if pb_set:
+                auxliary_dict['ProductBatching'] = []
+                for pb_obj in pb_set:
+                    pb_dict = pb_obj.__dict__
+                    pb_dict.pop('_state')
+                    auxliary_dict['ProductBatching'].append(pb_dict)
+        return Response({'上辅机群控系统': auxliary_dict}, status=200)
