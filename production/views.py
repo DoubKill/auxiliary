@@ -633,8 +633,8 @@ select equip.id       as id,
        (case when equipstatus.status is NULL then "正常" else equipstatus.status end),
        (case when equipstatus.current_trains is NULL then 0 else equipstatus.current_trains end),
        (case when trainsfeedbacks.product_no is NULL then " " else trainsfeedbacks.product_no end),
-       actuallist.classes,
-       global_code.id as classes_id,
+       (case when actuallist.classes is NULL then "早班" else actuallist.classes end),
+       (case when global_code.id is NULL then 1 else global_code.id end),
        (case when actuallist.sum_plan_trains is NULL then 0 else actuallist.sum_plan_trains end),
        (case when actuallist.sum_actual_trains is NULL then 0 else actuallist.sum_actual_trains end)
 from equip
