@@ -573,12 +573,11 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
     filter_class = MaterialStatisticsFilter
 
 
-class EquipStatusPlanList(mixins.ListModelMixin,
-                          GenericViewSet):
+class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticated,)
 
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         air = """with equipstatus as (select *
                      from (select plan_classes_uid,
                                   equip_no,
@@ -645,19 +644,12 @@ from equip
                    ON (trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = 0)
          left JOIN global_code ON (work_schedule_plan.classes_id = global_code.id)
          left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and equip_status.delete_flag = 0
-GROUP BY equip.equip_no, global_code.global_name;'''
-        equip_set = Equip.objects.raw(air)
-         left join equipstatus on equipstatus.equip_no = equip.equip_no
-         left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
-         left join actuallist on actuallist.equip_no = equip.equip_no
-         left join global_code on actuallist.classes = global_code.global_name
-order by id;
+GROUP BY equip.equip_no, global_code.global_name;
 """
         ret_data = {}
         cursor = connection.cursor()
         cursor.execute(air)
         equip_set = cursor.fetchall()
-        print(equip_set)
         for _ in equip_set:
             if _[1] in ret_data.keys():
                 ret_data[_[1]].append({"classes_id": _[6],
@@ -683,19 +675,11 @@ order by id;
         return Response(ret_data)
 
 
-class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                        GenericViewSet):
+class EquipDetailedList(APIView):
     """主页面详情展示机"""
 
-    # queryset = Equip.objects.filter(delete_flag=False)
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
-    # serializer_class = EquipDetailedSerializer
-    # filter_backends = [DjangoFilterBackend, OrderingFilter]
-    def get_queryset(self):
-        return
-
-    def list(self, request, *args, **kwargs):
-        params = request.query_params
+    def get(self, request, *args, **kwargs):
+        params = self.request.query_params
         equip_no = params.get('equip_no')
         air_list = f'''select equip_status.id,
        equip_status.equip_no,
