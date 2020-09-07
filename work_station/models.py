@@ -917,6 +917,7 @@ class IfdownRecipeWeigh6(models.Model):
         # managed = False
         db_table = 'ifdown_recipe_weigh_6'
 
+
 class IfdownRecipeOil11(models.Model):
     """1号机台配方油料表"""
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.

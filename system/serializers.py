@@ -9,6 +9,7 @@ import re
 from django.contrib.auth.models import Permission
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
@@ -64,6 +65,13 @@ class UserSerializer(BaseModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+    def validate_username(self, value):
+        if len(value) > 64:
+            raise ValidationError("用户名过长")
+        if not re.search(r'^[a-zA-Z0-9\u4e00-\u9fa5]+$', value):
+            raise serializers.ValidationError("用户名中包含非法字符")
+        return value
 
     class Meta:
         model = User
