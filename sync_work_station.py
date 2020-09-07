@@ -4,7 +4,6 @@ auther:
 datetime: 2020/8/19
 name: 
 """
-import copy
 import datetime
 import os
 import time
@@ -15,17 +14,16 @@ import django
 import logging
 
 import requests
-from django.db.transaction import atomic
-
-from system.models import SystemConfig, ChildSystemInfo
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from django.db.transaction import atomic
+from system.models import SystemConfig, ChildSystemInfo
 from work_station import models as md
 from plan.models import ProductClassesPlan
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
-    IfupReportCurveBackups, IfupReportMixBackups, PlanStatus
+    IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
 from work_station.models import IfupReportMix
 
 logger = logging.getLogger('sync_log')
@@ -187,6 +185,32 @@ def main():
             IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
         elif m == "IfupReportWeight":
             """车次报表材料重量表"""
+            sync_data_list = []
+            for temp in temp_model_set:
+                uid = temp.计划号
+                product_no = temp.配方号
+                equip_no = temp.机台号
+                trains = temp.车次号
+                plan_weight = temp.设定重量
+                actual_weight = temp.实际重量
+                material_no = temp.物料编码
+                material_type = temp.物料类型
+                material_name = temp.物料名称
+                product_time = temp.存盘时间
+                adapt_data = {
+                    "plan_classes_uid": uid,
+                    "equip_no": equip_no,
+                    "product_no": product_no,
+                    "trains": trains,
+                    "plan_weight": plan_weight,
+                    "actual_weight": actual_weight,
+                    "material_no": material_no,
+                    "material_type": material_type,
+                    "material_name": material_name,
+                    "product_time": product_time
+                }
+                sync_data_list.append(**adapt_data)
+            ExpendMaterial.objects.bulk_create(sync_data_list)
             IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
         else:
             # 该分支正常情况执行，若执行需告警
