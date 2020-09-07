@@ -351,7 +351,7 @@ class IssuedPlan(APIView):
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
             'actno': params.get("actual_trains", 0),  # 当前车次
-            'oper': params.get("operation_user", ""),  # 操作员角色
+            'oper': self.request.user.username,  # 操作员角色
             'state': '运行中',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
             'recstatus': '等待',  # 等待， 运行中， 完成
