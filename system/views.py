@@ -1,4 +1,3 @@
-import json
 
 import xlrd
 from django.contrib.auth.models import Permission
@@ -12,14 +11,11 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
-from basics.models import WorkSchedulePlan, Equip, PlanSchedule
 from mes.common_code import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
-from production.models import PlanStatus
-from recipe.models import ProductBatching, Material, MaterialAttribute, MaterialSupplier, ProductInfo, ProductRecipe, \
-    ProductBatchingDetail, ProductProcess, BaseCondition, BaseAction, ProductProcessDetail
+from plan.models import ProductClassesPlan
+from recipe.models import ProductBatching
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
@@ -64,6 +60,14 @@ class UserViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.filter(is_active=1).values('id', 'username')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         # 账号停用和启用
