@@ -700,7 +700,7 @@ from equip_status
          left join product_batching on product_day_plan.product_batching_id = product_batching.id
          left JOIN trains_feedbacks
                    ON trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = FALSE
-where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE 
+where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE and to_days(equip_status.created_date)=to_days(now())
 group by product_batching.stage_product_batch_no;'''
         product_list = EquipStatus.objects.raw(air_product_list)
         if not product_list:
@@ -717,7 +717,7 @@ group by product_batching.stage_product_batch_no;'''
        equip_status.status,
        count(equip_status.status) as count_status
 from equip_status
-where equip_status.equip_no = '{equip_no}' and equip_status.delete_flag=FALSE
+where equip_status.equip_no = '{equip_no}' and equip_status.delete_flag=FALSE and to_days(equip_status.created_date) = to_days(now())
 group by equip_status.status;
 '''
         status_list = EquipStatus.objects.raw(air_status_list)
