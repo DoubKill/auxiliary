@@ -110,6 +110,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
 
+
     def get_actual_trains(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
         if tfb_obj:
@@ -242,6 +243,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
 
 class UpdateTrainsSerializer(BaseModelSerializer):
+
     '''修改车次'''
     trains = serializers.DecimalField(write_only=True, help_text='修改车次',decimal_places=1, max_digits=8)
 
@@ -256,29 +258,51 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         if validated_data.get('trains') - instance.plan_trains <= 2:
             raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
+        # 查询计划状态变更
         p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         if not p_obj:
             raise serializers.ValidationError({'trains': "计划状态变更没有数据"})
         if p_obj.status != '运行中':
             raise serializers.ValidationError({'trains': '只有运行中的计划才可以修改车次'})
-        trains = validated_data.get('trains')
-        instance.plan_trains = trains
-        instance.save()
-
-        equip_no = instance.product_day_plan.equip.equip_no
-        if "0" in equip_no:
-            ext_str = equip_no[-1]
+        # 查询车次产出反馈
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by(
+            'created_date').last()
+        if not tfb_obj:
+            raise serializers.ValidationError({'trains': "车次产出反馈没有数据"})
         else:
-            ext_str = equip_no[1:]
+            if validated_data.get('trains') - tfb_obj.actual_trains < 2:
+                raise serializers.ValidationError({'trains': "修改车次至少要比当前车次大于或等于2次"})
+            else:
+                trains = validated_data.get('trains')
+                instance.plan_trains = trains
+                instance.save()
 
-        temp_data = {
-            'id': instance.id,  # id
-            'setno': instance.plan_trains,  # 设定车次
-            'remark': 'u',
-        }
-        temp = IssueWorkStation('IfdownShengchanjihua' + ext_str, temp_data)
-        temp.update_to_db(flag=True)
-        return instance
+                equip_no = instance.product_day_plan.equip.equip_no
+                if "0" in equip_no:
+                    ext_str = equip_no[-1]
+                else:
+                    ext_str = equip_no[1:]
+
+                from work_station import models as md
+                model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
+                              'IfdownRecipeCb', 'IfdownPmtRecipe']
+                for model_str in model_list:
+                    model_name = getattr(md, model_str + ext_str)
+                    instance = model_name.objects.get(id=instance.id)
+                    if not instance:
+                        raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
+                    if instance.recstatus == "车次需更新":
+                        recstatus = "车次需更新"
+                    elif instance.recstatus == "运行中":
+                        recstatus = "车次需更新"
+                    elif instance.recstatus == "配方车次需更新":
+                        recstatus = "配方车次需更新"
+                    elif instance.recstatus == '配方需重传':
+                        recstatus = "配方车次需更新"
+                    else:
+                        raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
+                    model_name.objects.all().update(recstatus=recstatus)
+                return instance
 
 
 class ProductClassesPlanSerializer(BaseModelSerializer):

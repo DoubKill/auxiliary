@@ -2,12 +2,13 @@ import datetime
 import re
 
 import requests
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
@@ -21,7 +22,8 @@ from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl, MaterialTankStatus, IfupReportBasisBackups
+    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
+    IfupReportCurveBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -30,6 +32,8 @@ from production.utils import strtoint
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 from django.db.models import Sum, Max
+import pymysql
+from mes.settings import DATABASES
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -571,17 +575,66 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 class EquipStatusPlanList(mixins.ListModelMixin,
                           GenericViewSet):
     """主页面展示"""
+    permission_classes = (IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
-        air = '''SELECT equip.id,
+        air = """with equipstatus as (select *
+                     from (select plan_classes_uid,
+                                  equip_no,
+                                  status,
+                                  current_trains,
+                                  row_number() over (partition by equip_no order by created_date desc) as num
+                           from equip_status
+                           where delete_flag = 0)
+                              as t
+                     where t.num = 1
+),
+     trainsfeedbacks as (
+         select *
+         from (select plan_classes_uid,
+                      equip_no,
+                      product_no,
+                      row_number() over (partition by equip_no,plan_classes_uid order by created_date) as num
+               from trains_feedbacks
+               where delete_flag = 0)
+                  as t
+         where t.num = 1
+         group by equip_no),
+     actuallist as (
+         SELECT equip_no,
+                classes,
+                sum(plan_trains)   as sum_plan_trains,
+                sum(actual_trains) as sum_actual_trains,
+                plan_classes_uid
+         from (
+                  select id, equip_no, classes, plan_classes_uid, plan_trains, actual_trains
+                  from (select id,
+                               equip_no,
+                               classes,
+                               product_no,
+                               plan_classes_uid,
+                               plan_trains,
+                               actual_trains,
+                               row_number()
+                                       over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
+                        from trains_feedbacks
+                        where plan_classes_uid in (select plan_classes_uid
+                                                   from product_classes_plan where delete_flag=0)
+                       )
+                           as t
+                  where t.num = 1
+              ) as c
+         group by c.equip_no, c.classes
+     )
+select equip.id       as id,
        equip.equip_no,
-       global_code.global_name,
-       global_code.id AS classes_id,
-       trains_feedbacks.product_no,
-       equip_status.status,
-       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
-       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num,
-       max(equip_status.current_trains)               as current_trains
+       equipstatus.status,
+       equipstatus.current_trains,
+       trainsfeedbacks.product_no,
+       actuallist.classes,
+       global_code.id as classes_id,
+       actuallist.sum_plan_trains,
+       actuallist.sum_actual_trains
 from equip
          left join product_day_plan on equip.id = product_day_plan.equip_id
          left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id and product_classes_plan.delete_flag = 0
@@ -592,32 +645,41 @@ from equip
          left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and equip_status.delete_flag = 0
 GROUP BY equip.equip_no, global_code.global_name;'''
         equip_set = Equip.objects.raw(air)
+         left join equipstatus on equipstatus.equip_no = equip.equip_no
+         left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
+         left join actuallist on actuallist.equip_no = equip.equip_no
+         left join global_code on actuallist.classes = global_code.global_name;
+"""
 
+        conn = pymysql.connect(DATABASES['default']['HOST'], DATABASES['default']['USER'],
+                               DATABASES['default']['PASSWORD'], DATABASES['default']['NAME'])
+        cur = conn.cursor()
+        cur.execute(air)
+        equip_set = cur.fetchall()
+        cur.close()
+        conn.close()
         ret_data = {}
-        print(equip_set)
         for _ in equip_set:
-            print(_)
-            # if ret_data[_.equip_no] :
-            if _.equip_no in ret_data.keys():
-                ret_data[_.equip_no].append({"classes_id": _.classes_id,
-                                             "global_name": _.global_name,
-                                             "plan_num": _.plan_num,
-                                             "actual_num": _.actual_num,
-                                             "product_no": _.product_no,
-                                             "status": _.status,
-                                             "current_trains": _.current_trains,
-                                             "id": _.id})
+            if _[1] in ret_data.keys():
+                ret_data[_[1]].append({"classes_id": _[6],
+                                       "global_name": _[5],
+                                       "plan_num": _[7],
+                                       "actual_num": _[8],
+                                       "product_no": _[4],
+                                       "status": _[2],
+                                       "current_trains": _[3],
+                                       "id": _[0]})
             else:
-                ret_data[_.equip_no] = []
-                ret_data[_.equip_no].append({"classes_id": _.classes_id,
-                                             "global_name": _.global_name,
-                                             "plan_num": _.plan_num,
-                                             "actual_num": _.actual_num,
-                                             "product_no": _.product_no,
-                                             "status": _.status,
-                                             "current_trains": _.current_trains,
-                                             "id": _.id
-                                             })
+                ret_data[_[1]] = []
+                ret_data[_[1]].append({"classes_id": _[6],
+                                       "global_name": _[5],
+                                       "plan_num": _[7],
+                                       "actual_num": _[8],
+                                       "product_no": _[4],
+                                       "status": _[2],
+                                       "current_trains": _[3],
+                                       "id": _[0]
+                                       })
 
         return Response(ret_data)
 
@@ -711,36 +773,78 @@ group by equip_status.status;
         return Response(ret_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """称量信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = IfupReportWeightBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
+    # pagination_class = SinglePageNumberPagination
     serializer_class = WeighInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                                  计划号=tfb_obk.plan_classes_uid,
+                                                                  配方号=tfb_obk.product_no,
+                                                                  车次号=tfb_obk.actual_trains)
+        except:
+            raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
 
+        return irw_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """密炼信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = IfupReportMixBackups.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
+    # pagination_class = SinglePageNumberPagination
     serializer_class = MixerInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                               计划号=tfb_obk.plan_classes_uid,
+                                                               配方号=tfb_obk.product_no,
+                                                               密炼车次=tfb_obk.actual_trains)
+        except:
+            raise ValidationError('车次产出反馈或车次报表步序表没有数据')
 
+        return irm_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """工艺曲线信息"""
-    queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    queryset = EquipStatus.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SinglePageNumberPagination
     serializer_class = CurveInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
+                                                      plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                      current_trains=tfb_obk.actual_trains)
+        except:
+            raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
+        return irc_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
@@ -769,17 +873,19 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
-        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values('plan_classes_uid', 'equip_no',
-                                                                           'product_no').annotate(
-            max_id=Max('id')).values_list('max_id', flat=True)
-        tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
+        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
+        #     .values('plan_classes_uid', 'equip_no',
+        #                                                                    'product_no').annotate(
+        #     max_id=Max('id')).values_list('max_id', flat=True)
+        # tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
         for tf_obj in tf_queryset:
             production_details = {}
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
                                                             计划号=tf_obj['plan_classes_uid'],
-                                                            配方号=tf_obj['product_no']).order_by('存盘时间').last()
+                                                            配方号=tf_obj['product_no'],
+                                                            车次号=tf_obj['actual_trains']).order_by('存盘时间').last()
             if irb_obj:
                 production_details['控制方式'] = irb_obj.控制方式  # 本远控
                 production_details['作业方式'] = irb_obj.作业方式  # 手自动
@@ -795,7 +901,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             else:
                 tf_obj['production_details'] = None
             ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'], plan_classes_uid=tf_obj['plan_classes_uid'],
-                                               product_no=tf_obj['product_no']).last()
+                                               product_no=tf_obj['product_no'],
+                                               actual_trains=tf_obj['actual_trains']).order_by('product_time').last()
             if ps_obj:
                 tf_obj['status'] = ps_obj.status
             else:

@@ -9,6 +9,7 @@ from basics.models import GlobalCode, EquipCategoryAttribute, Equip
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
     MaterialAttribute, ProductProcess, ProductProcessDetail
+from production.models import PlanStatus
 from mes.conf import COMMON_READ_ONLY_FIELDS
 
 logger = logging.getLogger('api_log')
@@ -18,23 +19,10 @@ class MaterialSerializer(BaseModelSerializer):
     material_no = serializers.CharField(max_length=64, help_text='编码',
                                         validators=[UniqueValidator(queryset=Material.objects.filter(delete_flag=0),
                                                                     message='该原材料已存在')])
-    material_type = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.filter(use_flag=0,
-                                                                                          delete_flag=False),
-                                                       help_text='原材料类型id',
-                                                       error_messages={'does_not_exist': '该原材料类型已被弃用或删除，操作无效'})
-    package_unit = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.filter(use_flag=0,
-                                                                                         delete_flag=False),
-                                                      help_text='包装单位id', required=False,
-                                                      allow_null=True, allow_empty=True,
-                                                      error_messages={'does_not_exist': '该包装单位类型已被弃用或删除，操作无效'})
     material_type_name = serializers.CharField(source='material_type.global_name', read_only=True)
     package_unit_name = serializers.CharField(source='package_unit.global_name', read_only=True)
     created_user_name = serializers.CharField(source='created_user.username', read_only=True)
     update_user_name = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
-
-    def create(self, validated_data):
-        validated_data['created_user'] = self.context['request'].user
-        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         validated_data['last_updated_user'] = self.context['request'].user
@@ -74,8 +62,6 @@ class ProductInfoSerializer(BaseModelSerializer):
 
 
 class ProductInfoCopySerializer(BaseModelSerializer):
-    factory = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.filter(use_flag=0, delete_flag=False),
-                                                 help_text='产地id')
 
     def validate(self, attrs):
         versions = attrs['versions']
@@ -140,8 +126,6 @@ class ProductBatchingListSerializer(BaseModelSerializer):
 
 
 class ProductBatchingCreateSerializer(BaseModelSerializer):
-    stage = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.filter(use_flag=0, delete_flag=False),
-                                               help_text='段次id')
     batching_details = ProductBatchingDetailSerializer(many=True, required=False,
                                                        help_text="""
                                                            [{"sn": 序号, "material":原材料id, "auto_flag": true,
@@ -266,6 +250,9 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_time = datetime.now()
         else:
             if instance.used_type == 4:  # 弃用
+                if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
+                                             status__in=('已下达', '运行中')).exists():
+                    raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
                 instance.obsolete_user = self.context['request'].user
                 instance.used_type = 6
                 instance.obsolete_time = datetime.now()
