@@ -578,95 +578,72 @@ class EquipStatusPlanList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        air = """with equipstatus as (select *
-                     from (select plan_classes_uid,
-                                  equip_no,
-                                  status,
-                                  current_trains,
-                                  row_number() over (partition by equip_no order by created_date desc) as num
-                           from equip_status
-                           where delete_flag = 0)
-                              as t
-                     where t.num = 1
-),
-     trainsfeedbacks as (
-         select *
-         from (select plan_classes_uid,
-                      equip_no,
-                      product_no,
-                      row_number() over (partition by equip_no,plan_classes_uid order by created_date) as num
-               from trains_feedbacks
-               where delete_flag = 0)
-                  as t
-         where t.num = 1
-         group by equip_no),
-     actuallist as (
-         SELECT equip_no,
-                classes,
-                sum(plan_trains)   as sum_plan_trains,
-                sum(actual_trains) as sum_actual_trains,
-                plan_classes_uid
-         from (
-                  select id, equip_no, classes, plan_classes_uid, plan_trains, actual_trains
-                  from (select id,
-                               equip_no,
-                               classes,
-                               product_no,
-                               plan_classes_uid,
-                               plan_trains,
-                               actual_trains,
-                               row_number()
-                                       over (partition by equip_no,product_no,plan_classes_uid order by id desc) as num
-                        from trains_feedbacks
-                        where plan_classes_uid in (select plan_classes_uid
-                                                   from product_classes_plan
-                                                   where delete_flag = 0)
-                       )
-                           as t
-                  where t.num = 1
-              ) as c
-         group by c.equip_no, c.classes
+        air = """with
+     plan as (
+        select
+               e.id as equopid,
+               e.equip_no,
+               gc.global_name as classes,
+               gc.id as classid,
+               sum(pcp.plan_trains) as plan_trains
+        from equip e
+        left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date)=to_days(now())
+        left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag=false
+        left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
+        left join global_code gc on wsp.classes_id = gc.id
+        group by e.equip_no, gc.global_name
+        ),
+     actual as (
+        select equip_no,
+               classes,
+               sum(actual_trains) as actual_trains
+        from trains_feedbacks
+        where to_days(trains_feedbacks.created_date)=to_days(now())
+        group by equip_no, classes
+        ),
+     eq as(
+         select
+       e.equip_no,
+       max(concat(e.equip_no, ',', es.product_time, ',', es.current_trains, ',', pb.stage_product_batch_no, ',', es.status)) as ret
+        from equip e
+        left join equip_status es on e.equip_no=es.equip_no and to_days(es.created_date)=to_days(now())
+        left join product_classes_plan pcp on pcp.plan_classes_uid=es.plan_classes_uid
+        left join product_day_plan pdp on pdp.id=pcp.product_day_plan_id
+        left join product_batching pb on pb.id=pdp.product_batching_id
+        group by e.equip_no
      )
-select equip.id as id,
-       equip.equip_no,
-       (case when equipstatus.status is NULL then "正常" else equipstatus.status end),
-       (case when equipstatus.current_trains is NULL then 0 else equipstatus.current_trains end),
-       (case when trainsfeedbacks.product_no is NULL then " " else trainsfeedbacks.product_no end),
-       (case when actuallist.classes is NULL then "早班" else actuallist.classes end),
-       (case when global_code.id is NULL then 1 else global_code.id end),
-       (case when actuallist.sum_plan_trains is NULL then 0 else actuallist.sum_plan_trains end),
-       (case when actuallist.sum_actual_trains is NULL then 0 else actuallist.sum_actual_trains end)
-from equip
-         left join equipstatus on equipstatus.equip_no = equip.equip_no
-         left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
-         left join actuallist on actuallist.equip_no = equip.equip_no
-         left join global_code on actuallist.classes = global_code.global_name
-order by id;
+select
+       plan.equip_no,
+       plan.classes,
+       plan.classid,
+       plan.plan_trains,
+       actual.actual_trains,
+       plan.equopid,
+       eq.ret
+    from plan
+    left join actual on plan.equip_no=actual.equip_no and plan.classes=actual.classes
+    left join eq on eq.equip_no=plan.equip_no;
 """
         ret_data = {}
         cursor = connection.cursor()
         cursor.execute(air)
         equip_set = cursor.fetchall()
         for _ in equip_set:
-            if _[1] in ret_data.keys():
-                ret_data[_[1]].append({"classes_id": _[6],
-                                       "global_name": _[5],
-                                       "plan_num": _[7],
-                                       "actual_num": _[8],
-                                       "product_no": _[4],
-                                       "status": _[2],
-                                       "current_trains": _[3],
-                                       "id": _[0]})
+            if _[0] in ret_data.keys():
+                ret_data[_[0]].append({"classes_id": _[2],
+                                       "global_name": _[1],
+                                       "plan_num": _[3],
+                                       "actual_num": _[4],
+                                       "ret": _[6],
+                                       "id": _[5]})
             else:
-                ret_data[_[1]] = []
-                ret_data[_[1]].append({"classes_id": _[6],
-                                       "global_name": _[5],
-                                       "plan_num": _[7],
-                                       "actual_num": _[8],
-                                       "product_no": _[4],
-                                       "status": _[2],
-                                       "current_trains": _[3],
-                                       "id": _[0]
+                ret_data[_[0]] = []
+                ret_data[_[0]].append({"classes_id": _[2],
+                                       "global_name": _[1],
+                                       "plan_num": _[3],
+                                       "actual_num": _[4],
+                                       "ret": _[6],
+                                       "id": _[5]
                                        })
 
         return Response(ret_data)
