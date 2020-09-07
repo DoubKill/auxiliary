@@ -78,7 +78,7 @@ def add_product():
                                                operation_user=user_name,
                                                classes=pcp_obj.work_schedule_plan.classes.global_name)
             # 与此同时中间表增数据
-            IfupReportBasisBackups.objects.create(车次号=t.plan_trains, 开始时间=t.begin_time, 消耗时间=i, 排胶时间=i,
+            IfupReportBasisBackups.objects.create(车次号=t.plan_trains,  消耗时间=i, 排胶时间=i,
                                                   间隔时间=i, 排胶温度=i, 排胶功率=i, 排胶能量=i, 作业方式='去你妈的作业',
                                                   控制方式='好累啊', 员工代号=t.operation_user, 总重量=t.plan_weight,
                                                   胶料重量=t.plan_weight, 炭黑重量=t.plan_weight, 油1重量=i, 油2重量=i,
@@ -115,7 +115,7 @@ def add_product():
 
         IfupReportWeightBackups.objects.create(车次号=t.plan_trains, 物料名称=t.product_no, 设定重量=t.plan_weight,
                                                实际重量=t.actual_weight, 秤状态='扛不住了啊', 计划号=t.plan_classes_uid,
-                                               配方号=t.product_no, 物料编码='物料编码', 物料类型='类型啊~~~', 存盘时间=i,
+                                               配方号=t.product_no, 物料编码='物料编码', 物料类型='1', 存盘时间=i,
                                                机台号=strtoint(t.equip_no), recstatus=random_status())
         IfupReportMixBackups.objects.create(步骤号=i, 条件="啥条件", 时间=i, 温度=i, 功率=i, 能量=i, 动作='铁山靠', 转速=i,
                                             压力=i, 计划号=t.plan_classes_uid, 配方号=t.product_no, 存盘时间=i, 密炼车次=i,
@@ -150,6 +150,6 @@ def add_work():
 
 
 if __name__ == '__main__':
-    add_product_plan()
+    # add_product_plan()
     add_product()
     # add_work()
