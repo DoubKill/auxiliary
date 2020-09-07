@@ -237,7 +237,7 @@ class IssuedPlan(APIView):
         if not product_process:
             raise ValidationError("胶料配料步序为空，该计划不可用")
         # 步序详情，一份通用步序对应多份步序详情
-        product_process_details = product_process.process_details.filter(delete_flag=False)
+        product_process_details = product_batching.process_details.filter(delete_flag=False)
         if not product_process_details:
             raise ValidationError("胶料配料步序详情为空，该计划不可用")
 
