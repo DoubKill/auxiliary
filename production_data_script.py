@@ -118,8 +118,8 @@ def run():
                             "begin_trains": m - (pallet_count-1),
                             "end_trains": m,
                             "pallet_no": f"{bath_no}|test",
-                            "barcode": "KJDL:LKYDFJM<NLIIRD",
                             "classes": class_name,
+                            "lot_no": "我是测试条码",
                             "product_time": end_time,
                         }
                     start_time = end_time
