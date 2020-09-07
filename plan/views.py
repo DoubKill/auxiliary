@@ -325,12 +325,12 @@ class IssuedPlan(APIView):
             data = {
                 "id": ppd.id,
                 "set_condition": ppd.condition.condition if ppd and ppd.condition else None,  # ? 条件名称还是条件代码
-                "set_time": int(ppd.time),
-                "set_temp": int(ppd.temperature),
+                "set_time": int(ppd.time) if ppd.time else 0,
+                "set_temp": int(ppd.temperature) if ppd.temperature else 0,
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
                 "act_code": ppd.action.code,
-                "set_pres": int(ppd.pressure),
+                "set_pres": int(ppd.pressure) if ppd.pressure else 0,
                 "set_rota": ppd.rpm,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "recstatus": "等待",
