@@ -141,6 +141,8 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除
             return GroupExtensionUpdateSerializer
         if self.action == 'partial_update':
             return GroupExtensionUpdateSerializer
+        else:
+            return GroupExtensionSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")

@@ -222,7 +222,7 @@ LOGGING = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'NAME': os.getenv('SFJ_DATABASE_NAME', 'GZSFJ'),  # 数据库名称
+        'NAME': os.getenv('SFJ_DATABASE_NAME', 'MMM'),  # 数据库名称
         'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.14.6'),  # HOST

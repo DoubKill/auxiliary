@@ -638,6 +638,15 @@ select equip.id       as id,
        (case when actuallist.sum_plan_trains is NULL then 0 else actuallist.sum_plan_trains end),
        (case when actuallist.sum_actual_trains is NULL then 0 else actuallist.sum_actual_trains end)
 from equip
+         left join product_day_plan on equip.id = product_day_plan.equip_id
+         left join product_classes_plan on product_day_plan.id = product_classes_plan.product_day_plan_id and product_classes_plan.delete_flag = 0
+         left JOIN work_schedule_plan ON (product_classes_plan.work_schedule_plan_id = work_schedule_plan.id)
+         left JOIN trains_feedbacks
+                   ON (trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = 0)
+         left JOIN global_code ON (work_schedule_plan.classes_id = global_code.id)
+         left join equip_status on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and equip_status.delete_flag = 0
+GROUP BY equip.equip_no, global_code.global_name;'''
+        equip_set = Equip.objects.raw(air)
          left join equipstatus on equipstatus.equip_no = equip.equip_no
          left join trainsfeedbacks on trainsfeedbacks.equip_no = equip.equip_no
          left join actuallist on actuallist.equip_no = equip.equip_no

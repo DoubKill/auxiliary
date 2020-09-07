@@ -134,6 +134,7 @@ def main():
         else:
             data = {}
         m.objects.create(**data)
+        n += 1
 
 def run():
     while True:

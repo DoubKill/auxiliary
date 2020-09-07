@@ -14,6 +14,10 @@ import functools
 import django
 import logging
 
+import requests
+from django.db.transaction import atomic
+
+from system.models import SystemConfig, ChildSystemInfo
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -26,83 +30,37 @@ from work_station.models import IfupReportMix
 
 logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
-sync_model_map = {
-    "IfupMachineStatus": EquipStatus,
-    "IfupReportBasis": (),
-    "IfupReportCurve": (),
-    "IfupReportMix": (),
-    "IfupReportWeight": (),
-}
-field_map = {
 
-    "IfupMachineStatus": {
-        "计划号": "plan_classes_uid",
-        "配方号": "",
-        "运行状态": "status",
-        "机台号": "equip_no",
-    },
 
-    "IfupReportBasis": {
-        "车次号": "",
-        "开始时间": "start_time",  # 格式 2020/4/15 16:08,
-        "消耗时间": "",
-        "间隔时间": "",
-        "排胶温度": "temperature",
-        "排胶功率": "power",
-        "排胶能量": "energy",
-        "作业方式": "",
-        "控制方式": "",
-        "员工代号": "operation_user",
-        "总重量": "",
-        "胶料重量": "actual_weight",
-        "炭黑重量": "",
-        "油1重量": "",
-        "油2重量": "",
-        "加胶时间": "",
-        "加炭黑时间": "",
-        "加油1时间": "",
-        "加油2时间": "",
-    },
+class MesUpClient(object):
 
-    "IfupReportCurve": {
-        "温度": "temperature",
-        "能量": "energy",
-        "功率": "power",
-        "压力": "pressure",
-        "转速": "rpm",
-    },
-
-    "IfupReportMix": {
-        "步骤号": "",
-        "条件": "",
-        "时间": "",
-        "温度": "temperature",
-        "能量": "energy",
-        "功率": "power",
-        "压力": "pressure",
-        "转速": "rpm",
-        "动作": "",
-        "密炼车次": "",
-        "计划号": "plan_classes_uid",
-        "配方号": "",
-        "机台号": "equip_no",
-    },
-
-    "IfupReportWeight": {
-        "车次号": "",
-        "物料名称": "",
-        "设定重量": "",
-        "实际重量": "",
-        "秤状态": "",
-        "计划号": "plan_classes_uid",
-        "配方号": "",
-        "机台号": "equip_no",
-        "物料编码": "",
-        "物料类型": "",
-        "存盘时间": "",
+    UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
+    Client = requests.request
+    mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
+    API_DICT = {
+        "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
+        "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
+        "EquipStatus": "/api/v1/equip-status/",
+        "PlanStatus": "/api/v1/plan-status/"
     }
-}
 
+    @atomic
+    @classmethod
+    def update(cls):
+        sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
+        for model_name in cls.UP_TABLE_LIST:
+            temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
+            temp_id = temp.config_value
+            model = getattr(md, model_name)
+            model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
+            if model_set:
+                new_temp_id = model_set.last().id + 1
+            else:
+                new_temp_id = temp_id
+            temp.config_value = new_temp_id
+            ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
+            if ret.status_code <300:
+                temp.save()
 
 
 def one_instance(func):
@@ -129,6 +87,7 @@ def main():
     # 手动对中间表模型进行排序确保业务逻辑正确
     bath_no = 1 # 没有批次号编码,暂时写死
     temp_model_set = None
+    temp = None
     temp_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
     for m in temp_list:
         temp_model = getattr(md, m)
@@ -146,7 +105,11 @@ def main():
             sync_data_list = []
             for temp in temp_model_set:
                 uid = temp.计划号
-                equip_no = temp.机台号
+                equip_no = str(temp.机台号)
+                if len(equip_no) == 1:
+                    equip_no = "Z0" + equip_no
+                else:
+                    equip_no = "Z" + equip_no
                 product_no = temp.配方号  # 这里不确定是否一致
                 # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
                 pcp = ProductClassesPlan.objects.filter(plan_classes_uid=uid).first()
@@ -189,6 +152,11 @@ def main():
             sync_data_list = []
             for temp in temp_model_set:
                 uid = temp.计划号
+                equip_no = str(temp.机台号)
+                if len(equip_no) == 1:
+                    equip_no = "Z0" + equip_no
+                else:
+                    equip_no = "Z" + equip_no
                 end_time_str = temp.存盘时间
                 if len(end_time_str) == 15:
                     end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
@@ -198,10 +166,10 @@ def main():
                 else:
                     continue
                 current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
-                                                              机台号=temp.机台号).first().密炼车次
+                                                              机台号=temp.机台号).last().密炼车次
                 adapt_data = {
                     "plan_classes_uid": uid,
-                    "equip_no": temp.机台号,  # 机台号可能需要根据规则格式化
+                    "equip_no": equip_no,  # 机台号可能需要根据规则格式化
                     "temperature": temp.温度,
                     "rpm": temp.转速,
                     "energy": temp.能量,
@@ -244,19 +212,29 @@ def main():
     if temp:
         plan_no = temp.计划号
         product_no = temp.配方号
-        equip_no = str(temp.机台号)
-        if len(equip_no) == 1:
-            equip_no = "Z0" + equip_no
+        equip_str = str(temp.机台号)
+        if len(equip_str) == 1:
+            equip_no = "Z0" + equip_str
         else:
-            equip_no = "Z" + equip_no
+            equip_no = "Z" + equip_str
         product_time = temp.存盘时间
         actual_trains = temp.车次号
         plan_trains = pcp.plan_trains
+        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
+                      'IfdownRecipeCb', 'IfdownPmtRecipe']
         if actual_trains < plan_trains:
             status = "运行中"
-        #elif: 这里预留一个分支判断，当满足时可能计划被删除
+            model_name = getattr(md, model_list[0] + equip_str)
+            instance = model_name.objects.all().first()
+            if instance:
+                if instance.recstatus == "停止":
+                    status = "停止"
+        # elif: 这里预留一个分支判断，当满足时可能计划被删除
         else:
             status = "已完成"
+            for model_str in model_list:
+                model_name = getattr(md, model_str + equip_str)
+                model_name.objects.all().update(recstatus='完成')
         operation_user = temp.员工代号
         if not operation_user:
             operation_user = ""
@@ -267,13 +245,13 @@ def main():
                                        product_time=product_time,
                                        status=status
                                        )
-
+    # MesUpClient.update()
 
 
 @one_instance
 def run():
+    logger.info("同步开始")
     while True:
-        logger.info("同步开始")
         main()
         time.sleep(5)
 
@@ -283,3 +261,80 @@ if __name__ == "__main__":
     # 什么时候写入车次反馈数据什么时候回写入批次反馈数据，跟万隆对接只有车次数据
     # ifup上行中间表是在每车完成同步插入数据的吗, 理论上来说对于万隆应该是个双写的逻辑
     run()
+
+    sync_model_map = {
+        "IfupMachineStatus": EquipStatus,
+        "IfupReportBasis": (),
+        "IfupReportCurve": (),
+        "IfupReportMix": (),
+        "IfupReportWeight": (),
+    }
+    field_map = {
+
+        "IfupMachineStatus": {
+            "计划号": "plan_classes_uid",
+            "配方号": "",
+            "运行状态": "status",
+            "机台号": "equip_no",
+        },
+
+        "IfupReportBasis": {
+            "车次号": "",
+            "开始时间": "start_time",  # 格式 2020/4/15 16:08,
+            "消耗时间": "",
+            "间隔时间": "",
+            "排胶温度": "temperature",
+            "排胶功率": "power",
+            "排胶能量": "energy",
+            "作业方式": "",
+            "控制方式": "",
+            "员工代号": "operation_user",
+            "总重量": "",
+            "胶料重量": "actual_weight",
+            "炭黑重量": "",
+            "油1重量": "",
+            "油2重量": "",
+            "加胶时间": "",
+            "加炭黑时间": "",
+            "加油1时间": "",
+            "加油2时间": "",
+        },
+
+        "IfupReportCurve": {
+            "温度": "temperature",
+            "能量": "energy",
+            "功率": "power",
+            "压力": "pressure",
+            "转速": "rpm",
+        },
+
+        "IfupReportMix": {
+            "步骤号": "",
+            "条件": "",
+            "时间": "",
+            "温度": "temperature",
+            "能量": "energy",
+            "功率": "power",
+            "压力": "pressure",
+            "转速": "rpm",
+            "动作": "",
+            "密炼车次": "",
+            "计划号": "plan_classes_uid",
+            "配方号": "",
+            "机台号": "equip_no",
+        },
+
+        "IfupReportWeight": {
+            "车次号": "",
+            "物料名称": "",
+            "设定重量": "",
+            "实际重量": "",
+            "秤状态": "",
+            "计划号": "plan_classes_uid",
+            "配方号": "",
+            "机台号": "equip_no",
+            "物料编码": "",
+            "物料类型": "",
+            "存盘时间": "",
+        }
+    }
