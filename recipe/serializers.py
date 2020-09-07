@@ -3,12 +3,12 @@ import logging
 
 from django.db.transaction import atomic
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from rest_framework.validators import UniqueValidator
 
 from basics.models import GlobalCode, EquipCategoryAttribute, Equip
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
-    MaterialAttribute, ProductProcess, ProductProcessDetail, BaseCondition, BaseAction
+    MaterialAttribute, ProductProcess, ProductProcessDetail
 from production.models import PlanStatus
 from mes.conf import COMMON_READ_ONLY_FIELDS
 
@@ -101,19 +101,21 @@ class ProductBatchingDetailSerializer(BaseModelSerializer):
 
 
 class ProductBatchingListSerializer(BaseModelSerializer):
-    product_name = serializers.CharField(source='product_info.product_name', read_only=True)
-    created_user_name = serializers.CharField(source='created_user.username', read_only=True)
-    update_user_name = serializers.CharField(source='last_updated_user.username', read_only=True)
-    stage_name = serializers.CharField(source="stage.global_name", read_only=True)
-    site_name = serializers.CharField(source="site.global_name", read_only=True)
-    dev_type_name = serializers.CharField(source='dev_type.category_name', default=None, read_only=True)
-    equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
-    equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
-    sp_num = serializers.IntegerField(source='processes.sp_num', read_only=True, default=None)
+    product_name = serializers.CharField(source='product_info__product_name', read_only=True)
+    created_username = serializers.CharField(source='created_user__username', read_only=True)
+    stage_name = serializers.CharField(source="stage__global_name", read_only=True)
+    site_name = serializers.CharField(source="site__global_name", read_only=True)
+    dev_type_name = serializers.CharField(source='dev_type__category_name', default=None, read_only=True)
+    equip_no = serializers.CharField(source='equip__equip_no', default=None, read_only=True)
+    equip_name = serializers.CharField(source='equip__equip_name', default=None, read_only=True)
+    sp_num = serializers.IntegerField(source='processes__sp_num', read_only=True, default=None)
+    dev_type = serializers.IntegerField(source='dev_type_id', read_only=True, default=None)
 
     class Meta:
         model = ProductBatching
-        fields = '__all__'
+        fields = ('id', 'product_name', 'created_username', 'stage_name', 'site_name', 'dev_type_name',
+                  'equip_no', 'equip_name', 'sp_num', 'stage_product_batch_no', 'production_time_interval',
+                  'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
@@ -122,36 +124,11 @@ class ProductProcessDetailSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductProcessDetail
-        exclude = ('product_process', )
+        exclude = ('product_batching', )
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
 class ProductProcessSerializer(BaseModelSerializer):
-    process_details = ProductProcessDetailSerializer(many=True, required=False, help_text="""
-                                                                                        [{"sn":'序号',
-                                                                                        "temperature":'温度',
-                                                                                        "rpm":'转速',
-                                                                                        "energy": '能量',
-                                                                                        "power": '功率',
-                                                                                        "pressure" : '压力',
-                                                                                        "condition": '条件id',
-                                                                                        "time" :'时间(分钟)',
-                                                                                        "action":'基本动作id',
-                                                                                        "time_unit":'时间单位'}]""")
-
-    @atomic()
-    def update(self, instance, validated_data):
-        process_details = validated_data.pop('process_details', None)
-        validated_data['last_updated_user'] = self.context['request'].user
-        instance = super().update(instance, validated_data)
-        if process_details:
-            instance.process_details.all().delete()
-            batching_detail_list = []
-            for detail in process_details:
-                detail['product_process'] = instance
-                batching_detail_list.append(ProductProcessDetail(**detail))
-            ProductProcessDetail.objects.bulk_create(batching_detail_list)
-        return instance
 
     class Meta:
         model = ProductProcess
@@ -165,6 +142,17 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                                                            [{"sn": 序号, "material":原材料id, "auto_flag": true,
                                                            "actual_weight":重量, "standard_error":误差值}]""")
     processes = ProductProcessSerializer(help_text='步序data')
+    process_details = ProductProcessDetailSerializer(many=True, required=False, help_text="""
+                                                                                        [{"sn":'序号',
+                                                                                        "temperature":'温度',
+                                                                                        "rpm":'转速',
+                                                                                        "energy": '能量',
+                                                                                        "power": '功率',
+                                                                                        "pressure" : '压力',
+                                                                                        "condition": '条件id',
+                                                                                        "time" :'时间(分钟)',
+                                                                                        "action":'基本动作id',
+                                                                                        "time_unit":'时间单位'}]""")
 
     def validate(self, attrs):
         stage_product_batch_no = attrs['stage_product_batch_no']
@@ -177,6 +165,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
         processes = validated_data.pop('processes', None)
+        process_details = validated_data.pop('process_details', None)
         validated_data['dev_type'] = validated_data['equip'].category
         validated_data['created_user'] = self.context["request"].user
         instance = super().create(validated_data)
@@ -206,11 +195,10 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
         # 增加步序和步序详情
         processes['product_batching'] = instance
         processes['created_user'] = self.context['request'].user
-        process_details = processes.pop('process_details', None)
-        product_process = ProductProcess.objects.create(**processes)
+        ProductProcess.objects.create(**processes)
         batching_detail_list = []
         for detail in process_details:
-            detail['product_process'] = product_process
+            detail['product_batching'] = instance
             batching_detail_list.append(ProductProcessDetail(**detail))
         ProductProcessDetail.objects.bulk_create(batching_detail_list)
 
@@ -231,20 +219,26 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
         model = ProductBatching
         fields = ('factory', 'site', 'product_info', 'precept', 'stage_product_batch_no',
                   'stage', 'versions', 'batching_details', 'equip', 'id', 'dev_type',
-                  'production_time_interval', 'processes')
+                  'production_time_interval', 'processes', 'process_details')
         extra_kwargs = {'equip': {'required': True}}
 
 
-class ProductBatchingRetrieveSerializer(ProductBatchingListSerializer):
+class ProductBatchingRetrieveSerializer(BaseModelSerializer):
     batching_details = ProductBatchingDetailSerializer(many=True, required=False,
                                                        help_text="""
                                                        [{"sn": 序号, "material":原材料id, 
                                                        "actual_weight":重量, "error_range":误差值}]""")
     processes = ProductProcessSerializer(help_text='步序data', default=None)
+    process_details = ProductProcessDetailSerializer(many=True, default=None)
+    equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
+    equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
+    product_name = serializers.CharField(source='product_info.product_name', read_only=True)
 
     class Meta:
         model = ProductBatching
-        fields = '__all__'
+        fields = ('id', 'equip_name', 'product_name', 'production_time_interval', 'factory',
+                  'site', 'stage', 'batching_details', 'processes', 'process_details',
+                  'equip_no', 'product_info', 'stage_product_batch_no', 'versions')
 
 
 class ProductProcessCreateSerializer(serializers.ModelSerializer):
@@ -262,13 +256,14 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
             raise serializers.ValidationError('只有编辑状态的配方才可修改')
         batching_details = validated_data.pop('batching_details', None)
         processes = validated_data.pop('processes', None)
+        process_details = validated_data.pop('process_details', None)
         validated_data['last_updated_user'] = self.context['request'].user
         instance = super().update(instance, validated_data)
 
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details is not None:
-            instance.batching_details.all().delete()
+            instance.batching_details.filter().update(delete_flag=True)
             batching_detail_list = [None] * len(batching_details)
             for i, detail in enumerate(batching_details):
                 actual_weight = detail.get('actual_weight', 0)
@@ -288,22 +283,21 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
         # 修改步序
         if processes:
-            process_details = processes.pop('process_details', None)
             s = ProductProcessCreateSerializer(instance=instance.processes, data=processes)
             s.is_valid(raise_exception=True)
-            product_process = s.save()
+            s.save()
             if process_details is not None:
                 process_detail_list = [None] * len(process_details)
-                product_process.process_details.all().delete()
+                instance.process_details.filter().update(delete_flag=True)
                 for i, process_detail in enumerate(process_details):
-                    process_detail['product_process'] = product_process
+                    process_detail['product_batching'] = instance
                     process_detail_list[i] = ProductProcessDetail(**process_detail)
                 ProductProcessDetail.objects.bulk_create(process_detail_list)
         return instance
 
     class Meta:
         model = ProductBatching
-        fields = ('id', 'batching_details', 'production_time_interval', 'equip', 'processes')
+        fields = ('id', 'batching_details', 'production_time_interval', 'equip', 'processes', 'process_details')
 
 
 class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):

@@ -1,4 +1,5 @@
 # Create your views here.
+from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -13,15 +14,15 @@ from basics.models import Equip
 from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
-from mes.permissions import ProductBatchingPermissions, PermissionClass
+from mes.permissions import PermissionClass
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter, ProcessStepsFilter
+    MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
-    ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
+    ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
     ProductBatchingPartialUpdateSerializer, RecipeReceiveSerializer
-from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
-    ProductBatchingDetail, BaseAction, BaseCondition
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -167,14 +168,30 @@ class ProductBatchingViewSet(ModelViewSet):
         配料审批
     """
     queryset = ProductBatching.objects.filter(
-        delete_flag=False).select_related(
-        "factory", "site", "equip__category", 'dev_type',
-        "stage", "product_info", 'created_user', 'last_updated_user'
-    ).prefetch_related('processes').order_by('-created_date')
-    permission_classes = (IsAuthenticated,)
+        delete_flag=False).select_related("equip__category", "product_info"
+                                          ).prefetch_related(
+                                            Prefetch('process_details',
+                                                     queryset=ProductProcessDetail.objects.filter(
+                                                         delete_flag=False).select_related('condition', 'action')),
+                                            Prefetch('batching_details',
+                                                     queryset=ProductBatchingDetail.objects.filter(
+                                                         delete_flag=False).select_related('material__material_type'))
+                                            ).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
     model_name = queryset.model.__name__.lower()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return ProductBatching.objects.filter(delete_flag=False).order_by('-created_date').values(
+                'id', 'stage_product_batch_no', 'product_info__product_name',
+                'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
+                'used_type', 'batching_weight', 'production_time_interval',
+                'stage__global_name', 'site__global_name', 'processes__sp_num',
+                'created_date', 'created_user__username', 'batching_type', 'dev_type_id'
+            )
+        else:
+            return self.queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -187,9 +204,6 @@ class ProductBatchingViewSet(ModelViewSet):
     def get_permissions(self):
         if self.request.query_params.get('all'):
             return ()
-        if self.action == 'partial_update':
-            return (ProductBatchingPermissions(),
-                    IsAuthenticated())
         else:
             return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
