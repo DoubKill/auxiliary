@@ -697,20 +697,24 @@ from equip_status
 where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE
 order by equip_status.product_time desc
 limit 1;'''
-        try:
-            equip_list = EquipStatus.objects.raw(air_list)[0]
-        except Exception as e:
-            # return Response('暂无数据', status=400)
-            raise ValidationError('暂无数据')
-
+        equip_list = EquipStatus.objects.raw(air_list)[0]
         ret_data = {}
-        ret_data['equip_no'] = equip_list.equip_no
-        ret_data['status'] = equip_list.status
-        ret_data['product_no'] = equip_list.product_no
-        ret_data['current_trains'] = equip_list.current_trains
-        ret_data['classes_name'] = equip_list.classes_name
-        ret_data['product_list'] = []
-        ret_data['status_list'] = []
+        if not equip_list:
+            ret_data['equip_no'] = None
+            ret_data['status'] = None
+            ret_data['product_no'] = None
+            ret_data['current_trains'] = None
+            ret_data['classes_name'] = None
+            ret_data['product_list'] = []
+            ret_data['status_list'] = []
+        else:
+            ret_data['equip_no'] = equip_list.equip_no
+            ret_data['status'] = equip_list.status
+            ret_data['product_no'] = equip_list.product_no
+            ret_data['current_trains'] = equip_list.current_trains
+            ret_data['classes_name'] = equip_list.classes_name
+            ret_data['product_list'] = []
+            ret_data['status_list'] = []
         air_product_list = f'''select equip_status.id,
        product_batching.stage_product_batch_no,
        SUM(distinct product_classes_plan.plan_trains) AS plan_num,
@@ -724,18 +728,16 @@ from equip_status
                    ON trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = FALSE
 where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE 
 group by product_batching.stage_product_batch_no;'''
-
-        try:
-            product_list = EquipStatus.objects.raw(air_product_list)
-        except Exception as e:
-            # return Response('暂无数据', status=400)
-            raise ValidationError('暂无数据')
-        for _ in product_list:
-            p_list = {}
-            p_list['product_no'] = _.stage_product_batch_no
-            p_list['plan_num'] = _.plan_num
-            p_list['actual_num'] = _.actual_num
-            ret_data['product_list'].append(p_list)
+        product_list = EquipStatus.objects.raw(air_product_list)
+        if not product_list:
+            ret_data['product_list'] = None
+        else:
+            for _ in product_list:
+                p_list = {}
+                p_list['product_no'] = _.stage_product_batch_no
+                p_list['plan_num'] = _.plan_num
+                p_list['actual_num'] = _.actual_num
+                ret_data['product_list'].append(p_list)
 
         air_status_list = f'''select equip_status.id,
        equip_status.status,
@@ -744,17 +746,15 @@ from equip_status
 where equip_status.equip_no = '{equip_no}' and equip_status.delete_flag=FALSE
 group by equip_status.status;
 '''
-
-        try:
-            status_list = EquipStatus.objects.raw(air_status_list)
-        except Exception as e:
-            # return Response('暂无数据', status=400)
-            raise ValidationError('暂无数据')
-        for _ in status_list:
-            s_list = {}
-            s_list['status'] = _.status
-            s_list['count_status'] = _.count_status
-            ret_data['status_list'].append(s_list)
+        status_list = EquipStatus.objects.raw(air_status_list)
+        if not status_list:
+            ret_data['status_list'] = None
+        else:
+            for _ in status_list:
+                s_list = {}
+                s_list['status'] = _.status
+                s_list['count_status'] = _.count_status
+                ret_data['status_list'].append(s_list)
         return Response(ret_data)
 
 
