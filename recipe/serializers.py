@@ -21,8 +21,11 @@ class MaterialSerializer(BaseModelSerializer):
                                                                     message='该原材料已存在')])
     material_type_name = serializers.CharField(source='material_type.global_name', read_only=True)
     package_unit_name = serializers.CharField(source='package_unit.global_name', read_only=True)
-    created_user_name = serializers.CharField(source='created_user.username', read_only=True)
     update_user_name = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
+
+    def create(self, validated_data):
+        validated_data['created_user'] = self.context['request'].user
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         validated_data['last_updated_user'] = self.context['request'].user
