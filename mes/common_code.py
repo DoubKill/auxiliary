@@ -1,3 +1,4 @@
+import requests
 from rest_framework import status, mixins
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -11,8 +12,11 @@ from system.models import User, SystemConfig, ChildSystemInfo, AsyncUpdateConten
 class CommonDeleteMixin(object):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.delete_flag = True
-        instance.delete_user = request.user
+        if instance.use_flag:
+            instance.use_flag = 0
+        else:
+            instance.use_flag = 1
+        instance.last_updated_user = request.user
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -74,3 +78,45 @@ def menu(request, menu, temp, format):
 
     temp.data.update({"menu": data})
     return temp
+
+
+class WebService(object):
+
+    client = requests.request
+    headers = {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'SOAPAction': 'http://tempuri.org/INXWebService/plan'
+    }
+    url = "http://{}:9000/planService"
+
+    @classmethod
+    def issue(cls, data, method="post"):
+        child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
+        recv_ip = child_system.link_address
+        url = cls.url.format(recv_ip)
+        rep = cls.client(method, url, headers=cls.headers, data=cls.trans_dict_to_xml(data))
+        if rep.status_code < 300:
+            return True
+    # dict数据转soap需求xml
+    @staticmethod
+    def trans_dict_to_xml(data):
+        """
+        将 dict 对象转换成微信支付交互所需的 XML 格式数据
+
+        :param data: dict 对象
+        :return: xml 格式数据
+        """
+
+        xml = []
+        for k in sorted(data.keys()):
+            v = data.get(k)
+            if k == 'detail' and not v.startswith('<![CDATA['):
+                v = '<![CDATA[{}]]>'.format(v)
+            xml.append('<{key}>{value}</{key}>'.format(key=k, value=v))
+        return """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                <s:Body>
+                    <plan xmlns="http://tempuri.org/">
+                        {}
+                    </plan>
+                </s:Body>
+                </s:Envelope>""".format(''.join(xml))

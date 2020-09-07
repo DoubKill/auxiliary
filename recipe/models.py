@@ -6,7 +6,7 @@ from system.models import AbstractEntity, User
 
 class Material(AbstractEntity):
     """原材料信息"""
-    material_no = models.CharField(max_length=64, help_text='原材料编码', verbose_name='原材料编码')
+    material_no = models.CharField(max_length=64, help_text='原材料编码', verbose_name='原材料编码', unique=True)
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
     for_short = models.CharField(max_length=64, help_text='原材料简称', verbose_name='原材料简称', blank=True, null=True)
     material_type = models.ForeignKey(GlobalCode, help_text='原材料类别', verbose_name='原材料类别',
@@ -36,7 +36,7 @@ class MaterialAttribute(AbstractEntity):
 class MaterialSupplier(AbstractEntity):
     """原材料供应商"""
     material = models.ForeignKey(Material, help_text='原材料', verbose_name='原材料', on_delete=models.DO_NOTHING)
-    supplier_no = models.IntegerField(help_text='供应商编码', verbose_name='供应商编码')
+    supplier_no = models.IntegerField(help_text='供应商编码', verbose_name='供应商编码', unique=True)
 
     class Meta:
         db_table = 'material_supplier'
@@ -45,7 +45,7 @@ class MaterialSupplier(AbstractEntity):
 
 class ProductInfo(AbstractEntity):
     """胶料工艺信息"""
-    product_no = models.CharField(max_length=64, help_text='胶料编码', verbose_name='胶料编码')
+    product_no = models.CharField(max_length=64, help_text='胶料编码', verbose_name='胶料编码', unique=True)
     product_name = models.CharField(max_length=64, help_text='胶料名称', verbose_name='胶料名称')
 
     def __str__(self):
@@ -82,10 +82,13 @@ class ProductBatching(AbstractEntity):
     USE_TYPE_CHOICE = (
         (1, '编辑'),
         (2, '提交'),
-        (3, '校对'),
         (4, '启用'),
         (5, '驳回'),
         (6, '废弃')
+    )
+    BATCHING_TYPE_CHOICE = (
+        (1, '机台'),
+        (2, '机型')
     )
     factory = models.ForeignKey(GlobalCode, help_text='工厂', verbose_name='工厂',
                                 on_delete=models.DO_NOTHING, related_name='f_batching')
@@ -117,6 +120,8 @@ class ProductBatching(AbstractEntity):
     production_time_interval = models.DecimalField(help_text='炼胶时间(分)', blank=True, null=True,
                                                    decimal_places=2, max_digits=8)
     equip = models.ForeignKey(Equip, help_text='设备', blank=True, null=True, on_delete=models.DO_NOTHING)
+    batching_type = models.PositiveIntegerField(verbose_name='配料类型', help_text='配料类型',
+                                                choices=BATCHING_TYPE_CHOICE, default=1)
 
     def __str__(self):
         return self.stage_product_batch_no
@@ -147,8 +152,8 @@ class ProductBatchingDetail(AbstractEntity):
 
 class ProductProcess(AbstractEntity):
     """胶料配方步序"""
-    equip = models.ForeignKey(Equip, help_text='机台id', on_delete=models.DO_NOTHING)
-    product_batching = models.ForeignKey(ProductBatching, help_text='配料标准', on_delete=models.DO_NOTHING)
+    product_batching = models.OneToOneField(ProductBatching, help_text='配料标准',
+                                            on_delete=models.DO_NOTHING, related_name='processes')
     equip_code = models.PositiveIntegerField(help_text='锁定/解除', blank=True, null=True)
     reuse_time = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
     mini_time = models.PositiveIntegerField(help_text='超温最短时间', blank=True, null=True)
@@ -167,7 +172,6 @@ class ProductProcess(AbstractEntity):
     sp_num = models.PositiveSmallIntegerField(help_text='收皮', blank=True, null=True)
 
     class Meta:
-        unique_together = ('equip', 'product_batching')
         db_table = 'product_process'
         verbose_name_plural = verbose_name = '胶料配料标准步序'
 
@@ -191,8 +195,8 @@ class BaseAction(AbstractEntity):
 
 
 class ProductProcessDetail(AbstractEntity):
-    product_process = models.ForeignKey(ProductProcess, help_text='步序id', on_delete=models.DO_NOTHING,
-                                        related_name='process_details')
+    product_batching = models.ForeignKey(ProductBatching, help_text='配方id', on_delete=models.DO_NOTHING,
+                                         related_name='process_details')
     sn = models.CharField(max_length=64, help_text='序号')
     temperature = models.PositiveIntegerField(help_text='温度', blank=True, null=True)
     rpm = models.PositiveIntegerField(help_text='转速', blank=True, null=True)

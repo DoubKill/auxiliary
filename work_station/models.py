@@ -34,7 +34,7 @@ class IfdownPmtRecipe1(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)     # 侧壁水温
     tempuse = models.IntegerField(blank=True, null=True)     # 三区水温启用/停用
     usenot = models.IntegerField(blank=True, null=True)      # 配方停用
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -60,7 +60,7 @@ class IfdownPmtRecipe2(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -86,7 +86,7 @@ class IfdownPmtRecipe3(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -112,7 +112,7 @@ class IfdownPmtRecipe4(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -138,7 +138,7 @@ class IfdownPmtRecipe5(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -164,7 +164,7 @@ class IfdownPmtRecipe6(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -190,7 +190,7 @@ class IfdownPmtRecipe7(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -216,7 +216,7 @@ class IfdownPmtRecipe8(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -242,7 +242,7 @@ class IfdownPmtRecipe9(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -268,7 +268,7 @@ class IfdownPmtRecipe10(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -294,7 +294,7 @@ class IfdownPmtRecipe11(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -320,7 +320,7 @@ class IfdownPmtRecipe12(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -346,7 +346,7 @@ class IfdownPmtRecipe13(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -372,7 +372,7 @@ class IfdownPmtRecipe14(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -398,7 +398,7 @@ class IfdownPmtRecipe15(models.Model):
     temp_cb = models.IntegerField(blank=True, null=True)
     tempuse = models.IntegerField(blank=True, null=True)
     usenot = models.IntegerField(blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -414,7 +414,7 @@ class IfdownRecipeCb1(models.Model):
     recipe_name = models.CharField(max_length=20)   # 配方名
     act_code = models.IntegerField(blank=True, null=True) # 动作编码
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -429,7 +429,7 @@ class IfdownRecipeCb2(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -444,7 +444,7 @@ class IfdownRecipeCb3(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -459,7 +459,7 @@ class IfdownRecipeCb4(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -474,7 +474,7 @@ class IfdownRecipeCb5(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -489,7 +489,7 @@ class IfdownRecipeCb6(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -504,7 +504,7 @@ class IfdownRecipeCb7(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -519,7 +519,7 @@ class IfdownRecipeCb8(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -534,7 +534,7 @@ class IfdownRecipeCb9(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -549,7 +549,7 @@ class IfdownRecipeCb10(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -564,7 +564,7 @@ class IfdownRecipeCb11(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -579,7 +579,7 @@ class IfdownRecipeCb12(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -594,7 +594,7 @@ class IfdownRecipeCb13(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -609,7 +609,7 @@ class IfdownRecipeCb14(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -624,7 +624,7 @@ class IfdownRecipeCb15(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -643,7 +643,7 @@ class IfdownRecipeMix1(models.Model):
     set_pres = models.IntegerField(blank=True, null=True) # 压力
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True) # 转速
     recipe_name = models.CharField(max_length=20, blank=True, null=True)  # 配方名
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -661,7 +661,7 @@ class IfdownRecipeMix2(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -679,7 +679,7 @@ class IfdownRecipeMix3(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -697,7 +697,7 @@ class IfdownRecipeMix4(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -715,7 +715,7 @@ class IfdownRecipeMix5(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -733,7 +733,7 @@ class IfdownRecipeMix6(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -751,7 +751,7 @@ class IfdownRecipeMix7(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -769,7 +769,7 @@ class IfdownRecipeMix8(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -787,7 +787,7 @@ class IfdownRecipeMix9(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -805,7 +805,7 @@ class IfdownRecipeMix10(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -824,7 +824,7 @@ class IfdownRecipeMix11(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -842,7 +842,7 @@ class IfdownRecipeMix12(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -860,7 +860,7 @@ class IfdownRecipeMix13(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -878,7 +878,7 @@ class IfdownRecipeMix14(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -896,12 +896,26 @@ class IfdownRecipeMix15(models.Model):
     set_pres = models.IntegerField(blank=True, null=True)
     set_rota = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     recipe_name = models.CharField(max_length=20, blank=True, null=True)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
         db_table = 'ifdown_recipe_mix_15'
 
+
+class IfdownRecipeWeigh6(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_6'
 
 class IfdownRecipeOil11(models.Model):
     """1号机台配方油料表"""
@@ -912,7 +926,7 @@ class IfdownRecipeOil11(models.Model):
     recipe_name = models.CharField(max_length=20) # 配方名称
     act_code = models.IntegerField(blank=True, null=True) # 动作代码
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -927,7 +941,7 @@ class IfdownRecipeOil12(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -942,7 +956,7 @@ class IfdownRecipeOil13(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -957,7 +971,7 @@ class IfdownRecipeOil14(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -972,7 +986,7 @@ class IfdownRecipeOil15(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -987,7 +1001,7 @@ class IfdownRecipeOil16(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1002,7 +1016,7 @@ class IfdownRecipeOil17(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1017,7 +1031,7 @@ class IfdownRecipeOil18(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1032,7 +1046,7 @@ class IfdownRecipeOil19(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1047,7 +1061,7 @@ class IfdownRecipeOil110(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1062,7 +1076,7 @@ class IfdownRecipeOil111(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1077,7 +1091,7 @@ class IfdownRecipeOil112(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1092,7 +1106,7 @@ class IfdownRecipeOil113(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1107,7 +1121,7 @@ class IfdownRecipeOil114(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1122,7 +1136,7 @@ class IfdownRecipeOil115(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1138,7 +1152,7 @@ class IfdownRecipePloy1(models.Model):
     recipe_name = models.CharField(max_length=20)  # 配方名称
     act_code = models.IntegerField(blank=True, null=True) # 动作代码  recipe.BaseAction
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1153,7 +1167,7 @@ class IfdownRecipePloy2(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1168,7 +1182,7 @@ class IfdownRecipePloy3(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1183,7 +1197,7 @@ class IfdownRecipePloy4(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1198,7 +1212,7 @@ class IfdownRecipePloy5(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1212,8 +1226,8 @@ class IfdownRecipePloy6(models.Model):
     error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
-    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # 胶料 P  炭黑 C 油 O
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1228,7 +1242,7 @@ class IfdownRecipePloy7(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1243,7 +1257,7 @@ class IfdownRecipePloy8(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1258,7 +1272,7 @@ class IfdownRecipePloy9(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1274,7 +1288,7 @@ class IfdownRecipePloy10(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1289,7 +1303,7 @@ class IfdownRecipePloy11(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1304,7 +1318,7 @@ class IfdownRecipePloy12(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1319,7 +1333,7 @@ class IfdownRecipePloy13(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1334,7 +1348,7 @@ class IfdownRecipePloy14(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1349,7 +1363,7 @@ class IfdownRecipePloy15(models.Model):
     recipe_name = models.CharField(max_length=20)
     act_code = models.IntegerField(blank=True, null=True)
     type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1373,7 +1387,7 @@ class IfdownShengchanjihua1(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True) # 操作员角色
     state = models.CharField(max_length=8, blank=True, null=True) # 计划状态：等待，运行中，完成
     remark = models.CharField(max_length=4) # c 新增  u 更新 d删除
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1395,7 +1409,7 @@ class IfdownShengchanjihua2(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1417,7 +1431,7 @@ class IfdownShengchanjihua3(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1439,7 +1453,7 @@ class IfdownShengchanjihua4(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1461,7 +1475,7 @@ class IfdownShengchanjihua5(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1483,7 +1497,7 @@ class IfdownShengchanjihua6(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1505,7 +1519,7 @@ class IfdownShengchanjihua7(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1527,7 +1541,7 @@ class IfdownShengchanjihua8(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1549,7 +1563,7 @@ class IfdownShengchanjihua9(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1571,7 +1585,7 @@ class IfdownShengchanjihua10(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1593,7 +1607,7 @@ class IfdownShengchanjihua11(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1615,7 +1629,7 @@ class IfdownShengchanjihua12(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1637,7 +1651,7 @@ class IfdownShengchanjihua13(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1659,7 +1673,7 @@ class IfdownShengchanjihua14(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1681,7 +1695,7 @@ class IfdownShengchanjihua15(models.Model):
     oper = models.CharField(max_length=18, blank=True, null=True)
     state = models.CharField(max_length=8, blank=True, null=True)
     remark = models.CharField(max_length=4)
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1696,7 +1710,7 @@ class IfupMachineStatus(models.Model):
     配方号 = models.CharField(max_length=20, blank=True, null=True)  # recipe no
     运行状态 = models.IntegerField()
     机台号 = models.IntegerField()  # equip_no
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1730,7 +1744,7 @@ class IfupReportBasis(models.Model):
     加油2时间 = models.IntegerField(blank=True, null=True)
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1749,7 +1763,7 @@ class IfupReportCurve(models.Model):
     转速 = models.IntegerField(blank=True, null=True)
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1773,7 +1787,7 @@ class IfupReportMix(models.Model):
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     密炼车次 = models.IntegerField(blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False
@@ -1794,7 +1808,7 @@ class IfupReportWeight(models.Model):
     物料类型 = models.CharField(max_length=1, blank=True, null=True)
     存盘时间 = models.CharField(max_length=19, blank=True, null=True)
     机台号 = models.IntegerField()
-    recstatus = models.CharField(db_column='RecStatus', max_length=20)
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
 
     class Meta:
         # managed = False

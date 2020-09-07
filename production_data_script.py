@@ -17,7 +17,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
 from plan.models import ProductClassesPlan, ProductDayPlan
-from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus
+from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, ExpendMaterial
 
 pallet_count = 5
 
@@ -51,6 +51,8 @@ def run():
     day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
     for day_plan in list(day_plan_set):
         class_plan_set = ProductClassesPlan.objects.filter(product_day_plan=day_plan.id)
+        pbd_set = day_plan.product_batching.batching_details.all()
+        weight_list = []
         bath_no = 1
         for class_plan in list(class_plan_set):
             plan_trains = class_plan.plan_trains
@@ -84,7 +86,22 @@ def run():
                     "classes": class_name,
                     "product_time": end_time,
                 }
+                for pbd in pbd_set:
+                    weight_data = {
+                        "plan_classes_uid": class_plan.plan_classes_uid,
+                        "equip_no": equip_no,
+                        "product_no": product_no,
+                        "trains": m,
+                        "plan_weight": plan_weight,
+                        "actual_weight": m * 5,
+                        "material_no": pbd.material.material_no,
+                        "material_type": pbd.material.material_type.global_name,
+                        "material_name": pbd.material.material_name,
+                        "product_time": end_time
+                    }
+                    weight_list.append(ExpendMaterial(**weight_data))
                 start_time = end_time
+                ExpendMaterial.objects.bulk_create(weight_list)
                 TrainsFeedbacks.objects.create(**train_data)
                 if m % pallet_count == 0:
                     end_time = start_time + datetime.timedelta(seconds=150*5)
@@ -101,8 +118,8 @@ def run():
                             "begin_trains": m - (pallet_count-1),
                             "end_trains": m,
                             "pallet_no": f"{bath_no}|test",
-                            "barcode": "KJDL:LKYDFJM<NLIIRD",
                             "classes": class_name,
+                            "lot_no": "我是测试条码",
                             "product_time": end_time,
                         }
                     start_time = end_time

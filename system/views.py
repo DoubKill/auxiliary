@@ -1,4 +1,3 @@
-import json
 
 import xlrd
 from django.contrib.auth.models import Permission
@@ -12,14 +11,11 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
-from basics.models import WorkSchedulePlan, Equip, PlanSchedule
 from mes.common_code import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
-from production.models import PlanStatus
-from recipe.models import ProductBatching, Material, MaterialAttribute, MaterialSupplier, ProductInfo, ProductRecipe, \
-    ProductBatchingDetail, ProductProcess, BaseCondition, BaseAction, ProductProcessDetail
+from plan.models import ProductClassesPlan
+from recipe.models import ProductBatching
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
@@ -44,6 +40,7 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     serializer_class = PermissionSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = SinglePageNumberPagination
+    # filter_backends = (DjangoFilterBackend,)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -108,7 +105,7 @@ class UserGroupsViewSet(mixins.ListModelMixin,
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(ModelViewSet):
+class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除，现在改为是启用就改为禁用 是禁用就改为启用
     """
     list:
         角色列表,xxx?all=1查询所有
@@ -148,6 +145,8 @@ class GroupExtensionViewSet(ModelViewSet):
             return GroupExtensionUpdateSerializer
         if self.action == 'partial_update':
             return GroupExtensionUpdateSerializer
+        else:
+            return GroupExtensionSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")
