@@ -46,11 +46,6 @@ router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
 
 # 物料统计
 router.register(r'material-statistics', MaterialStatisticsViewSet, basename="material-statistics")
-
-# 主页面展示
-router.register(r'equip-status-plan-list', EquipStatusPlanList, basename="equip-status-plan-list")
-# 主页面详情展示
-router.register(r'equip-detailed-list', EquipDetailedList, basename="equip-detailed-list")
 # 称量信息展示
 router.register(r'weigh-information-list', WeighInformationList, basename="weigh-information-list")
 # 密炼信息展示
@@ -63,4 +58,6 @@ router.register(r'trains-feedbacks-apiview', TrainsFeedbacksAPIView, basename="t
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('equip-status-plan-list/', EquipStatusPlanList.as_view()),  # 主页面展示
+    path('equip-detailed-list/', EquipDetailedList.as_view()),  # 主页面详情展示
 ]
