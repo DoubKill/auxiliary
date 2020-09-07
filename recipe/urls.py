@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from recipe.views import MaterialViewSet, ProductInfoViewSet, \
     ProductBatchingViewSet, MaterialAttributeViewSet, \
-    ValidateProductVersionsView, ProcessStepsViewSet, ProductProcessDetailViewSet, ActionListView, ConditionListView, \
-    RecipeReceiveAPiView, RecipeObsoleteAPiView, ProductBatchingCopyView
+    ValidateProductVersionsView, ActionListView, ConditionListView, \
+    RecipeReceiveAPiView, RecipeObsoleteAPiView, BatchingEquip
 
 router = DefaultRouter()
 
@@ -20,15 +20,9 @@ router.register(r'product-infos', ProductInfoViewSet)
 # 胶料配料
 router.register(r'product-batching', ProductBatchingViewSet)
 
-# 胶料步序
-router.register(r'process-steps', ProcessStepsViewSet)
-
-# 胶料步序详情
-router.register(r'process-steps-details', ProductProcessDetailViewSet)
-
 urlpatterns = [
     path('', include(router.urls)),
-    path('product-batching-copy/', ProductBatchingCopyView.as_view()),
+    path('batching-equips/', BatchingEquip.as_view()),
     path('recipe-obsolete/', RecipeObsoleteAPiView.as_view()),
     path('recipe-receive/', RecipeReceiveAPiView.as_view()),  # 接收mes下发的配方
     path('actions/', ActionListView.as_view()),

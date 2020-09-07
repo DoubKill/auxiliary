@@ -6,8 +6,6 @@ from rest_framework.relations import PKOnlyObject
 
 from django.utils.translation import ugettext as _
 
-from system.models import User
-
 
 def _common_to_representation(self, instance):
     """
@@ -45,21 +43,20 @@ def _common_to_representation(self, instance):
 class BaseHyperlinkSerializer(serializers.HyperlinkedModelSerializer):
     """封装字段值国际化功能后的超链接序列化器，需要用HyperlinkedModelSerializer请直接继承该类"""
     id = serializers.IntegerField(read_only=True)
+
     def to_representation(self, instance):
         """复用公共私有方法,扩展并继承原本to_representation方法"""
         return _common_to_representation(self, instance)
 
 
-
 class BaseModelSerializer(serializers.ModelSerializer):
     """封装字段值国际化功能后的模型类序列化器，需要用ModelSerializer请直接继承该类"""
-    created_username = serializers.SerializerMethodField(read_only=True)
+    created_username = serializers.CharField(source='created_user.username', default=None, read_only=True)
 
-    def get_created_username(self, object):
-        user_id = object.created_user.id if object.created_user else 0
-        created_user = User.objects.filter(id=user_id).first()
-        return created_user.username if created_user else ""
-
+    # def get_created_username(self, object):
+    #     user_id = object.created_user.id if object.created_user else 0
+    #     created_user = User.objects.filter(id=user_id).first()
+    #     return created_user.username if created_user else ""
 
     def to_representation(self, instance):
         """复用公共私有方法,扩展并继承原本to_representation方法"""

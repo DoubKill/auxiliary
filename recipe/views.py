@@ -1,4 +1,5 @@
 # Create your views here.
+from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -9,18 +10,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+from basics.models import Equip
 from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
-from mes.permissions import ProductBatchingPermissions, PermissionClass
+from mes.permissions import PermissionClass
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter, ProcessStepsFilter
+    MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
-    ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, ProductProcessSerializer, \
-    ProductBatchingPartialUpdateSerializer, ProcessDetailSerializer, RecipeReceiveSerializer, ProductBatchingSerializer
-from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, \
-    ProductBatchingDetail, ProductProcessDetail, BaseAction, BaseCondition
+    ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
+    ProductBatchingPartialUpdateSerializer, RecipeReceiveSerializer
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -165,14 +167,31 @@ class ProductBatchingViewSet(ModelViewSet):
     partial_update:
         配料审批
     """
-    # TODO 配方下载功能（只能下载应用状态的配方，并去除当前计划中的配方）
-    queryset = ProductBatching.objects.filter(delete_flag=False).select_related("factory", "site", "dev_type",
-                                                                                "stage", "product_info"
-                                                                                ).order_by('-created_date')
-    permission_classes = (IsAuthenticated,)
+    queryset = ProductBatching.objects.filter(
+        delete_flag=False).select_related("equip__category", "product_info"
+                                          ).prefetch_related(
+                                            Prefetch('process_details',
+                                                     queryset=ProductProcessDetail.objects.filter(
+                                                         delete_flag=False).select_related('condition', 'action')),
+                                            Prefetch('batching_details',
+                                                     queryset=ProductBatchingDetail.objects.filter(
+                                                         delete_flag=False).select_related('material__material_type'))
+                                            ).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
     model_name = queryset.model.__name__.lower()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return ProductBatching.objects.filter(delete_flag=False).order_by('-created_date').values(
+                'id', 'stage_product_batch_no', 'product_info__product_name',
+                'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
+                'used_type', 'batching_weight', 'production_time_interval',
+                'stage__global_name', 'site__global_name', 'processes__sp_num',
+                'created_date', 'created_user__username', 'batching_type', 'dev_type_id'
+            )
+        else:
+            return self.queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -185,9 +204,6 @@ class ProductBatchingViewSet(ModelViewSet):
     def get_permissions(self):
         if self.request.query_params.get('all'):
             return ()
-        if self.action == 'partial_update':
-            return (ProductBatchingPermissions(),
-                    IsAuthenticated())
         else:
             return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())
@@ -203,60 +219,6 @@ class ProductBatchingViewSet(ModelViewSet):
             return ProductBatchingPartialUpdateSerializer
         else:
             return ProductBatchingUpdateSerializer
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete_flag = True
-        instance.delete_user = request.user
-        instance.save()
-        instance.batching_details.filter().update(delete_flag=True, delete_user=request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@method_decorator([api_recorder], name="dispatch")
-class ProcessStepsViewSet(ModelViewSet):
-    """
-    list:
-        胶料配料步序列表
-    retrieve:
-        胶料配料步序
-    create:
-        新建胶料配料步序
-    update:
-        修改胶料配料步序
-    partial_update:
-        修改胶料配料步序
-    """
-    queryset = ProductProcess.objects.filter(delete_flag=False
-                                             ).select_related("equip", "product_batching").order_by('-created_date')
-    filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProductProcessSerializer
-    filter_class = ProcessStepsFilter
-    model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
-
-
-@method_decorator([api_recorder], name="dispatch")
-class ProductProcessDetailViewSet(ModelViewSet):
-    """
-    list:
-        胶料配料步序详情列表
-    retrieve:
-        胶料配料步序详情详情
-    create:
-        新建胶料配料步序详情
-    update:
-        修改胶料配料步序详情
-    partial_update:
-        修改胶料配料步序详情
-    delete:
-        删除胶料配料步序详情
-    """
-    queryset = ProductProcessDetail.objects.filter(delete_flag=False).order_by('-created_date')
-    filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProcessDetailSerializer
-    model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -306,12 +268,16 @@ class RecipeObsoleteAPiView(APIView):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class ProductBatchingCopyView(CreateAPIView):
-    """
-    配方新增复制接口
-    """
-    queryset = ProductBatching.objects.all()
-    serializer_class = ProductBatchingSerializer
-    model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticated,
-                          PermissionClass(return_permission_params(model_name)))
+class BatchingEquip(APIView):
+    """复制配方时根据机型id获取还未配料的机台"""
+
+    def get(self, request):
+        dev_type = self.request.query_params.get('dev_type')
+        try:
+            dev_type = int(dev_type)
+        except Exception:
+            raise ValidationError('参数错误')
+        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type).values_list('equip_id', flat=True))
+        equip_data = Equip.objects.exclude(
+            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name')
+        return Response(data={'results': equip_data})
