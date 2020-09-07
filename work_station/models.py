@@ -903,6 +903,81 @@ class IfdownRecipeMix15(models.Model):
         db_table = 'ifdown_recipe_mix_15'
 
 
+class IfdownRecipeWeigh1(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_1'
+
+
+class IfdownRecipeWeigh2(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_2'
+
+
+class IfdownRecipeWeigh3(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_3'
+
+
+class IfdownRecipeWeigh4(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_4'
+
+
+class IfdownRecipeWeigh5(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_5'
+
+
 class IfdownRecipeWeigh6(models.Model):
     id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
     mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
@@ -916,6 +991,141 @@ class IfdownRecipeWeigh6(models.Model):
     class Meta:
         # managed = False
         db_table = 'ifdown_recipe_weigh_6'
+
+
+class IfdownRecipeWeigh7(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_7'
+
+
+class IfdownRecipeWeigh8(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_8'
+
+
+class IfdownRecipeWeigh9(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_9'
+
+
+class IfdownRecipeWeigh10(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_10'
+
+
+class IfdownRecipeWeigh11(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_11'
+
+
+class IfdownRecipeWeigh12(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_12'
+
+
+class IfdownRecipeWeigh13(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_13'
+
+
+class IfdownRecipeWeigh14(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_14'
+
+
+class IfdownRecipeWeigh15(models.Model):
+    id = models.BigIntegerField(db_column='ID', primary_key=True)  # Field name made lowercase.
+    mname = models.CharField(max_length=19, blank=True, null=True)  # 油料名称
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 设定重量
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # 防错
+    recipe_name = models.CharField(max_length=20)  # 配方名称
+    act_code = models.IntegerField(blank=True, null=True)  # 动作代码
+    type = models.CharField(db_column='TYPE', max_length=1, blank=True, null=True)  # Field name made lowercase.
+    recstatus = models.CharField(db_column='RecStatus', max_length=30)
+
+    class Meta:
+        # managed = False
+        db_table = 'ifdown_recipe_weigh_15'
 
 
 class IfdownRecipeOil11(models.Model):

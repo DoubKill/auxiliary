@@ -9,11 +9,109 @@ from rest_framework import serializers
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from work_station.models import *
 
-# 新增万龙需求表的序列化器
-class IfdownRecipeWeigh6Serializer(serializers.ModelSerializer):
 
+# 新增万龙需求表的序列化器
+class IfdownRecipeWeigh1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh1
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh2Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh2
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh3Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh3
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh4Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh4
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh5Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh5
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh6Serializer(serializers.ModelSerializer):
     class Meta:
         model = IfdownRecipeWeigh6
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh7Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh7
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh8Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh8
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh9Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh9
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh10Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh10
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh11Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh11
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh12Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh12
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh13Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh13
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh14Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh14
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class IfdownRecipeWeigh15Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfdownRecipeWeigh15
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
