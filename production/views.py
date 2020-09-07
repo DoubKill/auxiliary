@@ -682,6 +682,8 @@ class EquipDetailedList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     # permission_classes = (IsAuthenticatedOrReadOnly,)
     # serializer_class = EquipDetailedSerializer
     # filter_backends = [DjangoFilterBackend, OrderingFilter]
+    def get_queryset(self):
+        return
 
     def list(self, request, *args, **kwargs):
         params = request.query_params

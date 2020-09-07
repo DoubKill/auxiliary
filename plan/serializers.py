@@ -244,7 +244,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
 class UpdateTrainsSerializer(BaseModelSerializer):
     '''修改车次和重传'''
-    trains = serializers.DecimalField(write_only=True, help_text='修改车次', decimal_places=1, max_digits=8)
+    trains = serializers.IntegerField(write_only=True, help_text='修改车次')
 
     class Meta:
         model = ProductClassesPlan
