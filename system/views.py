@@ -54,7 +54,7 @@ class UserViewSet(ModelViewSet):
     destroy:
         账号停用和启用
     """
-    queryset = User.objects.filter(delete_flag=False).prefetch_related('user_permissions', 'groups')
+    queryset = User.objects.filter(delete_flag=False).order_by('num').prefetch_related('user_permissions', 'groups')
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
@@ -115,7 +115,7 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除
     destroy:
         删除角色
     """
-    queryset = GroupExtension.objects.filter(delete_flag=False).prefetch_related('user_set', 'permissions')
+    queryset = GroupExtension.objects.filter(delete_flag=False).order_by('-created_date').prefetch_related('user_set', 'permissions')
     serializer_class = GroupExtensionSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
