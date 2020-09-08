@@ -13,16 +13,20 @@ class IsSuperUser(BasePermission):
 
 
 class ProductBatchingPermissions(BasePermission):
+    """配方审核权限"""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
             return True
+        user_permissions = request.user.get_all_permissions()
         if obj.used_type == 1:  # 当前状态是编辑
-            return '配方审核' in request.user.groups.values_list('name', flat=True)
-        elif obj.used_type == 2:  # 当前状态是校验通过
-            return '配方应用' in request.user.groups.values_list('name', flat=True)
-        elif obj.used_type == 3:  # 当前状态是应用
-            return '配方废弃' in request.user.groups.values_list('name', flat=True)
+            return 'submit_prod' in user_permissions
+        elif obj.used_type == 2:  # 当前状态是提交
+            return 'using_prod' in user_permissions
+        elif obj.used_type == 4:  # 当前状态是应用
+            return 'abandon_prod' in user_permissions
+        else:
+            return False
 
 
 class PermissonsDispatch(object):

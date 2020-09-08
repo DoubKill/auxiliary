@@ -9,7 +9,6 @@ from mes.base_serializer import BaseModelSerializer
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
-from work_station.api import IssueWorkStation
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -79,7 +78,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,
                                       status='等待', operation_user=self.context['request'].user.username)
-            for pbd_obj in instance.product_batching.batching_details.all():
+            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
                 MaterialDemanded.objects.create(product_classes_plan=pcp_obj,
                                                 work_schedule_plan=pcp_obj.work_schedule_plan,
                                                 material=pbd_obj.material,
@@ -109,7 +108,6 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     group = serializers.CharField(source='work_schedule_plan.group.global_name', read_only=True, help_text='班组')
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
-
 
     def get_actual_trains(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
