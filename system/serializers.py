@@ -61,6 +61,7 @@ class UserSerializer(BaseModelSerializer):
         password = validated_data.get('password')
         if not re.search(partten, password):
             raise serializers.ValidationError("请输入6~16位长度包含字母和数字的密码")
+        validated_data['created_user'] = self.context['request'].user
         user = super().create(validated_data)
         user.set_password(password)
         user.save()
