@@ -162,21 +162,21 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
     def _get_sql(self, params):
         equip_no = params.get("equip_no")
         product_no = params.get("product_no")
-        masterial_type = params.get("masterial_type")
+        material_type = params.get("material_type")
         st = params.get("st")
         et = params.get("et")
-        if equip_no or product_no or masterial_type or st or et:
+        if equip_no or product_no or material_type or st or et:
             condition_str = "WHERE"
             if equip_no:
                 if condition_str == "WHERE":
                     condition_str += f" equip_no='{equip_no}'"
                 else:
                     condition_str += f" and equip_no='{equip_no}'"
-            if masterial_type:
+            if material_type:
                 if condition_str == "WHERE":
-                    condition_str += f" masterial_type='{masterial_type}'"
+                    condition_str += f" material_type='{material_type}'"
                 else:
-                    condition_str += f" and masterial_type='{masterial_type}'"
+                    condition_str += f" and material_type='{material_type}'"
             if product_no:
                 if condition_str == "WHERE":
                     condition_str += f" product_no='{product_no}'"
