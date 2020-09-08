@@ -140,7 +140,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
 
 class UpRegulationSerializer(BaseModelSerializer):
     """上调"""
-    equip_name = serializers.CharField(write_only=True, help_text='机台名', required=False)
+    equip_no = serializers.CharField(write_only=True, help_text='机台名', required=False)
     classes = serializers.CharField(write_only=True, help_text='班次', required=False)
     product_batching = serializers.CharField(write_only=True, help_text='配方', required=False)
     begin_times = serializers.DateTimeField(write_only=True, help_text='开始时间', required=False)
@@ -148,7 +148,7 @@ class UpRegulationSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductClassesPlan
-        fields = ('equip_name', 'classes', 'product_batching', 'begin_times', 'end_times')
+        fields = ('equip_no', 'classes', 'product_batching', 'begin_times', 'end_times')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
     @atomic()
@@ -156,11 +156,11 @@ class UpRegulationSerializer(BaseModelSerializer):
         p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
-            raise serializers.ValidationError({'equip_name': '只有等待中的计划才能上调'})
+            raise serializers.ValidationError({'equip_no': '只有等待中的计划才能上调'})
         update_dict = {'delete_flag': False}
-        equip_name = validated_data.get('equip_name', None)
+        equip_name = validated_data.get('equip_no', None)
         if equip_name:
-            update_dict['product_day_plan__equip__equip_name'] = equip_name
+            update_dict['product_day_plan__equip__equip_no'] = equip_name
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
@@ -192,7 +192,7 @@ class UpRegulationSerializer(BaseModelSerializer):
 
 class DownRegulationSerializer(BaseModelSerializer):
     """下调"""
-    equip_name = serializers.CharField(write_only=True, help_text='机台名', required=False)
+    equip_no = serializers.CharField(write_only=True, help_text='机台名', required=False)
     classes = serializers.CharField(write_only=True, help_text='班次', required=False)
     product_batching = serializers.CharField(write_only=True, help_text='配方', required=False)
     begin_times = serializers.DateTimeField(write_only=True, help_text='开始时间', required=False)
@@ -200,7 +200,7 @@ class DownRegulationSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductClassesPlan
-        fields = ('equip_name', 'classes', 'product_batching', 'begin_times', 'end_times')
+        fields = ('equip_no', 'classes', 'product_batching', 'begin_times', 'end_times')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
     @atomic()
@@ -208,11 +208,11 @@ class DownRegulationSerializer(BaseModelSerializer):
         p_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         # for p_obj in p_status:
         if p_status.status != '等待':
-            raise serializers.ValidationError({'equip_name': '只有等待中的计划才能下调'})
+            raise serializers.ValidationError({'equip_no': '只有等待中的计划才能下调'})
         update_dict = {'delete_flag': False}
-        equip_name = validated_data.get('equip_name', None)
+        equip_name = validated_data.get('equip_no', None)
         if equip_name:
-            update_dict['product_day_plan__equip__equip_name'] = equip_name
+            update_dict['product_day_plan__equip__equip_no'] = equip_name
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
