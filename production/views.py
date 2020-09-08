@@ -671,8 +671,8 @@ from equip_status
 where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE
 order by equip_status.product_time desc
 limit 1;'''
-        equip_list = EquipStatus.objects.raw(air_list)[0]
         ret_data = {}
+        equip_list = EquipStatus.objects.raw(air_list)
         if not equip_list:
             ret_data['equip_no'] = None
             ret_data['status'] = None
@@ -682,6 +682,7 @@ limit 1;'''
             ret_data['product_list'] = []
             ret_data['status_list'] = []
         else:
+            equip_list = equip_list[0]
             ret_data['equip_no'] = equip_list.equip_no
             ret_data['status'] = equip_list.status
             ret_data['product_no'] = equip_list.product_no

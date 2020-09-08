@@ -357,7 +357,7 @@ class Synchronization(APIView):
         # 获取断网时间
         csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
         if csi_obj:
-            lost_time = csi_obj.lost_time
+            lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
             auxliary_dict['plan'] = {}
             auxliary_dict['recipe'] = {}
