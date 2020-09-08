@@ -29,7 +29,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
-from production.utils import strtoint
+from production.utils import strtoint, gen_material_export_file_response
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
 from django.db.models import Sum, Max
@@ -153,7 +153,6 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
     ordering_fields = ('id',)
     filter_class = ExpendMaterialFilter
 
-
     def _validate_params(self, params):
         for k, v in params.items():
             if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]+$", v):
@@ -204,7 +203,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         params = request.query_params
         page = int(params.get("page", 1))
         page_size = int(params.get("page_size", 10))
-        if not 1 <= page <= 2**16:
+        if not 1 <= page <= 2 ** 16:
             raise ValidationError(f"页码:{page}错误")
         if not 10 <= page_size <= 1000:
             raise ValidationError(f"页长:{page_size}错误")
@@ -634,52 +633,59 @@ class EquipStatusPlanList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        air = """with plan as (
-    select e.id                 as equopid,
-           e.equip_no,
-           gc.global_name       as classes,
-           gc.id                as classid,
-           sum(pcp.plan_trains) as plan_trains
-    from equip e
-             left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date) = to_days(now())
-             left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag = false
-             left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-             left join global_code gc on wsp.classes_id = gc.id
-    group by e.equip_no, gc.global_name
-),
-     actual as (
-         select equip_no,
-                classes,
-                sum(actual_trains) as actual_trains
-         from trains_feedbacks
-         where to_days(trains_feedbacks.created_date) = to_days(now())
-         group by equip_no, classes
-     ),
-     eq as (
-         select e.equip_no,
-                max(concat(e.equip_no, ',', es.created_date, ',', es.current_trains, ',', pb.stage_product_batch_no,
-                           ',', es.status)) as ret
-         from equip e
-                  left join equip_status es on e.equip_no = es.equip_no and to_days(es.created_date) = to_days(now())
-                  left join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
-                  left join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
-                  left join product_batching pb on pb.id = pdp.product_batching_id
-         group by e.equip_no
-     )
-select plan.equip_no,
-       (case when plan.classes is NULL then '早班' else plan.classes end),
-       (case when plan.classid is NULL then 0 else plan.classid end),
-       (case when plan.plan_trains is NULL then 0 else plan.plan_trains end),
-       (case when actual.actual_trains is NULL then 0 else actual.actual_trains end),
-       plan.equopid,
-       (case when eq.ret is NULL then '--,--,--,--,--' else eq.ret end)
-from plan
-         left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
-         left join eq on eq.equip_no = plan.equip_no;
-"""
+        sql = """
+        with plan as (
+            select 
+                   e.equip_no,
+                   gc.global_name       as classes,
+                   sum(pcp.plan_trains) as plan_trains
+            from equip e
+                     left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date) = to_days(now())
+                     left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag = false
+                     left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
+                     left join global_code gc on wsp.classes_id = gc.id
+            group by e.equip_no, gc.global_name
+        ),
+             actual as (
+                 select equip_no,
+                        classes,
+                        sum(actual_trains) as actual_trains
+                 from trains_feedbacks
+                 where to_days(trains_feedbacks.created_date) = to_days(now())
+                 group by equip_no, classes
+             ),
+             eq as (
+                 select e.equip_no,
+                        max(concat(e.equip_no, ',', es.created_date, ',', es.current_trains, ',', pb.stage_product_batch_no,
+                                   ',', es.status)) as ret
+                 from equip e
+                          left join equip_status es on e.equip_no = es.equip_no and to_days(es.created_date) = to_days(now())
+                          left join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
+                          left join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
+                          left join product_batching pb on pb.id = pdp.product_batching_id
+                 group by e.equip_no
+             )
+        select plan.equip_no,
+               plan.classes,
+               (case
+                   when plan.classes='早班' then 1
+                   when plan.classes='中班' then 2
+                   when plan.classes='晚班' then 3 end) as sn,
+               (case
+                   when plan.plan_trains is NULL then 0
+                   else plan.plan_trains end),
+               (case
+                   when actual.actual_trains is NULL then 0
+                   else actual.actual_trains end),
+               (case
+                   when eq.ret is NULL then '--,--,--,--,--'
+                   else eq.ret end)
+        from plan
+                 left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
+                 left join eq on eq.equip_no = plan.equip_no order by equip_no, sn;"""
         ret_data = {}
         cursor = connection.cursor()
-        cursor.execute(air)
+        cursor.execute(sql)
         equip_set = cursor.fetchall()
         for _ in equip_set:
             if _[0] in ret_data.keys():
@@ -687,16 +693,14 @@ from plan
                                        "global_name": _[1],
                                        "plan_num": _[3],
                                        "actual_num": _[4],
-                                       "ret": _[6],
-                                       "id": _[5]})
+                                       "ret": _[5]})
             else:
                 ret_data[_[0]] = []
                 ret_data[_[0]].append({"classes_id": _[2],
                                        "global_name": _[1],
                                        "plan_num": _[3],
                                        "actual_num": _[4],
-                                       "ret": _[6],
-                                       "id": _[5]
+                                       "ret": _[5],
                                        })
 
         return Response(ret_data)
@@ -922,3 +926,92 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['status'] = None
 
         return Response({'count': counts, 'results': tf_queryset})
+
+
+class MaterialExport(mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin,
+                     GenericViewSet):
+    queryset = ExpendMaterial.objects.filter(delete_flag=False)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = ExpendMaterialSerializer
+    filter_backends = [OrderingFilter]
+    ordering_fields = ('id',)
+    filter_class = ExpendMaterialFilter
+
+    def _validate_params(self, params):
+        for k, v in params.items():
+            if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]+$", v):
+                raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")
+
+    def _get_sql(self, params):
+        equip_no = params.get("equip_no")
+        product_no = params.get("product_no")
+        material_type = params.get("material_type")
+        st = params.get("st")
+        et = params.get("et")
+        if equip_no or product_no or material_type or st or et:
+            condition_str = "WHERE"
+            if equip_no:
+                if condition_str == "WHERE":
+                    condition_str += f" equip_no='{equip_no}'"
+                else:
+                    condition_str += f" and equip_no='{equip_no}'"
+            if material_type:
+                if condition_str == "WHERE":
+                    condition_str += f" material_type='{material_type}'"
+                else:
+                    condition_str += f" and material_type='{material_type}'"
+            if product_no:
+                if condition_str == "WHERE":
+                    condition_str += f" product_no='{product_no}'"
+                else:
+                    condition_str += f" and product_no='{product_no}'"
+            if st:
+                if condition_str == "WHERE":
+                    condition_str += f" product_time >= '{st}'"
+                else:
+                    condition_str += f" and product_time >= '{st}'"
+            if et:
+                if condition_str == "WHERE":
+                    condition_str += f" product_time <= '{et}'"
+                else:
+                    condition_str += f" and product_time <= '{et}'"
+        else:
+            condition_str = ''
+        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
+                                material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
+                                from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
+                    """
+        # return gen_material_export_file_response('导出', sql_str)
+
+        return sql_str
+
+    def list(self, request, *args, **kwargs):
+        params = request.query_params
+        page = int(params.get("page", 1))
+        page_size = int(params.get("page_size", 10))
+        if not 1 <= page <= 2 ** 16:
+            raise ValidationError(f"页码:{page}错误")
+        if not 10 <= page_size <= 1000:
+            raise ValidationError(f"页长:{page_size}错误")
+        self._validate_params(params)
+        sql_str = self._get_sql(params)
+        em_set = ExpendMaterial.objects.raw(sql_str)
+        count = len(em_set)
+        rep_list = []
+        for em in em_set:
+            rep = {
+                "id": em.id,
+                "equip_no": em.equip_no,
+                "product_no": em.product_no,
+                "material_no": em.material_no,
+                "material_type": em.material_type,
+                "material_name": em.material_name,
+                "actual_weight": em.actual_weight,
+                "plan_classes_uid": em.plan_classes_uid
+            }
+            rep_list.append(rep)
+        rep_list = rep_list[(page - 1) * page_size:page_size * page]
+        # return Response({"count": count, "results": rep_list})
+        return gen_material_export_file_response("results", rep_list)

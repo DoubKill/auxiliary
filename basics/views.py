@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
@@ -88,7 +89,10 @@ class WorkScheduleViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除工作日程
     """
-    queryset = WorkSchedule.objects.filter(delete_flag=False).prefetch_related('classesdetail_set__classes')
+    queryset = WorkSchedule.objects.filter(delete_flag=False
+                                           ).prefetch_related(
+        Prefetch('classesdetail_set', queryset=ClassesDetail.objects.filter(delete_flag=False))
+    )
     serializer_class = WorkScheduleSerializer
     model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticated,
@@ -166,8 +170,7 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = Equip.objects.filter(delete_flag=False).select_related('category__equip_type',
                                                                       'category__process',
-                                                                      'equip_level'
-                                                                      ).order_by('equip_no')
+                                                                      'equip_level').order_by('equip_no')
     serializer_class = EquipSerializer
     model_name = queryset.model.__name__.lower()
     filter_backends = (DjangoFilterBackend,)
@@ -260,7 +263,7 @@ class PlanScheduleViewSet(CommonDeleteMixin, ModelViewSet):
                                                                             'work_schedule_plan__group')
     serializer_class = PlanScheduleSerializer
     model_name = queryset.model.__name__.lower()
-    filter_fields = ('day_time', )
+    filter_fields = ('day_time',)
     filter_backends = (DjangoFilterBackend,)
     filter_class = PlanScheduleFilter
 

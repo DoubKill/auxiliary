@@ -18,7 +18,7 @@ class ProductBatchingPermissions(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
             return True
-        user_permissions = request.user.get_all_permissions()
+        user_permissions = PermissonsDispatch(request.user).get_all_permissions
         if obj.used_type == 1:  # 当前状态是编辑
             return 'submit_prod' in user_permissions
         elif obj.used_type == 2:  # 当前状态是提交
