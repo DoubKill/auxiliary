@@ -130,7 +130,7 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.values('id', 'name')
+            data = queryset.filter(use_flag=1).values('id', 'name')
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)
