@@ -156,7 +156,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
 
     def _validate_params(self, params):
         for k, v in params.items():
-            if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s]+$", v):
+            if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:]+$", v):
                 raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")
 
     def _get_sql(self, params):
