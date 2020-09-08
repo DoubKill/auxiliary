@@ -99,6 +99,14 @@ class GroupExtensionSerializer(BaseModelSerializer):
     """角色组扩展序列化器"""
     user_set = UserUpdateSerializer(read_only=True, many=True)
 
+    def create(self, validated_data):
+        validated_data['created_user'] = self.context['request'].user
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['last_updated_user'] = self.context['request'].user
+        return super().update(instance, validated_data)
+
     class Meta:
         model = GroupExtension
         fields = '__all__'
