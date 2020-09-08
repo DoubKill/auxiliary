@@ -139,7 +139,7 @@ class WorkScheduleUpdateSerializer(BaseModelSerializer):
             raise serializers.ValidationError('该倒班已关联排班计划，不可修改')
         classesdetail_set = validated_data.pop('classesdetail_set', None)
         if classesdetail_set is not None:
-            instance.classesdetail_set.all().delete()
+            instance.classesdetail_set.filter().update(delete_flag=True)
             classes_details_list = []
             for plan in classesdetail_set:
                 plan['work_schedule'] = instance
@@ -240,7 +240,7 @@ class PlanScheduleSerializer(BaseModelSerializer):
     def create(self, validated_data):
         day_time = validated_data['day_time']
         work_schedule_plan = validated_data.pop('work_schedule_plan', None)
-        validated_data['plan_schedule_no'] = UUidTools.uuid1_hex()
+        validated_data['plan_schedule_no'] = UUidTools.uuid1_hex(None)
         instance = super().create(validated_data)
         work_schedule_plan_list = []
         morning_class = ClassesDetail.objects.filter(work_schedule=instance.work_schedule,
@@ -260,7 +260,7 @@ class PlanScheduleSerializer(BaseModelSerializer):
             plan['start_time'] = str(day_time) + ' ' + str(class_detail.start_time)
             plan['end_time'] = str(day_time) + ' ' + str(class_detail.end_time)
             plan['plan_schedule'] = instance
-            plan['work_schedule_plan_no'] = UUidTools.uuid1_hex()
+            plan['work_schedule_plan_no'] = UUidTools.uuid1_hex(None)
             work_schedule_plan_list.append(WorkSchedulePlan(**plan))
         WorkSchedulePlan.objects.bulk_create(work_schedule_plan_list)
         return instance
