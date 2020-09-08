@@ -578,51 +578,48 @@ class EquipStatusPlanList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        air = """with
-     plan as (
-        select
-               e.id as equopid,
-               e.equip_no,
-               gc.global_name as classes,
-               gc.id as classid,
-               sum(pcp.plan_trains) as plan_trains
-        from equip e
-        left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date)=to_days(now())
-        left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag=false
-        left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-        left join global_code gc on wsp.classes_id = gc.id
-        group by e.equip_no, gc.global_name
-        ),
+        air = """with plan as (
+    select e.id                 as equopid,
+           e.equip_no,
+           gc.global_name       as classes,
+           gc.id                as classid,
+           sum(pcp.plan_trains) as plan_trains
+    from equip e
+             left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date) = to_days(now())
+             left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag = false
+             left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
+             left join global_code gc on wsp.classes_id = gc.id
+    group by e.equip_no, gc.global_name
+),
      actual as (
-        select equip_no,
-               classes,
-               sum(actual_trains) as actual_trains
-        from trains_feedbacks
-        where to_days(trains_feedbacks.created_date)=to_days(now())
-        group by equip_no, classes
-        ),
-     eq as(
-         select
-       e.equip_no,
-       max(concat(e.equip_no, ',', es.product_time, ',', es.current_trains, ',', pb.stage_product_batch_no, ',', es.status)) as ret
-        from equip e
-        left join equip_status es on e.equip_no=es.equip_no and to_days(es.created_date)=to_days(now())
-        left join product_classes_plan pcp on pcp.plan_classes_uid=es.plan_classes_uid
-        left join product_day_plan pdp on pdp.id=pcp.product_day_plan_id
-        left join product_batching pb on pb.id=pdp.product_batching_id
-        group by e.equip_no
+         select equip_no,
+                classes,
+                sum(actual_trains) as actual_trains
+         from trains_feedbacks
+         where to_days(trains_feedbacks.created_date) = to_days(now())
+         group by equip_no, classes
+     ),
+     eq as (
+         select e.equip_no,
+                max(concat(e.equip_no, ',', es.created_date, ',', es.current_trains, ',', pb.stage_product_batch_no,
+                           ',', es.status)) as ret
+         from equip e
+                  left join equip_status es on e.equip_no = es.equip_no and to_days(es.created_date) = to_days(now())
+                  left join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
+                  left join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
+                  left join product_batching pb on pb.id = pdp.product_batching_id
+         group by e.equip_no
      )
-select
-       plan.equip_no,
-       plan.classes,
-       plan.classid,
-       plan.plan_trains,
-       actual.actual_trains,
+select plan.equip_no,
+       (case when plan.classes is NULL then '早班' else plan.classes end),
+       (case when plan.classid is NULL then 0 else plan.classid end),
+       (case when plan.plan_trains is NULL then 0 else plan.plan_trains end),
+       (case when actual.actual_trains is NULL then 0 else actual.actual_trains end),
        plan.equopid,
-       eq.ret
-    from plan
-    left join actual on plan.equip_no=actual.equip_no and plan.classes=actual.classes
-    left join eq on eq.equip_no=plan.equip_no;
+       (case when eq.ret is NULL then ' , , , , ' else eq.ret end)
+from plan
+         left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
+         left join eq on eq.equip_no = plan.equip_no;
 """
         ret_data = {}
         cursor = connection.cursor()
