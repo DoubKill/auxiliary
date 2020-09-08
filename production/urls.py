@@ -22,7 +22,7 @@ router.register(r'equip-status', EquipStatusViewSet)
 router.register(r'plan-status', PlanStatusViewSet)
 
 # 原材料消耗表
-router.register(r'expend-materials', ExpendMaterialViewSet)
+# router.register(r'expend-materials', ExpendMaterialViewSet)  重复了故删除
 
 # 操作日志
 router.register(r'operation-logs', OperationLogViewSet)
@@ -45,7 +45,7 @@ router.register(r'weigh-cb', WeighParameterCarbonViewSet, basename="weigh-cb")
 router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
 
 # 物料统计
-router.register(r'material-statistics', MaterialStatisticsViewSet, basename="material-statistics")
+router.register(r'material-statistics', ExpendMaterialViewSet, basename="material-statistics")
 # 称量信息展示
 router.register(r'weigh-information-list', WeighInformationList, basename="weigh-information-list")
 # 密炼信息展示

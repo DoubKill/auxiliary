@@ -17,7 +17,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
 from plan.models import ProductClassesPlan, ProductDayPlan
-from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, ExpendMaterial
+from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, ExpendMaterial, PlanStatus
 
 pallet_count = 5
 
@@ -41,13 +41,7 @@ def run():
     TrainsFeedbacks.objects.all().delete()
     PalletFeedbacks.objects.all().delete()
     EquipStatus.objects.all().delete()
-
-    # plan_schedule_set = PlanSchedule.objects.filter(delete_flag=False)
-    # for plan_schedule in plan_schedule_set:
-    #     if plan_schedule:
-    #         day_plan_set = plan_schedule.ps_day_plan.filter(delete_flag=False)
-    #     else:
-    #         continue
+    ExpendMaterial.objects.all().delete()
     day_plan_set = ProductDayPlan.objects.filter(delete_flag=False)
     for day_plan in list(day_plan_set):
         class_plan_set = ProductClassesPlan.objects.filter(product_day_plan=day_plan.id)
@@ -62,14 +56,6 @@ def run():
                 equip_no = day_plan.equip.equip_no
                 product_no = day_plan.product_batching.stage_product_batch_no
                 plan_weight = class_plan.weight
-                # time_str = '2020-08-01 08:00:00'
-                # time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
-                # if class_name == "早班":
-                #     time = time
-                # elif class_name == "中班":
-                #     time = time + datetime.timedelta(hours=8)
-                # else:
-                #     time = time + datetime.timedelta(hours=16)
                 end_time = start_time + datetime.timedelta(seconds=150)
                 train_data = {
                     "plan_classes_uid": class_plan.plan_classes_uid,
@@ -86,14 +72,23 @@ def run():
                     "classes": class_name,
                     "product_time": end_time,
                 }
+                plan_status_data = {
+                    "plan_classes_uid": class_plan.plan_classes_uid,
+                    "status": "运行中",
+                    "actual_trains": m,
+                    "equip_no": equip_no,
+                    "product_no": product_no,
+                    "operation_user": "string-user",
+                    "product_time": end_time,
+                }
                 for pbd in pbd_set:
                     weight_data = {
                         "plan_classes_uid": class_plan.plan_classes_uid,
                         "equip_no": equip_no,
                         "product_no": product_no,
                         "trains": m,
-                        "plan_weight": plan_weight,
-                        "actual_weight": m * 5,
+                        "plan_weight": pbd.actual_weight,
+                        "actual_weight": pbd.actual_weight + pbd.standard_error,
                         "material_no": pbd.material.material_no,
                         "material_type": pbd.material.material_type.global_name,
                         "material_name": pbd.material.material_name,
@@ -103,6 +98,7 @@ def run():
                 start_time = end_time
                 ExpendMaterial.objects.bulk_create(weight_list)
                 TrainsFeedbacks.objects.create(**train_data)
+                PlanStatus.objects.create(**plan_status_data)
                 if m % pallet_count == 0:
                     end_time = start_time + datetime.timedelta(seconds=150*5)
                     pallet_data = {
