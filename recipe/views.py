@@ -14,7 +14,7 @@ from basics.models import Equip
 from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
-from mes.permissions import PermissionClass
+from mes.permissions import PermissionClass, ProductBatchingPermissions
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
@@ -207,6 +207,9 @@ class ProductBatchingViewSet(ModelViewSet):
     def get_permissions(self):
         if self.request.query_params.get('all'):
             return ()
+        elif self.action == 'partial_update':
+            return (IsAuthenticated(),
+                    ProductBatchingPermissions())
         else:
             return (IsAuthenticated(),
                     PermissionClass(return_permission_params(self.model_name))())

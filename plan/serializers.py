@@ -9,7 +9,6 @@ from mes.base_serializer import BaseModelSerializer
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
-from work_station.api import IssueWorkStation
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -79,7 +78,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,
                                       status='等待', operation_user=self.context['request'].user.username)
-            for pbd_obj in instance.product_batching.batching_details.all():
+            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
                 MaterialDemanded.objects.create(product_classes_plan=pcp_obj,
                                                 work_schedule_plan=pcp_obj.work_schedule_plan,
                                                 material=pbd_obj.material,
