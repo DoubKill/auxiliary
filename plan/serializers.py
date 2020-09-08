@@ -179,6 +179,10 @@ class UpRegulationSerializer(BaseModelSerializer):
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
         last_obj = pcp_queryset.filter(sn__lt=instance.sn).order_by('sn').last()
         if last_obj:
+            p_status = PlanStatus.objects.filter(plan_classes_uid=last_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if p_status.status != '等待':
+                raise serializers.ValidationError({'equip_no': '被上调的计划只有等待中的才能上调'})
             snsn = last_obj.sn
             last_obj.sn = instance.sn
             last_obj.save()
@@ -231,6 +235,10 @@ class DownRegulationSerializer(BaseModelSerializer):
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
         last_obj = pcp_queryset.filter(sn__gt=instance.sn).order_by('sn').first()
         if last_obj:
+            p_status = PlanStatus.objects.filter(plan_classes_uid=last_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if p_status.status != '等待':
+                raise serializers.ValidationError({'equip_no': '被上调的计划只有等待中的才能下调'})
             snsn = last_obj.sn
             last_obj.sn = instance.sn
             last_obj.save()
