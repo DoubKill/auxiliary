@@ -174,24 +174,24 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
                     condition_str += f" and equip_no='{equip_no}'"
             if masterial_type:
                 if condition_str == "WHERE":
-                    condition_str += f"masterial_type='{masterial_type}'"
+                    condition_str += f" masterial_type='{masterial_type}'"
                 else:
                     condition_str += f" and masterial_type='{masterial_type}'"
             if product_no:
                 if condition_str == "WHERE":
-                    condition_str += f"product_no='{product_no}'"
+                    condition_str += f" product_no='{product_no}'"
                 else:
                     condition_str += f" and product_no='{product_no}'"
             if st:
                 if condition_str == "WHERE":
-                    condition_str += f"product_time>='{st}'"
+                    condition_str += f" product_time >= '{st}'"
                 else:
-                    condition_str += f" and product_time>='{st}'"
+                    condition_str += f" and product_time >= '{st}'"
             if et:
                 if condition_str == "WHERE":
-                    condition_str += f"product_time<='{et}'"
+                    condition_str += f" product_time <= '{et}'"
                 else:
-                    condition_str += f" and product_time<='{et}'"
+                    condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
         sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
