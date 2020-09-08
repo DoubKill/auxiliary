@@ -672,7 +672,7 @@ select plan.equip_no,
        (case when plan.plan_trains is NULL then 0 else plan.plan_trains end),
        (case when actual.actual_trains is NULL then 0 else actual.actual_trains end),
        plan.equopid,
-       (case when eq.ret is NULL then ' , , , , ' else eq.ret end)
+       (case when eq.ret is NULL then '--,--,--,--,--' else eq.ret end)
 from plan
          left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
          left join eq on eq.equip_no = plan.equip_no;
