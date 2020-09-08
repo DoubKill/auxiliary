@@ -4,6 +4,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from jwt import DecodeError
+from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
 from rest_framework_jwt.utils import jwt_decode_handler
 
@@ -102,6 +103,9 @@ class JwtTokenUserMiddleware(MiddlewareMixin):
                 # 校验token并获取用户对象塞入request中
                 jwt_serializer = VerifyJSONWebTokenSerializer(token)
                 # 获得user_id
-                data = jwt_serializer.validate(token_dict)
+                try:
+                    data = jwt_serializer.validate(token_dict)
+                except Exception as e:
+                    raise ValidationError(e)
                 user = data.get("user")
                 setattr(request, "user", user)
