@@ -110,7 +110,6 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
 
-
     def get_actual_trains(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
         if tfb_obj:
@@ -158,9 +157,9 @@ class UpRegulationSerializer(BaseModelSerializer):
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_no': '只有等待中的计划才能上调'})
         update_dict = {'delete_flag': False}
-        equip_name = validated_data.get('equip_no', None)
-        if equip_name:
-            update_dict['product_day_plan__equip__equip_no'] = equip_name
+        equip_no = validated_data.get('equip_no', None)
+        if equip_no:
+            update_dict['product_day_plan__equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
@@ -178,7 +177,7 @@ class UpRegulationSerializer(BaseModelSerializer):
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, end_time__lte=end_times)
         else:
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
-        last_obj = pcp_queryset.filter(sn__lt=instance.sn).last()
+        last_obj = pcp_queryset.filter(sn__lt=instance.sn).order_by('sn').last()
         if last_obj:
             snsn = last_obj.sn
             last_obj.sn = instance.sn
@@ -210,9 +209,9 @@ class DownRegulationSerializer(BaseModelSerializer):
         if p_status.status != '等待':
             raise serializers.ValidationError({'equip_no': '只有等待中的计划才能下调'})
         update_dict = {'delete_flag': False}
-        equip_name = validated_data.get('equip_no', None)
-        if equip_name:
-            update_dict['product_day_plan__equip__equip_no'] = equip_name
+        equip_no = validated_data.get('equip_no', None)
+        if equip_no:
+            update_dict['product_day_plan__equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
@@ -230,7 +229,7 @@ class DownRegulationSerializer(BaseModelSerializer):
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict, end_time__lte=end_times)
         else:
             pcp_queryset = ProductClassesPlan.objects.filter(**update_dict)
-        last_obj = pcp_queryset.filter(sn__gt=instance.sn).first()
+        last_obj = pcp_queryset.filter(sn__gt=instance.sn).order_by('sn').first()
         if last_obj:
             snsn = last_obj.sn
             last_obj.sn = instance.sn
@@ -253,7 +252,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.product_day_plan.product_batching.used_type != 4: # 4对应配方的启用状态
+        if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         if validated_data.get('trains') - instance.plan_trains <= 2:
             raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
