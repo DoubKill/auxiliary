@@ -307,7 +307,9 @@ class LoginView(ObtainJSONWebToken):
                 else:
                     permissions_tree["system"] = auth
             if permissions_tree.get("recipe", {}).get("material"):
-                permissions_tree["production"] = {}
+                # 当有配方原材料的时候需要往生产里迁移映射关系
+                if not permissions_tree.get("production"):
+                    permissions_tree["production"] = {}
                 material = permissions_tree["recipe"].pop("material")
                 if permissions_tree.get("production"):
                     permissions_tree["production"].update(material=material)
