@@ -119,9 +119,6 @@ class GroupExtensionUpdateSerializer(BaseModelSerializer):
 
 class GroupUserUpdateSerializer(BaseModelSerializer):
     """更新角色组用户序列化器"""
-    username = serializers.CharField(required=False)
-    password = serializers.CharField(required=False)
-    num = serializers.CharField(required=False)
     user_set = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all(), write_only=True,
                                                   help_text="""{"user_set":[<user_id>, ……]}""")
 
