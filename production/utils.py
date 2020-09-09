@@ -32,4 +32,3 @@ def strtoint(equip_no):
     return int(equip_int)
 
 
-

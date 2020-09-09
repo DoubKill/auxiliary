@@ -8,6 +8,8 @@ from mes.permissions import PermissonsDispatch
 from plan.models import ProductClassesPlan
 from system.models import User, SystemConfig, ChildSystemInfo, AsyncUpdateContent
 
+import chardet
+
 
 class CommonDeleteMixin(object):
     def destroy(self, request, *args, **kwargs):
@@ -81,25 +83,28 @@ def menu(request, menu, temp, format):
 
 
 class WebService(object):
-
     client = requests.request
-    headers = {
-        'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://tempuri.org/INXWebService/plan'
-    }
     url = "http://{}:9000/planService"
 
     @classmethod
-    def issue(cls, data, method="post"):
+    def issue(cls, data, category, method="post"):
+        headers = {
+            'Content-Type': 'text/xml; charset=utf-8',
+            'SOAPAction': 'http://tempuri.org/INXWebService/{}'
+        }
+
         child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
-        rep = cls.client(method, url, headers=cls.headers, data=cls.trans_dict_to_xml(data))
+        headers['SOAPAction'] = headers['SOAPAction'].format(category)
+        print(headers)
+        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category))
         if rep.status_code < 300:
             return True
+
     # dict数据转soap需求xml
     @staticmethod
-    def trans_dict_to_xml(data):
+    def trans_dict_to_xml(data, category):
         """
         将 dict 对象转换成微信支付交互所需的 XML 格式数据
 
@@ -108,15 +113,19 @@ class WebService(object):
         """
 
         xml = []
-        for k in sorted(data.keys()):
+        print(data, type(data))
+        for k in data.keys():
             v = data.get(k)
             if k == 'detail' and not v.startswith('<![CDATA['):
                 v = '<![CDATA[{}]]>'.format(v)
             xml.append('<{key}>{value}</{key}>'.format(key=k, value=v))
-        return """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-                <s:Body>
-                    <plan xmlns="http://tempuri.org/">
-                        {}
-                    </plan>
+        res = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"> <s:Body>
+                    <{} xmlns="http://tempuri.org/">
+                       {}
+                    </{}>
                 </s:Body>
-                </s:Envelope>""".format(''.join(xml))
+                </s:Envelope>""".format(category, ''.join(xml), category)
+        print(res)
+        res = res.encode("utf-8")
+        print(res)
+        return res
