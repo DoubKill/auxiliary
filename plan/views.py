@@ -173,19 +173,20 @@ class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
-@method_decorator([api_recorder], name="dispatch")
+# @method_decorator([api_recorder], name="dispatch")
 class StopPlan(APIView):
     """计划停止"""
 
-    def seng_to_yikong(self):
+    def sent_to_yikong(self):
         # 发送数据给易控
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
-        WebService.issue(test_dict, 'stop')
-
+        try:
+            WebService.issue(test_dict, 'stop')
+        except Exception as e:
+            raise ValidationError(e)
     @atomic()
     def get(self, request):
-
         params = request.query_params
         plan_id = params.get("id")
         if plan_id is None:
@@ -224,7 +225,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        # self.seng_to_yikong()  # 发送数据给易控
+        # self.sent_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -434,8 +435,12 @@ class IssuedPlan(APIView):
         test_dict['runstate'] = '运行中'
         test_dict['machineno'] = strtoint(params.get("equip_name", None))  # 易控组态那边的机台euqip_no是int类型
         test_dict['finishno'] = params.get("actual_trains", None)
-        # pcp_obj.product_day_plan.product_batching.batching_weight
-        WebService.issue(test_dict, 'plan')
+        test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+        test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        try:
+            WebService.issue(test_dict, 'plan')
+        except Exception as e:
+            raise ValidationError(e)
 
     @atomic()
     def post(self, request):
@@ -444,7 +449,9 @@ class IssuedPlan(APIView):
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
+
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+
         if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法下达")
 
@@ -472,7 +479,8 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        # self.sent_to_yikong(self, params, pcp_obj)
+
+        # self.sent_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     @atomic()
