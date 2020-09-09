@@ -39,8 +39,7 @@ def strtoint(equip_no):
 
 def gen_material_export_file_response(filename: str, queryset):
 
-<<<<<<< production/utils.py
-=======
+
     response = HttpResponse(content_type='application/vnd.ms-excel')
     # response['Content-Disposition'] = 'attachment;filename= ' + filename.encode('gbk').decode('ISO-8859-1') + '.xlsx'
     if queryset:
@@ -80,4 +79,4 @@ def gen_material_export_file_response(filename: str, queryset):
         response.write(output.getvalue())
     return response
 
->>>>>>> production/utils.py
+
