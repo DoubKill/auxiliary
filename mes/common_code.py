@@ -96,6 +96,7 @@ class WebService(object):
         child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
+        print(url)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
         print(headers)
         rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category))
@@ -113,7 +114,6 @@ class WebService(object):
         """
 
         xml = []
-        print(data, type(data))
         for k in data.keys():
             v = data.get(k)
             if k == 'detail' and not v.startswith('<![CDATA['):
@@ -127,5 +127,4 @@ class WebService(object):
                 </s:Envelope>""".format(category, ''.join(xml), category)
         print(res)
         res = res.encode("utf-8")
-        print(res)
         return res
