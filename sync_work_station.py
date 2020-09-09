@@ -195,6 +195,12 @@ def main():
                 actual_weight = temp.实际重量
                 material_no = temp.物料编码
                 material_type = temp.物料类型
+                if material_type == "C":
+                    material_type = "炭黑"
+                elif material_type == "O":
+                    material_type = "油料"
+                elif material_type == "P":
+                    material_type = "胶料"
                 material_name = temp.物料名称
                 product_time = temp.存盘时间
                 adapt_data = {
