@@ -129,6 +129,11 @@ class ProductBatching(AbstractEntity):
     class Meta:
         db_table = 'product_batching'
         verbose_name_plural = verbose_name = '胶料配料标准'
+        permissions = (
+            ('submit_prod', '提交配方'),
+            ('using_prod', '启用配方'),
+            ('abandon_prod', '弃用配方')
+        )
 
 
 class ProductBatchingDetail(AbstractEntity):

@@ -212,7 +212,8 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
             Material.objects.get_or_create(
                 material_no=instance.stage_product_batch_no,
                 material_name=instance.stage_product_batch_no,
-                material_type=material_type
+                material_type=material_type,
+                created_user=self.context['request'].user
             )
         except Exception as e:
             logger.error(e)
