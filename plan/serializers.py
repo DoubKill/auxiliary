@@ -1,11 +1,14 @@
+from collections import OrderedDict
+
 from django.db.transaction import atomic
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingClassesPlan
 from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
-from mes.conf import COMMON_READ_ONLY_FIELDS
 from mes.base_serializer import BaseModelSerializer
+from mes.common_code import WebService
+from mes.conf import COMMON_READ_ONLY_FIELDS
+from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingClassesPlan
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
@@ -257,6 +260,14 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         fields = ('trains',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
+    def send_to_yikong(self, validated_data):
+        test_dict = OrderedDict()
+        test_dict['updatestate'] = validated_data.get('trains')
+        try:
+            WebService.issue(test_dict, 'updatetrains')
+        except Exception as e:
+            raise serializers.ValidationError("超时链接")
+
     @atomic()
     def update(self, instance, validated_data):
         if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
@@ -307,6 +318,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                     else:
                         raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
                     model_name.objects.all().update(recstatus=recstatus)
+                    self.send_to_yikong(validated_data)
                 return instance
 
 
