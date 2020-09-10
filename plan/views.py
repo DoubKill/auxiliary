@@ -313,7 +313,7 @@ class IssuedPlan(APIView):
                 "error_allow": pbd.standard_error,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "act_code": 1 if pbd.auto_flag else 0,  # ?
-                "type": "",  # 胶料 P
+                "type": "P",  # 胶料 P
                 "recstatus": "等待"
             }
             datas.append(data)
@@ -350,9 +350,9 @@ class IssuedPlan(APIView):
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
-            'actno': params.get("actual_trains", 0),  # 当前车次
+            'actno': params.get("actual_trains") if params.get("actual_trains") else 1,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
-            'state': '运行中',  # 计划状态：等待，运行中，完成
+            'state': '等待',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
             'recstatus': '等待',  # 等待， 运行中， 完成
         }
