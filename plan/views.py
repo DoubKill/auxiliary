@@ -430,10 +430,11 @@ class IssuedPlan(APIView):
         test_dict['grouptime'] = params.get("classes", "")
         test_dict['groupoper'] = params.get("group", "")
         test_dict['setno'] = params.get("plan_trains", 0)
-        test_dict['oper'] = params.get("operation_user", "")
+        test_dict['oper'] = params.get("operation_user", "") if params.get("operation_user", "") else ""
         test_dict['runstate'] = "运行中"  # '运行中'
-        test_dict['machineno'] = strtoint(params.get("equip_name", 0))  # 易控组态那边的机台euqip_no是int类型
-        test_dict['finishno'] = params.get("actual_trains", 0)
+        test_dict['machineno'] = strtoint(params.get("equip_name", 0)) if strtoint(
+            params.get("equip_name", 0)) else 0  # 易控组态那边的机台euqip_no是int类型
+        test_dict['finishno'] = params.get("actual_trains", 0) if params.get("actual_trains", 0) else 0
         weight = pcp_obj.product_day_plan.product_batching.batching_weight
         if weight:
             test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
@@ -445,7 +446,11 @@ class IssuedPlan(APIView):
         else:
             test_dict['sp_number'] = 0
         try:
-            WebService.issue(test_dict, 'plan')
+            success_flag = WebService.issue(test_dict, 'plan')
+            if success_flag:
+                return True
+            else:
+                raise ValidationError("未知错误")
         except Exception as e:
             raise ValidationError("超时链接")
 
