@@ -26,6 +26,9 @@ from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1, IfdownR
     IfdownRecipePloy1, IfdownRecipeMix1
 from production.models import PlanStatus, TrainsFeedbacks
 from work_station.api import IssueWorkStation
+from mes.common_code import WebService
+from production.utils import strtoint
+from collections import OrderedDict
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -170,10 +173,18 @@ class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
-@method_decorator([api_recorder], name="dispatch")
+# @method_decorator([api_recorder], name="dispatch")
 class StopPlan(APIView):
     """计划停止"""
 
+    def sent_to_yikong(self):
+        # 发送数据给易控
+        test_dict = OrderedDict()
+        test_dict['stopstate'] = '停止'
+        try:
+            WebService.issue(test_dict, 'stop')
+        except Exception as e:
+            raise ValidationError(e)
     @atomic()
     def get(self, request):
         params = request.query_params
@@ -214,6 +225,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
+        # self.sent_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -407,36 +419,44 @@ class IssuedPlan(APIView):
         }
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).update_to_db()
 
+    def sent_to_yikong(self, params, pcp_obj):
+        # 计划下达到易控组态
+        test_dict = OrderedDict()  # 传给易控组态的数据
+        test_dict['recipe_name'] = params.get("stage_product_batch_no", None)
+        test_dict['recipe_code'] = params.get("stage_product_batch_no", None)
+        test_dict['latesttime'] = params.get("day_time", None)
+        test_dict['planid'] = params.get("plan_classes_uid", None)
+        test_dict['starttime'] = params.get("begin_time", None)
+        test_dict['stoptime'] = params.get("end_time", None)
+        test_dict['grouptime'] = params.get("classes", None)
+        test_dict['groupoper'] = params.get("group", None)
+        test_dict['setno'] = params.get("plan_trains", None)
+        test_dict['oper'] = params.get("operation_user", None)
+        test_dict['runstate'] = '运行中'
+        test_dict['machineno'] = strtoint(params.get("equip_name", None))  # 易控组态那边的机台euqip_no是int类型
+        test_dict['finishno'] = params.get("actual_trains", None)
+        test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+        test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        try:
+            WebService.issue(test_dict, 'plan')
+        except Exception as e:
+            raise ValidationError(e)
+
     @atomic()
     def post(self, request):
+
         params = request.data
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
+
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
+
         if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法下达")
 
-        """
-        # 通过id去取相关数据
-        params = {}
-        params['stage_product_batch_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
-        params['day_time'] = pcp_obj.product_day_plan.plan_schedule.day_time
-        params['plan_classes_uid'] = pcp_obj.plan_classes_uid
-        params['begin_time'] = pcp_obj.work_schedule_plan.start_time
-        params['end_time'] = pcp_obj.work_schedule_plan.end_time
-        params['classes'] = pcp_obj.work_schedule_plan.classes.global_name
-        params['group'] = pcp_obj.work_schedule_plan.group.global_name
-        params['plan_trains'] = pcp_obj.plan_trains
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).last()
-        if tfb_obj:
-            params['actual_trains'] = tfb_obj.actual_trains
-            params['operation_user'] = tfb_obj.operation_user
-        else:
-            params['actual_trains'] = None
-            params['operation_user'] = None
-        """
         # 校验计划与配方完整性
+
         uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
         id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id",
                                                                                                               flat=True)
@@ -459,6 +479,8 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
+
+        # self.sent_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     @atomic()
