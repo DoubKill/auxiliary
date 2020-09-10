@@ -188,7 +188,8 @@ class ProductBatchingViewSet(ModelViewSet):
                 'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
                 'used_type', 'batching_weight', 'production_time_interval',
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
-                'created_date', 'created_user__username', 'batching_type', 'dev_type_id'
+                'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
+                'equip__category__category_name'
             )
         else:
             return self.queryset

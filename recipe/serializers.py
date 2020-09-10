@@ -113,12 +113,15 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     equip_name = serializers.CharField(source='equip__equip_name', default=None, read_only=True)
     sp_num = serializers.IntegerField(source='processes__sp_num', read_only=True, default=None)
     dev_type = serializers.IntegerField(source='dev_type_id', read_only=True, default=None)
+    category__category_name = serializers.CharField(source='equip__category__category_name',
+                                                    default=None, read_only=True)
 
     class Meta:
         model = ProductBatching
         fields = ('id', 'product_name', 'created_username', 'stage_name', 'site_name', 'dev_type_name',
                   'equip_no', 'equip_name', 'sp_num', 'stage_product_batch_no', 'production_time_interval',
-                  'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type')
+                  'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
+                  'category__category_name')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
