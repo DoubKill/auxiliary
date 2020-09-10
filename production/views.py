@@ -634,13 +634,16 @@ class EquipStatusPlanList(APIView):
 
     def get(self, request, *args, **kwargs):
         sql = """
-        with plan as (
-            select 
+            with plan as (
+            select
                    e.equip_no,
                    gc.global_name       as classes,
                    sum(pcp.plan_trains) as plan_trains
             from equip e
-                     left join product_day_plan pdp on e.id = pdp.equip_id and to_days(pdp.created_date) = to_days(now())
+                     inner join equip_category_attribute eca on e.category_id = eca.id
+                     inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
+                     left join product_day_plan pdp on e.id = pdp.equip_id
+                     left join plan_schedule ps on pdp.plan_schedule_id = ps.id and ps.day_time=to_days(now())
                      left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag = false
                      left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
                      left join global_code gc on wsp.classes_id = gc.id
@@ -659,6 +662,8 @@ class EquipStatusPlanList(APIView):
                         max(concat(e.equip_no, ',', es.created_date, ',', es.current_trains, ',', pb.stage_product_batch_no,
                                    ',', es.status)) as ret
                  from equip e
+                          inner join equip_category_attribute eca on e.category_id = eca.id
+                          inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
                           left join equip_status es on e.equip_no = es.equip_no and to_days(es.created_date) = to_days(now())
                           left join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
                           left join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
