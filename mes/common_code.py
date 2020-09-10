@@ -3,12 +3,8 @@ from rest_framework import status, mixins
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from basics.models import PlanSchedule
 from mes.permissions import PermissonsDispatch
-from plan.models import ProductClassesPlan
-from system.models import User, SystemConfig, ChildSystemInfo, AsyncUpdateContent
-
-import chardet
+from system.models import User, ChildSystemInfo
 
 
 class CommonDeleteMixin(object):
@@ -96,10 +92,8 @@ class WebService(object):
         child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
-        print(url)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
-        print(headers)
-        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category))
+        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
         if rep.status_code < 300:
             return True
 
@@ -125,6 +119,5 @@ class WebService(object):
                     </{}>
                 </s:Body>
                 </s:Envelope>""".format(category, ''.join(xml), category)
-        print(res)
         res = res.encode("utf-8")
         return res

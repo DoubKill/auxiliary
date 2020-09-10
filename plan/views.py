@@ -1,34 +1,30 @@
-from django.db.models import Max
+from collections import OrderedDict
+
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
-from rest_framework import mixins, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
+from mes.common_code import WebService
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
+from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
     PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
-from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
-from rest_framework.views import APIView
-
-# Create your views here.
-from recipe.models import Material, ProductProcess, ProductBatchingDetail, ProductProcessDetail
-from work_station.api import IssueWorkStation
-from work_station.models import IfdownShengchanjihua1, IfdownPmtRecipe1, IfdownRecipeCb1, IfdownRecipeOil11, \
-    IfdownRecipePloy1, IfdownRecipeMix1
 from production.models import PlanStatus, TrainsFeedbacks
-from work_station.api import IssueWorkStation
-from mes.common_code import WebService
 from production.utils import strtoint
-from collections import OrderedDict
+# Create your views here.
+from recipe.models import ProductProcess
+from work_station.api import IssueWorkStation
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -173,22 +169,24 @@ class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
-# @method_decorator([api_recorder], name="dispatch")
+@method_decorator([api_recorder], name="dispatch")
 class StopPlan(APIView):
     """计划停止"""
 
-    def sent_to_yikong(self):
+    def send_to_yikong(self):
         # 发送数据给易控
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
         try:
             WebService.issue(test_dict, 'stop')
         except Exception as e:
-            raise ValidationError(e)
+            raise ValidationError("超时链接")
+
     @atomic()
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id")
+        print(plan_id)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
@@ -225,7 +223,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        # self.sent_to_yikong()  # 发送数据给易控
+        self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -419,28 +417,36 @@ class IssuedPlan(APIView):
         }
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).update_to_db()
 
-    def sent_to_yikong(self, params, pcp_obj):
+    def send_to_yikong(self, params, pcp_obj):
         # 计划下达到易控组态
         test_dict = OrderedDict()  # 传给易控组态的数据
-        test_dict['recipe_name'] = params.get("stage_product_batch_no", None)
-        test_dict['recipe_code'] = params.get("stage_product_batch_no", None)
-        test_dict['latesttime'] = params.get("day_time", None)
-        test_dict['planid'] = params.get("plan_classes_uid", None)
-        test_dict['starttime'] = params.get("begin_time", None)
-        test_dict['stoptime'] = params.get("end_time", None)
-        test_dict['grouptime'] = params.get("classes", None)
-        test_dict['groupoper'] = params.get("group", None)
-        test_dict['setno'] = params.get("plan_trains", None)
-        test_dict['oper'] = params.get("operation_user", None)
-        test_dict['runstate'] = '运行中'
-        test_dict['machineno'] = strtoint(params.get("equip_name", None))  # 易控组态那边的机台euqip_no是int类型
-        test_dict['finishno'] = params.get("actual_trains", None)
-        test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
-        test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        test_dict['recipe_name'] = params.get("stage_product_batch_no", "")
+        test_dict['recipe_code'] = params.get("stage_product_batch_no", "")
+        test_dict['latesttime'] = params.get("day_time", "")
+        test_dict['planid'] = params.get("plan_classes_uid", "")
+        test_dict['starttime'] = params.get("begin_time", "")
+        test_dict['stoptime'] = params.get("end_time", "")
+        test_dict['grouptime'] = params.get("classes", "")
+        test_dict['groupoper'] = params.get("group", "")
+        test_dict['setno'] = params.get("plan_trains", 0)
+        test_dict['oper'] = params.get("operation_user", "")
+        test_dict['runstate'] = "运行中"  # '运行中'
+        test_dict['machineno'] = strtoint(params.get("equip_name", 0))  # 易控组态那边的机台euqip_no是int类型
+        test_dict['finishno'] = params.get("actual_trains", 0)
+        weight = pcp_obj.product_day_plan.product_batching.batching_weight
+        if weight:
+            test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+        else:
+            test_dict['weight'] = 0
+        sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        if sp_number:
+            test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        else:
+            test_dict['sp_number'] = 0
         try:
             WebService.issue(test_dict, 'plan')
         except Exception as e:
-            raise ValidationError(e)
+            raise ValidationError("超时链接")
 
     @atomic()
     def post(self, request):
@@ -479,8 +485,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-
-        # self.sent_to_yikong(params, pcp_obj)
+        self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     @atomic()
