@@ -125,18 +125,17 @@ def run():
                     equip_status_data = {
                         "plan_classes_uid": class_plan.plan_classes_uid,
                         "equip_no": equip_no,
-                        "temperature": random.randint(300,700),
-                        "rpm": random.randint(500,2000),
-                        "energy": random.randint(50,500),
-                        "power": random.randint(50,500),
-                        "pressure": random.randint(80,360),
+                        "temperature": random.randint(1,200),
+                        "rpm": random.randint(1,200),
+                        "energy": random.randint(10,200),
+                        "power": random.randint(10,2500),
+                        "pressure": random.randint(2,200),
                         "status": "running",
                         "current_trains": m,
                         "product_time": end_time,
                     }
+                    end_time += datetime.timedelta(seconds=1)
                     EquipStatus.objects.create(**equip_status_data)
-                    t.sleep(1)
-
 
 if __name__ == '__main__':
     run()
