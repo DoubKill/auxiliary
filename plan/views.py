@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from django.db.models import Max
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
