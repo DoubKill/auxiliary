@@ -96,6 +96,9 @@ class WebService(object):
         rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
         if rep.status_code < 300:
             return True
+        else:
+            return False
+
 
     # dict数据转soap需求xml
     @staticmethod
@@ -120,5 +123,4 @@ class WebService(object):
                 </s:Body>
                 </s:Envelope>""".format(category, ''.join(xml), category)
         res = res.encode("utf-8")
-        print(res)
         return res
