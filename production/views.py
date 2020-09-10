@@ -649,7 +649,7 @@ class EquipStatusPlanList(APIView):
                             inner join product_day_plan pdp on pcp.product_day_plan_id = pdp.id
                             inner join plan_schedule ps on pdp.plan_schedule_id = ps.id and ps.day_time=current_date()
                             inner join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-                            left join global_code gc on wsp.classes_id = gc.id) tmp on tmp.equip_id=e.id
+                            inner join global_code gc on wsp.classes_id = gc.id) tmp on tmp.equip_id=e.id
             group by e.equip_no, tmp.global_name
         ),
              actual as (

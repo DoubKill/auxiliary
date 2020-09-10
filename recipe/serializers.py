@@ -163,7 +163,8 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def validate(self, attrs):
         stage_product_batch_no = attrs['stage_product_batch_no']
         equip = attrs['equip']
-        if ProductBatching.objects.filter(stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
+        if ProductBatching.objects.exclude(used_type__in=(5, 6)).filter(
+                stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
         return attrs
 

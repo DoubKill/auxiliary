@@ -183,7 +183,8 @@ class ProductBatchingViewSet(ModelViewSet):
 
     def get_queryset(self):
         if self.action == 'list':
-            return ProductBatching.objects.filter(delete_flag=False).order_by('-created_date').values(
+            return ProductBatching.objects.filter(delete_flag=False, used_time__in=(1, 2, 4)
+                                                  ).order_by('-created_date').values(
                 'id', 'stage_product_batch_no', 'product_info__product_name',
                 'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
                 'used_type', 'batching_weight', 'production_time_interval',
@@ -286,5 +287,6 @@ class BatchingEquip(APIView):
             raise ValidationError('参数错误')
         existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type).values_list('equip_id', flat=True))
         equip_data = Equip.objects.exclude(
-            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name')
+            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
+                                                                       'category__category_name')
         return Response(data={'results': equip_data})
