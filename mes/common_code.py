@@ -120,4 +120,5 @@ class WebService(object):
                 </s:Body>
                 </s:Envelope>""".format(category, ''.join(xml), category)
         res = res.encode("utf-8")
+        print(res)
         return res
