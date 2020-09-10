@@ -633,41 +633,51 @@ class EquipStatusPlanList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        sql = """
-            with plan as (
+        sql = """with plan as (
             select
                    e.equip_no,
-                   gc.global_name       as classes,
-                   sum(pcp.plan_trains) as plan_trains
+                   tmp.global_name       as classes,
+                   sum(tmp.plan_trains) as plan_trains
             from equip e
                      inner join equip_category_attribute eca on e.category_id = eca.id
                      inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
-                     left join product_day_plan pdp on e.id = pdp.equip_id
-                     left join plan_schedule ps on pdp.plan_schedule_id = ps.id and ps.day_time=to_days(now())
-                     left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id and pcp.delete_flag = false
-                     left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-                     left join global_code gc on wsp.classes_id = gc.id
-            group by e.equip_no, gc.global_name
+                     left join (select
+                            pcp.plan_trains,
+                            gc.global_name,
+                            pdp.equip_id
+                            from product_classes_plan pcp
+                            inner join product_day_plan pdp on pcp.product_day_plan_id = pdp.id
+                            inner join plan_schedule ps on pdp.plan_schedule_id = ps.id and ps.day_time=current_date()
+                            inner join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
+                            left join global_code gc on wsp.classes_id = gc.id) tmp on tmp.equip_id=e.id
+            group by e.equip_no, tmp.global_name
         ),
              actual as (
                  select equip_no,
                         classes,
                         sum(actual_trains) as actual_trains
                  from trains_feedbacks
-                 where to_days(trains_feedbacks.created_date) = to_days(now())
+                 where date(trains_feedbacks.created_date) = current_date()
                  group by equip_no, classes
              ),
              eq as (
                  select e.equip_no,
-                        max(concat(e.equip_no, ',', es.created_date, ',', es.current_trains, ',', pb.stage_product_batch_no,
-                                   ',', es.status)) as ret
+                        max(concat(e.equip_no, ',', es1.created_date, ',', es1.current_trains, ',', es1.stage_product_batch_no,
+                                   ',', es1.status)) as ret
                  from equip e
                           inner join equip_category_attribute eca on e.category_id = eca.id
                           inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
-                          left join equip_status es on e.equip_no = es.equip_no and to_days(es.created_date) = to_days(now())
-                          left join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
-                          left join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
-                          left join product_batching pb on pb.id = pdp.product_batching_id
+                          left join (select
+                               es.equip_no,
+                               es.created_date,
+                               es.current_trains,
+                               pb.stage_product_batch_no,
+                               es.status
+                            from equip_status es
+                            inner join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
+                            inner join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
+                            inner join product_batching pb on pb.id = pdp.product_batching_id
+                            where date(es.created_date) = current_date()) es1 on es1.equip_no=e.equip_no
                  group by e.equip_no
              )
         select plan.equip_no,
@@ -687,7 +697,8 @@ class EquipStatusPlanList(APIView):
                    else eq.ret end)
         from plan
                  left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
-                 left join eq on eq.equip_no = plan.equip_no order by equip_no, sn;"""
+                 left join eq on eq.equip_no = plan.equip_no order by equip_no, sn;
+            """
         ret_data = {}
         cursor = connection.cursor()
         cursor.execute(sql)

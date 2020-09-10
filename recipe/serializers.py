@@ -237,12 +237,13 @@ class ProductBatchingRetrieveSerializer(BaseModelSerializer):
     equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
     product_name = serializers.CharField(source='product_info.product_name', read_only=True)
+    category__category_name = serializers.CharField(source='equip.category.category_name', default=None, read_only=True)
 
     class Meta:
         model = ProductBatching
         fields = ('id', 'equip_name', 'product_name', 'production_time_interval', 'factory',
                   'site', 'stage', 'batching_details', 'processes', 'process_details',
-                  'equip_no', 'product_info', 'stage_product_batch_no', 'versions')
+                  'equip_no', 'product_info', 'stage_product_batch_no', 'versions', 'category__category_name')
 
 
 class ProductProcessCreateSerializer(serializers.ModelSerializer):
