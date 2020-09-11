@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from django.db.transaction import atomic
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
 from mes.base_serializer import BaseModelSerializer
@@ -321,7 +322,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 for model_str in model_list:
                     model_name = getattr(md, model_str + ext_str)
                     model_name.objects.all().update(recstatus=recstatus)
-                self.send_to_yikong(validated_data)
+                # self.send_to_yikong(validated_data)
                 return instance
 
 
