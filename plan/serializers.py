@@ -318,7 +318,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                     else:
                         raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
                     model_name.objects.all().update(recstatus=recstatus)
-                    self.send_to_yikong(validated_data)
+                    # self.send_to_yikong(validated_data)
                 return instance
 
 
