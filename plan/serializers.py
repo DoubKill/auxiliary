@@ -268,7 +268,6 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             if not success_flag:
                 raise serializers.ValidationError("收皮机错误")
         except Exception as e:
-            print(e)
             raise serializers.ValidationError("收皮机连接超时")
 
     @atomic()
@@ -322,7 +321,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 for model_str in model_list:
                     model_name = getattr(md, model_str + ext_str)
                     model_name.objects.all().update(recstatus=recstatus)
-                self.send_to_yikong(validated_data)
+                # self.send_to_yikong(validated_data)
                 return instance
 
 
@@ -380,7 +379,6 @@ class PlanReceiveSerializer(BaseModelSerializer):
             detail['work_schedule_plan'] = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan_no)
             product_classes_list[i] = ProductClassesPlan(**detail)
         pcp_obj_list = ProductClassesPlan.objects.bulk_create(product_classes_list)
-        print(pcp_obj_list)
         for pcp_obj in pcp_obj_list:
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,

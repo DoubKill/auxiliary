@@ -225,7 +225,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        self.send_to_yikong()  # 发送数据给易控
+        # self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -490,7 +490,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        self.send_to_yikong(params, pcp_obj)
+        # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     @atomic()
