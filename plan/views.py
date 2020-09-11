@@ -496,7 +496,7 @@ class IssuedPlan(APIView):
     def send_again_yikong(self, params, pcp_obj):
         # 计划下达到易控组态
         test_dict = OrderedDict()  # 传给易控组态的数据
-        test_dict['runstate'] = "运行中"  # '运行中'
+        test_dict['planid'] = params.get("plan_classes_uid", "")
         weight = pcp_obj.product_day_plan.product_batching.batching_weight
         if weight:
             test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
@@ -507,6 +507,7 @@ class IssuedPlan(APIView):
             test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
         else:
             test_dict['sp_number'] = 0
+        test_dict['runstate'] = "运行中"  # '运行中'
         try:
             success_flag = WebService.issue(test_dict, 'planAgain')
             if success_flag:
