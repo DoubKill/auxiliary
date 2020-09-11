@@ -160,7 +160,7 @@ class ProductProcess(AbstractEntity):
     product_batching = models.OneToOneField(ProductBatching, help_text='配料标准',
                                             on_delete=models.DO_NOTHING, related_name='processes')
     equip_code = models.PositiveIntegerField(help_text='锁定/解除', blank=True, null=True)
-    reuse_timematerial_demanded = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
+    reuse_time = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
     mini_time = models.PositiveIntegerField(help_text='超温最短时间', blank=True, null=True)
     max_time = models.PositiveIntegerField(help_text='超温最长时间', blank=True, null=True)
     mini_temp = models.PositiveIntegerField(help_text='进胶最低温度', blank=True, null=True)
