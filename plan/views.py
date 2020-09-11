@@ -262,7 +262,7 @@ class IssuedPlan(APIView):
             "oper": self.request.user.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code": product_process.equip_code,
+            "equip_code": product_process.equip_code if product_process.equip_code else 0.0, # 锁定解锁
             "reuse_time": product_process.reuse_time,
             "mini_time": product_process.mini_time,
             "max_time": product_process.max_time,
@@ -362,7 +362,7 @@ class IssuedPlan(APIView):
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
-            'actno': params.get("actual_trains") if params.get("actual_trains") else 1,  # 当前车次
+            'actno': 0,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
             'state': '等待',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
