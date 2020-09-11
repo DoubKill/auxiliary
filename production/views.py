@@ -3,6 +3,7 @@ import re
 
 import requests
 from django.db import connection
+from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -32,7 +33,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
 from production.utils import strtoint, gen_material_export_file_response
 from work_station.api import IssueWorkStation
 from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
-from django.db.models import Sum, Max
+from django.db.models import Sum, Max, F, Value, CharField
 import pymysql
 from mes.settings import DATABASES
 
@@ -633,92 +634,66 @@ class EquipStatusPlanList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        sql = """with plan as (
-            select
-                   e.equip_no,
-                   tmp.global_name       as classes,
-                   sum(tmp.plan_trains) as plan_trains
-            from equip e
-                     inner join equip_category_attribute eca on e.category_id = eca.id
-                     inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
-                     left join (select
-                            pcp.plan_trains,
-                            gc.global_name,
-                            pdp.equip_id
-                            from product_classes_plan pcp
-                            inner join product_day_plan pdp on pcp.product_day_plan_id = pdp.id
-                            inner join plan_schedule ps on pdp.plan_schedule_id = ps.id and ps.day_time=current_date()
-                            inner join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-                            inner join global_code gc on wsp.classes_id = gc.id) tmp on tmp.equip_id=e.id
-            group by e.equip_no, tmp.global_name
-        ),
-             actual as (
-                 select equip_no,
-                        classes,
-                        sum(actual_trains) as actual_trains
-                 from trains_feedbacks
-                 where date(trains_feedbacks.created_date) = current_date()
-                 group by equip_no, classes
-             ),
-             eq as (
-                 select e.equip_no,
-                        max(concat(e.equip_no, ',', es1.created_date, ',', es1.current_trains, ',', es1.stage_product_batch_no,
-                                   ',', es1.status)) as ret
-                 from equip e
-                          inner join equip_category_attribute eca on e.category_id = eca.id
-                          inner join global_code g on g.id=eca.equip_type_id and g.global_name='密炼设备'
-                          left join (select
-                               es.equip_no,
-                               es.created_date,
-                               es.current_trains,
-                               pb.stage_product_batch_no,
-                               es.status
-                            from equip_status es
-                            inner join product_classes_plan pcp on pcp.plan_classes_uid = es.plan_classes_uid
-                            inner join product_day_plan pdp on pdp.id = pcp.product_day_plan_id
-                            inner join product_batching pb on pb.id = pdp.product_batching_id
-                            where date(es.created_date) = current_date()) es1 on es1.equip_no=e.equip_no
-                 group by e.equip_no
-             )
-        select plan.equip_no,
-               plan.classes,
-               (case
-                   when plan.classes='早班' then 1
-                   when plan.classes='中班' then 2
-                   when plan.classes='晚班' then 3 end) as sn,
-               (case
-                   when plan.plan_trains is NULL then 0
-                   else plan.plan_trains end),
-               (case
-                   when actual.actual_trains is NULL then 0
-                   else actual.actual_trains end),
-               (case
-                   when eq.ret is NULL then '--,--,--,--,--'
-                   else eq.ret end)
-        from plan
-                 left join actual on plan.equip_no = actual.equip_no and plan.classes = actual.classes
-                 left join eq on eq.equip_no = plan.equip_no order by equip_no, sn;
-            """
-        ret_data = {}
-        cursor = connection.cursor()
-        cursor.execute(sql)
-        equip_set = cursor.fetchall()
-        for _ in equip_set:
-            if _[0] in ret_data.keys():
-                ret_data[_[0]].append({"classes_id": _[2],
-                                       "global_name": _[1],
-                                       "plan_num": _[3],
-                                       "actual_num": _[4],
-                                       "ret": _[5]})
-            else:
-                ret_data[_[0]] = []
-                ret_data[_[0]].append({"classes_id": _[2],
-                                       "global_name": _[1],
-                                       "plan_num": _[3],
-                                       "actual_num": _[4],
-                                       "ret": _[5],
-                                       })
 
+        equip_nos = Equip.objects.filter(use_flag=True).order_by('equip_no').values_list('equip_no', flat=True)
+
+        # 计划数据，根据设备机台号和班次分组，
+        plan_data = ProductClassesPlan.objects.filter(
+            product_day_plan__plan_schedule__day_time=datetime.datetime.now().date()
+        ).values('work_schedule_plan__classes__global_name',
+                 'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
+        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item for item in plan_data}
+
+        # 实际数据，根据设备机台号和班次分组，
+        actual_data = TrainsFeedbacks.objects.filter(
+            created_date__date=datetime.datetime.now().date()
+        ).values('equip_no', 'classes').annotate(actual_num=Sum('plan_trains'),
+                                                 ret=Max(Concat(F('equip_no'), Value(","),
+                                                                F('created_date'), Value(","),
+                                                                F('product_no'), output_field=CharField()
+                                                                )))
+        actual_data = {item['equip_no'] + item['classes']: item for item in actual_data}
+
+        # 机台反馈数据
+        equip_status_data = EquipStatus.objects.filter(
+            created_date__date=datetime.datetime.now().date()
+        ).values('equip_no').annotate(ret=Max(Concat(F('equip_no'), Value(","),
+                                                     F('created_date'), Value(","),
+                                                     F('current_trains'), Value(','),
+                                                     F('status')), output_field=CharField()))
+        equip_status_data = {item['equip_no']: item for item in equip_status_data}
+
+        ret_data = {item: [] for item in equip_nos}
+
+        class_dict = {'早班': 1, '中班': 2, '晚班': 3}
+        for key, value in plan_data.items():
+            class_name = value['work_schedule_plan__classes__global_name']
+            equip_no = value['product_day_plan__equip__equip_no']
+            classes_id = class_dict[class_name]
+            plan_num = value['plan_num']
+            if key in actual_data:
+                actual_ret = actual_data[key]['ret'].split(',')
+                actual_num = actual_data[key]['actual_num']
+                es_ret = None
+                if equip_no in equip_status_data:
+                    es_ret = equip_status_data[equip_no]['ret'].split(',')
+                ret_data[equip_no].append(
+                    {"classes_id": classes_id,
+                     "global_name": class_name,
+                     "plan_num": plan_num,
+                     "actual_num": actual_num,
+                     'ret': [actual_ret[2], es_ret[2], es_ret[3]] if es_ret else [actual_ret[2], '--', '--']
+                     }
+                )
+            else:
+                ret_data[equip_no].append(
+                    {"classes_id": classes_id,
+                     "global_name": class_name,
+                     "plan_num": plan_num,
+                     "actual_num": 0,
+                     'ret': []
+                     }
+                )
         return Response(ret_data)
 
 

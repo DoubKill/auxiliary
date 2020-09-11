@@ -285,7 +285,7 @@ class BatchingEquip(APIView):
             dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
-        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type).values_list('equip_id', flat=True))
+        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type, used_type__in=(1, 2, 4)).values_list('equip_id', flat=True))
         equip_data = Equip.objects.exclude(
             id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
                                                                        'category__category_name')
