@@ -179,15 +179,16 @@ class StopPlan(APIView):
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
         try:
-            WebService.issue(test_dict, 'stop')
+            success_flag = WebService.issue(test_dict, 'stop')
+            if not success_flag:
+                raise ValidationError("收皮机错误")
         except Exception as e:
-            raise ValidationError("超时链接")
+            raise ValidationError("收皮机连接超时")
 
     @atomic()
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id")
-        print(plan_id)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
@@ -220,7 +221,7 @@ class StopPlan(APIView):
 
         from work_station import models as md
         model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                      'IfdownRecipeCb', 'IfdownPmtRecipe']
+                      'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
@@ -447,12 +448,10 @@ class IssuedPlan(APIView):
             test_dict['sp_number'] = 0
         try:
             success_flag = WebService.issue(test_dict, 'plan')
-            if success_flag:
-                return True
-            else:
-                raise ValidationError("未知错误")
+            if not success_flag:
+                raise ValidationError("收皮机错误")
         except Exception as e:
-            raise ValidationError("超时链接")
+            raise ValidationError("收皮机连接超时")
 
     @atomic()
     def post(self, request):
