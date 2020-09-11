@@ -95,8 +95,16 @@ def main():
             """设备状态表"""
             # 每次循环最后检测，补充修改设备状态
             for temp in temp_model_set:
+                if temp.运行状态 == 1:
+                    equip_status = "运行中"
+                elif temp.运行状态 == 2:
+                    equip_status = "停机"
+                elif temp.运行状态 == 3:
+                    equip_status = "故障"
+                else:
+                    equip_status = "unknown"
                 EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
-                                           equip_no=temp.机台号).update(status=temp.运行状态)
+                                           equip_no=temp.机台号).update(status=equip_status)
 
         elif m == "IfupReportBasis":
             """车次报表主信息"""
