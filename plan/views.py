@@ -341,7 +341,7 @@ class IssuedPlan(APIView):
                 "set_temp": int(ppd.temperature) if ppd.temperature else 0,
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
-                "act_code": ppd.action.code,
+                "act_code": ppd.action.action,
                 "set_pres": int(ppd.pressure) if ppd.pressure else 0,
                 "set_rota": ppd.rpm,
                 "recipe_name": product_batching.stage_product_batch_no,
