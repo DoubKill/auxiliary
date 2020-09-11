@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 from django.db.transaction import atomic
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
 from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
 from mes.base_serializer import BaseModelSerializer
@@ -264,16 +263,19 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         test_dict = OrderedDict()
         test_dict['updatestate'] = validated_data.get('trains')
         try:
-            WebService.issue(test_dict, 'updatetrains')
+            success_flag = WebService.issue(test_dict, 'updatetrains')
+            if not success_flag:
+                raise serializers.ValidationError("收皮机错误")
         except Exception as e:
-            raise serializers.ValidationError("超时链接")
+            print(e)
+            raise serializers.ValidationError("收皮机连接超时")
 
     @atomic()
     def update(self, instance, validated_data):
         if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
-        if validated_data.get('trains') - instance.plan_trains <= 2:
-            raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
+        # if validated_data.get('trains') - instance.plan_trains <= 2:
+        #     raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
         # 查询计划状态变更
         p_obj = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by('created_date').last()
         if not p_obj:
@@ -301,24 +303,25 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
                 from work_station import models as md
                 model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                              'IfdownRecipeCb', 'IfdownPmtRecipe']
+                              'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+                model_name = getattr(md, model_list[0] + ext_str)
+                instance = model_name.objects.filter().first()
+                if not instance:
+                    raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
+                if instance.recstatus == "车次需更新":
+                    recstatus = "车次需更新"
+                elif instance.recstatus == "运行中":
+                    recstatus = "车次需更新"
+                elif instance.recstatus == "配方车次需更新":
+                    recstatus = "配方车次需更新"
+                elif instance.recstatus == '配方需重传':
+                    recstatus = "配方车次需更新"
+                else:
+                    raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
                 for model_str in model_list:
                     model_name = getattr(md, model_str + ext_str)
-                    instance = model_name.objects.get(id=instance.id)
-                    if not instance:
-                        raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-                    if instance.recstatus == "车次需更新":
-                        recstatus = "车次需更新"
-                    elif instance.recstatus == "运行中":
-                        recstatus = "车次需更新"
-                    elif instance.recstatus == "配方车次需更新":
-                        recstatus = "配方车次需更新"
-                    elif instance.recstatus == '配方需重传':
-                        recstatus = "配方车次需更新"
-                    else:
-                        raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
                     model_name.objects.all().update(recstatus=recstatus)
-                    self.send_to_yikong(validated_data)
+                self.send_to_yikong(validated_data)
                 return instance
 
 
