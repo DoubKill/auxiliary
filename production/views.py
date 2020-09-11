@@ -703,7 +703,7 @@ class EquipDetailedList(APIView):
     def get(self, request, *args, **kwargs):
         params = self.request.query_params
         equip_no = params.get('equip_no')
-        air_list = f'''select equip_status.id,
+        air_list = f'''select
        equip_status.equip_no,
        equip_status.status,
        product_batching.stage_product_batch_no as product_no,
@@ -720,7 +720,9 @@ where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE
 order by equip_status.product_time desc
 limit 1;'''
         ret_data = {}
-        equip_list = EquipStatus.objects.raw(air_list)
+        cursor = connection.cursor()
+        cursor.execute(air_list)
+        equip_list = cursor.fetchall()
         if not equip_list:
             ret_data['equip_no'] = None
             ret_data['status'] = None
@@ -731,14 +733,14 @@ limit 1;'''
             ret_data['status_list'] = []
         else:
             equip_list = equip_list[0]
-            ret_data['equip_no'] = equip_list.equip_no
-            ret_data['status'] = equip_list.status
-            ret_data['product_no'] = equip_list.product_no
-            ret_data['current_trains'] = equip_list.current_trains
-            ret_data['classes_name'] = equip_list.classes_name
+            ret_data['equip_no'] = equip_list[0]
+            ret_data['status'] = equip_list[1]
+            ret_data['product_no'] = equip_list[2]
+            ret_data['current_trains'] = equip_list[3]
+            ret_data['classes_name'] = equip_list[4]
             ret_data['product_list'] = []
             ret_data['status_list'] = []
-        air_product_list = f'''select equip_status.id,
+        air_product_list = f'''select
        product_batching.stage_product_batch_no,
        SUM(distinct product_classes_plan.plan_trains) AS plan_num,
        SUM(distinct trains_feedbacks.actual_trains)   AS actual_num
@@ -751,32 +753,36 @@ from equip_status
                    ON trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = FALSE
 where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE and to_days(equip_status.created_date)=to_days(now())
 group by product_batching.stage_product_batch_no;'''
-        product_list = EquipStatus.objects.raw(air_product_list)
+        cursor = connection.cursor()
+        cursor.execute(air_product_list)
+        product_list = cursor.fetchall()
         if not product_list:
             ret_data['product_list'] = None
         else:
             for _ in product_list:
                 p_list = {}
-                p_list['product_no'] = _.stage_product_batch_no
-                p_list['plan_num'] = _.plan_num
-                p_list['actual_num'] = _.actual_num
+                p_list['product_no'] = _[0]
+                p_list['plan_num'] = _[1]
+                p_list['actual_num'] = _[2]
                 ret_data['product_list'].append(p_list)
 
-        air_status_list = f'''select equip_status.id,
+        air_status_list = f'''select
        equip_status.status,
        count(equip_status.status) as count_status
 from equip_status
 where equip_status.equip_no = '{equip_no}' and equip_status.delete_flag=FALSE and to_days(equip_status.created_date) = to_days(now())
 group by equip_status.status;
 '''
-        status_list = EquipStatus.objects.raw(air_status_list)
+        cursor = connection.cursor()
+        cursor.execute(air_status_list)
+        status_list = cursor.fetchall()
         if not status_list:
             ret_data['status_list'] = None
         else:
             for _ in status_list:
                 s_list = {}
-                s_list['status'] = _.status
-                s_list['count_status'] = _.count_status
+                s_list['status'] = _[0]
+                s_list['count_status'] = _[1]
                 ret_data['status_list'].append(s_list)
         return Response(ret_data)
 
