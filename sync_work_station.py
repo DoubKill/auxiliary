@@ -174,7 +174,7 @@ def main():
                     "power": temp.功率,
                     "pressure": temp.压力,
                     "current_trains": current_trains,
-                    "status": "等待",
+                    "status": "运行中",
                     "product_time": end_time,
                 }
                 sync_data_list.append(EquipStatus(**adapt_data))
