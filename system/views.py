@@ -10,9 +10,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
-from mes.common_code import CommonDeleteMixin
+from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
+from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from recipe.models import ProductBatching
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
@@ -37,7 +38,9 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     """
     queryset = Permission.objects.filter()
     serializer_class = PermissionSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     pagination_class = SinglePageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
 
@@ -56,7 +59,9 @@ class UserViewSet(ModelViewSet):
     """
     queryset = User.objects.filter(delete_flag=False).order_by('num').prefetch_related('user_permissions', 'groups')
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
 
@@ -97,7 +102,9 @@ class UserGroupsViewSet(mixins.ListModelMixin,
     queryset = User.objects.filter(delete_flag=False).prefetch_related('user_permissions', 'groups')
 
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     pagination_class = SinglePageNumberPagination
     filter_class = UserFilter
@@ -117,7 +124,9 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除
     """
     queryset = GroupExtension.objects.filter(delete_flag=False).order_by('-created_date').prefetch_related('user_set', 'permissions')
     serializer_class = GroupExtensionSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = GroupExtensionFilter
 
@@ -153,6 +162,9 @@ class GroupAddUserViewSet(UpdateAPIView):
     """控制角色中用户具体为哪些的视图"""
     queryset = GroupExtension.objects.filter(delete_flag=False).prefetch_related('user_set', 'permissions')
     serializer_class = GroupUserUpdateSerializer
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -169,7 +181,9 @@ class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = Section.objects.filter(delete_flag=False)
     serializer_class = SectionSerializer
-    permission_classes = (IsAuthenticated,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
 
 
@@ -245,7 +259,9 @@ class SystemConfigViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = SystemConfig.objects.filter(delete_flag=False)
     serializer_class = SystemConfigSerializer
-    permission_classes = (IsAdminUser,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
 
 
 class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
@@ -262,7 +278,9 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = ChildSystemInfo.objects.filter(delete_flag=False)
     serializer_class = ChildSystemInfoSerializer
     pagination_class = SinglePageNumberPagination
-    permission_classes = (IsAdminUser,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ("system_type",)
 
@@ -323,7 +341,10 @@ import datetime
 
 class SystemStatusSwitch(APIView):
     # post: 切换系统运行状态的接口
-    query_set = ChildSystemInfo.objects.filter(delete_flag=False)
+    queryset = ChildSystemInfo.objects.filter(delete_flag=False)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
 
     def post(self, request, *args, **kwargs):
         params = request.data
