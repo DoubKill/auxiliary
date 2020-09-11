@@ -323,9 +323,11 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_time = datetime.now()
         else:
             if instance.used_type == 4:  # 弃用
-                if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
-                                             status__in=('已下达', '运行中')).exists():
-                    raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
+                if instance.equip:
+                    if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
+                                                 equip_no=instance.equip.equip_no,
+                                                 status__in=('已下达', '运行中')).exists():
+                        raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
                 instance.obsolete_user = self.context['request'].user
                 instance.used_type = 6
                 instance.obsolete_time = datetime.now()
