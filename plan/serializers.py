@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from django.db.transaction import atomic
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
 from mes.base_serializer import BaseModelSerializer
