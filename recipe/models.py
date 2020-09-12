@@ -91,17 +91,18 @@ class ProductBatching(AbstractEntity):
         (2, '机型')
     )
     factory = models.ForeignKey(GlobalCode, help_text='工厂', verbose_name='工厂',
-                                on_delete=models.DO_NOTHING, related_name='f_batching')
+                                on_delete=models.DO_NOTHING, related_name='f_batching', blank=True, null=True)
     site = models.ForeignKey(GlobalCode, help_text='SITE', verbose_name='SITE',
-                             on_delete=models.DO_NOTHING, related_name='s_batching')
-    product_info = models.ForeignKey(ProductInfo, help_text='胶料工艺信息', on_delete=models.DO_NOTHING)
+                             on_delete=models.DO_NOTHING, related_name='s_batching', blank=True, null=True)
+    product_info = models.ForeignKey(ProductInfo, help_text='胶料工艺信息',
+                                     on_delete=models.DO_NOTHING, blank=True, null=True)
     precept = models.CharField(max_length=64, help_text='方案', verbose_name='方案', blank=True, null=True)
     stage_product_batch_no = models.CharField(max_length=63, help_text='胶料配方编码')
     dev_type = models.ForeignKey(EquipCategoryAttribute, help_text='机型', on_delete=models.DO_NOTHING, blank=True,
                                  null=True)
     stage = models.ForeignKey(GlobalCode, help_text='段次', verbose_name='段次',
-                              on_delete=models.DO_NOTHING, related_name='stage_batches')
-    versions = models.CharField(max_length=64, help_text='版本', verbose_name='版本')
+                              on_delete=models.DO_NOTHING, related_name='stage_batches', blank=True, null=True)
+    versions = models.CharField(max_length=64, help_text='版本', verbose_name='版本', blank=True, null=True)
     used_type = models.PositiveSmallIntegerField(help_text='使用状态', choices=USE_TYPE_CHOICE, default=1)
     batching_weight = models.DecimalField(verbose_name='配料重量', help_text='配料重量',
                                           decimal_places=2, max_digits=8, default=0)
