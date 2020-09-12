@@ -1164,7 +1164,7 @@ def add_schedules():
 
 
 def add_equip_attribute():
-    equip_type_ids = list(GlobalCode.objects.filter(global_type__type_name='设备类型').values_list('id', flat=True))
+    equip_type_ids = list(GlobalCode.objects.filter(global_name='密炼设备').values_list('id', flat=True))
     process_ids = list(GlobalCode.objects.filter(global_type__type_name='工序').values_list('id', flat=True))
     j = 1000
     cat_names = ['LB02', 'F370', 'E550', 'G320', 'MN01', 'LB01']
