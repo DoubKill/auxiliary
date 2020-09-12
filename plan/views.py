@@ -265,7 +265,7 @@ class IssuedPlan(APIView):
             "equip_code": product_process.equip_code if product_process.equip_code else 0.0, # 锁定解锁
             "reuse_time": product_process.reuse_time,
             "mini_time": product_process.mini_time,
-            "max_time": product_process.max_time,
+            "max_time": product_process.over_time,
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
