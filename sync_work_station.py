@@ -268,8 +268,9 @@ def main():
         product_time = temp.存盘时间
         actual_trains = temp.车次号
         plan_trains = pcp.plan_trains
-        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                      'IfdownRecipeCb', 'IfdownPmtRecipe']
+        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix',
+                      # 'IfdownRecipePloy', 'IfdownRecipeOil1','IfdownRecipeCb',
+                      'IfdownPmtRecipe', "IfdownRecipeWeigh"]
         if actual_trains < plan_trains:
             status = "运行中"
             model_name = getattr(md, model_list[0] + equip_str)
