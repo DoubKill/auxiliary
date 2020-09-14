@@ -17,12 +17,12 @@ router.register(r'up-regulation', UpRegulation)
 router.register(r'down-regulation', DownRegulation)
 # 修改车次
 router.register(r'update-trains', UpdateTrains)
+# 计划管理新增页面展示
 router.register(r'product-classes-plan-list', ProductClassesPlanList)
 
 urlpatterns = [
     path('', include(router.urls)),
     path('product-day-plan-manycreate/', ProductDayPlanManyCreate.as_view()),  # 群增胶料日计划
-    path('product-classes-plan-manycreate/', ProductClassesPlanManyCreate.as_view()),  # 群增胶料日班次计划以及单删
     path('product-classes-plan-manycreate/', ProductClassesPlanManyCreate.as_view()),  # 群增胶料日班次计划以及单删
     path('stop-plan/', StopPlan.as_view()),  # 计划停止
     path('issued-plan/', IssuedPlan.as_view()),  # 计划下达
