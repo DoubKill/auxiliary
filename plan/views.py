@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from itertools import groupby
+from operator import itemgetter
 
 from django.db.models import Max
 from django.db.transaction import atomic
@@ -84,7 +86,7 @@ class ProductDayPlanManyCreate(APIView):
 class ProductClassesPlanManyCreate(APIView):
     """胶料日班次计划群增接口"""
 
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
 
     @atomic()
     def post(self, request, *args, **kwargs):
@@ -94,8 +96,7 @@ class ProductClassesPlanManyCreate(APIView):
             many = True
         else:
             return Response(data={'detail': '数据有误'}, status=400)
-        from operator import itemgetter
-        from itertools import groupby
+
         class_list = []
         request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
         for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
