@@ -1,10 +1,15 @@
+import logging
+
 import requests
 from rest_framework import status, mixins
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from mes.permissions import PermissonsDispatch
 from system.models import User, ChildSystemInfo
+
+logger = logging.getLogger(__name__)
 
 
 class CommonDeleteMixin(object):
@@ -96,9 +101,11 @@ class WebService(object):
         rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
         if rep.status_code < 300:
             return True
+        elif rep.status_code == 500:
+            logger.error(rep.text)
+            raise ValidationError('收皮机内部错误')
         else:
             return False
-
 
     # dict数据转soap需求xml
     @staticmethod

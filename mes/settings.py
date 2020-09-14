@@ -70,7 +70,7 @@ AUTH_USER_MODEL = 'system.User'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'dist/'),],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,9 +81,6 @@ TEMPLATES = [
             ],
         },
     },
-]
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'dist/static/'),
 ]
 
 WSGI_APPLICATION = 'mes.wsgi.application'
@@ -161,33 +158,37 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'api_log.log'),
-            'when': 'D',
+            'when': 'midnight',
             'backupCount': 10,
             'formatter': 'standard',
+            'interval': 1,
         },
         'errorFile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'error.log'),
-            'when': 'D',
+            'when': 'midnight',
             'backupCount': 10,
             'formatter': 'standard',
+            'interval': 1,
         },
         'syncFile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'sync.log'),
-            'when': 'D',
+            'when': 'midnight',
             'backupCount': 10,
             'formatter': 'standard',
+            'interval': 1,
         },
         'asyncFile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'async.log'),
-            'when': 'D',
+            'when': 'midnight',
             'backupCount': 10,
             'formatter': 'standard',
+            'interval': 1,
         },
     },
     'loggers': {
@@ -216,19 +217,18 @@ LOGGING = {
         'async_log': {
             'handlers': ['asyncFile'],
             'level': 'INFO',
-            }
+        }
     },
 }
-
 
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
         'NAME': os.getenv('SFJ_DATABASE_NAME', 'AJLJ'),  # 数据库名称
-        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
-        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
-        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '127.0.0.1'),  # HOST
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'mes'),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes@2020'),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.10.54'),  # HOST
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     }
 }
@@ -285,7 +285,6 @@ LANGUAGES = (
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'locale'),
 )
-
 
 # 跨域允许的请求方式，可以使用默认值，默认的请求方式为:
 # from corsheaders.defaults import default_methods

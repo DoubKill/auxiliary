@@ -91,17 +91,18 @@ class ProductBatching(AbstractEntity):
         (2, '机型')
     )
     factory = models.ForeignKey(GlobalCode, help_text='工厂', verbose_name='工厂',
-                                on_delete=models.DO_NOTHING, related_name='f_batching')
+                                on_delete=models.DO_NOTHING, related_name='f_batching', blank=True, null=True)
     site = models.ForeignKey(GlobalCode, help_text='SITE', verbose_name='SITE',
-                             on_delete=models.DO_NOTHING, related_name='s_batching')
-    product_info = models.ForeignKey(ProductInfo, help_text='胶料工艺信息', on_delete=models.DO_NOTHING)
+                             on_delete=models.DO_NOTHING, related_name='s_batching', blank=True, null=True)
+    product_info = models.ForeignKey(ProductInfo, help_text='胶料工艺信息',
+                                     on_delete=models.DO_NOTHING, blank=True, null=True)
     precept = models.CharField(max_length=64, help_text='方案', verbose_name='方案', blank=True, null=True)
     stage_product_batch_no = models.CharField(max_length=63, help_text='胶料配方编码')
     dev_type = models.ForeignKey(EquipCategoryAttribute, help_text='机型', on_delete=models.DO_NOTHING, blank=True,
                                  null=True)
     stage = models.ForeignKey(GlobalCode, help_text='段次', verbose_name='段次',
-                              on_delete=models.DO_NOTHING, related_name='stage_batches')
-    versions = models.CharField(max_length=64, help_text='版本', verbose_name='版本')
+                              on_delete=models.DO_NOTHING, related_name='stage_batches', blank=True, null=True)
+    versions = models.CharField(max_length=64, help_text='版本', verbose_name='版本', blank=True, null=True)
     used_type = models.PositiveSmallIntegerField(help_text='使用状态', choices=USE_TYPE_CHOICE, default=1)
     batching_weight = models.DecimalField(verbose_name='配料重量', help_text='配料重量',
                                           decimal_places=2, max_digits=8, default=0)
@@ -159,22 +160,22 @@ class ProductProcess(AbstractEntity):
     """胶料配方步序"""
     product_batching = models.OneToOneField(ProductBatching, help_text='配料标准',
                                             on_delete=models.DO_NOTHING, related_name='processes')
-    equip_code = models.PositiveIntegerField(help_text='锁定/解除', blank=True, null=True)
-    reuse_time = models.PositiveIntegerField(help_text='回收时间', blank=True, null=True)
-    mini_time = models.PositiveIntegerField(help_text='超温最短时间', blank=True, null=True)
-    max_time = models.PositiveIntegerField(help_text='超温最长时间', blank=True, null=True)
-    mini_temp = models.PositiveIntegerField(help_text='进胶最低温度', blank=True, null=True)
-    max_temp = models.PositiveIntegerField(help_text='进胶最高温度', blank=True, null=True)
-    over_time = models.PositiveIntegerField(help_text='炼胶超时时间', blank=True, null=True)
-    over_temp = models.PositiveIntegerField(help_text='超温温度', blank=True, null=True)
+    equip_code = models.PositiveIntegerField(help_text='锁定/解除', default=0)
+    reuse_time = models.PositiveIntegerField(help_text='回收时间', default=0)
+    mini_time = models.PositiveIntegerField(help_text='超温最短时间', default=0)
+    max_time = models.PositiveIntegerField(help_text='超温最长时间', default=0)
+    mini_temp = models.PositiveIntegerField(help_text='进胶最低温度', default=0)
+    max_temp = models.PositiveIntegerField(help_text='进胶最高温度', default=0)
+    over_time = models.PositiveIntegerField(help_text='炼胶超时时间', default=0)
+    over_temp = models.PositiveIntegerField(help_text='超温温度', default=0)
     reuse_flag = models.BooleanField(help_text='是否回收', default=False)
-    zz_temp = models.PositiveIntegerField(help_text='转子水温', blank=True, null=True)
-    xlm_temp = models.PositiveIntegerField(help_text='卸料门水温', blank=True, null=True)
-    cb_temp = models.PositiveIntegerField(help_text='侧壁水温', blank=True, null=True)
+    zz_temp = models.PositiveIntegerField(help_text='转子水温', default=0)
+    xlm_temp = models.PositiveIntegerField(help_text='卸料门水温', default=0)
+    cb_temp = models.PositiveIntegerField(help_text='侧壁水温', default=0)
     temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
     use_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
-    batching_error = models.PositiveIntegerField(help_text='胶料总误差', blank=True, null=True)
-    sp_num = models.PositiveSmallIntegerField(help_text='收皮', blank=True, null=True)
+    batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
+    sp_num = models.PositiveSmallIntegerField(help_text='收皮', default=0)
 
     class Meta:
         db_table = 'product_process'
@@ -203,15 +204,15 @@ class ProductProcessDetail(AbstractEntity):
     product_batching = models.ForeignKey(ProductBatching, help_text='配方id', on_delete=models.DO_NOTHING,
                                          related_name='process_details')
     sn = models.CharField(max_length=64, help_text='序号')
-    temperature = models.PositiveIntegerField(help_text='温度', blank=True, null=True)
-    rpm = models.PositiveIntegerField(help_text='转速', blank=True, null=True)
-    energy = models.DecimalField(help_text='能量', blank=True, null=True, decimal_places=1, max_digits=8)
-    power = models.DecimalField(help_text='功率', blank=True, null=True, decimal_places=1, max_digits=8)
-    pressure = models.DecimalField(help_text='压力', blank=True, null=True, decimal_places=1, max_digits=8)
+    temperature = models.PositiveIntegerField(help_text='温度', default=0)
+    rpm = models.PositiveIntegerField(help_text='转速', default=0)
+    energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=8)
+    power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=8)
+    pressure = models.DecimalField(help_text='压力', default=0, decimal_places=1, max_digits=8)
     condition = models.ForeignKey(BaseCondition, help_text='条件id', blank=True, null=True, on_delete=models.DO_NOTHING)
-    time = models.PositiveIntegerField(help_text='时间(分钟)', blank=True, null=True)
+    time = models.PositiveIntegerField(help_text='时间(分钟)', default=0)
     action = models.ForeignKey(BaseAction, help_text='基本动作id', blank=True, null=True, on_delete=models.DO_NOTHING)
-    time_unit = models.CharField(max_length=4, help_text='时间单位', blank=True, null=True)
+    time_unit = models.CharField(max_length=4, help_text='时间单位', default='秒')
 
     class Meta:
         db_table = 'product_process_detail'

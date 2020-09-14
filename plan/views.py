@@ -179,15 +179,16 @@ class StopPlan(APIView):
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
         try:
-            WebService.issue(test_dict, 'stop')
+            success_flag = WebService.issue(test_dict, 'stop')
+            if not success_flag:
+                raise ValidationError("收皮机错误")
         except Exception as e:
-            raise ValidationError("超时链接")
+            raise ValidationError("收皮机连接超时")
 
     @atomic()
     def get(self, request):
         params = request.query_params
         plan_id = params.get("id")
-        print(plan_id)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
@@ -220,11 +221,11 @@ class StopPlan(APIView):
 
         from work_station import models as md
         model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                      'IfdownRecipeCb', 'IfdownPmtRecipe']
+                      'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        self.send_to_yikong()  # 发送数据给易控
+        # self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -261,10 +262,10 @@ class IssuedPlan(APIView):
             "oper": self.request.user.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code": product_process.equip_code,
+            "equip_code": product_process.equip_code if product_process.equip_code else 0.0, # 锁定解锁
             "reuse_time": product_process.reuse_time,
             "mini_time": product_process.mini_time,
-            "max_time": product_process.max_time,
+            "max_time": product_process.over_time,
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
@@ -340,7 +341,7 @@ class IssuedPlan(APIView):
                 "set_temp": int(ppd.temperature) if ppd.temperature else 0,
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
-                "act_code": ppd.action.code,
+                "act_code": ppd.action.action,
                 "set_pres": int(ppd.pressure) if ppd.pressure else 0,
                 "set_rota": ppd.rpm,
                 "recipe_name": product_batching.stage_product_batch_no,
@@ -361,7 +362,7 @@ class IssuedPlan(APIView):
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
-            'actno': params.get("actual_trains") if params.get("actual_trains") else 1,  # 当前车次
+            'actno': 0,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
             'state': '等待',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
@@ -447,12 +448,10 @@ class IssuedPlan(APIView):
             test_dict['sp_number'] = 0
         try:
             success_flag = WebService.issue(test_dict, 'plan')
-            if success_flag:
-                return True
-            else:
-                raise ValidationError("未知错误")
+            if not success_flag:
+                raise ValidationError("收皮机错误")
         except Exception as e:
-            raise ValidationError("超时链接")
+            raise ValidationError("收皮机连接超时")
 
     @atomic()
     def post(self, request):
@@ -491,7 +490,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        self.send_to_yikong(params, pcp_obj)
+        # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
