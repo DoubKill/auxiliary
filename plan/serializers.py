@@ -2,9 +2,8 @@ from collections import OrderedDict
 
 from django.db.transaction import atomic
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
-from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
+from basics.models import PlanSchedule, WorkSchedulePlan, Equip
 from mes.base_serializer import BaseModelSerializer
 from mes.common_code import WebService
 from mes.conf import COMMON_READ_ONLY_FIELDS
@@ -15,14 +14,38 @@ from recipe.models import ProductBatching
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
+    """胶料日班次计划序列化"""
+
     classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
-    classes = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.all(),
-                                                 help_text='班次id（公共代码）', write_only=True)
+    product_no = serializers.CharField(source='product_batching.stage_product_batch_no',read_only=True)
 
     class Meta:
         model = ProductClassesPlan
-        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid')
+        exclude = ('product_day_plan',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    @atomic()
+    def create(self, validated_data):
+        plan_classes_uid = validated_data['plan_classes_uid']
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, delete_flag=False).first()
+        if not pcp_obj:
+            instance = super().create(validated_data)
+        else:
+            instance = super().update(pcp_obj, validated_data)
+            PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(delete_flag=True)
+            MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
+        # 创建计划状态
+        PlanStatus.objects.create(plan_classes_uid=instance.plan_classes_uid, equip_no=instance.equip.equip_no,
+                                  product_no=instance.product_batching.stage_product_batch_no,
+                                  status='等待', operation_user=self.context['request'].user.username)
+        # 创建原材料需求量
+        for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+            MaterialDemanded.objects.create(product_classes_plan=instance,
+                                            work_schedule_plan=instance.work_schedule_plan,
+                                            material=pbd_obj.material,
+                                            material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+                                            plan_classes_uid=instance.plan_classes_uid)
+        return instance
 
 
 class ProductDayPlanSerializer(BaseModelSerializer):
@@ -76,6 +99,8 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
+            detail['equip'] = instance.equip
+            detail['product_batching'] = instance.product_batching
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
@@ -100,14 +125,14 @@ class ProductBatchingClassesPlanSerializer(BaseModelSerializer):
 
 
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
-    equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
-    stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
+    equip_name = serializers.CharField(source='equip.equip_no', read_only=True, help_text='机台名')
+    stage_product_batch_no = serializers.CharField(source='product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
     classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
     operation_user = serializers.SerializerMethodField(read_only=True, help_text='操作员')
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
-    day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time', read_only=True)
+    day_time = serializers.DateField(source='work_schedule_plan.plan_schedule.day_time', read_only=True)
     group = serializers.CharField(source='work_schedule_plan.group.global_name', read_only=True, help_text='班组')
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')

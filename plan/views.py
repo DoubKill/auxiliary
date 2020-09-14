@@ -17,10 +17,11 @@ from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService
 from mes.derorators import api_recorder
+from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, ProductClassesPlanCreateSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
@@ -77,6 +78,59 @@ class ProductDayPlanManyCreate(APIView):
         s.is_valid(raise_exception=True)
         s.save()
         return Response('新建成功')
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductClassesPlanManyCreate(APIView):
+    """胶料日班次计划群增接口"""
+
+    # permission_classes = (IsAuthenticated,)
+
+    @atomic()
+    def post(self, request, *args, **kwargs):
+        if isinstance(request.data, dict):
+            many = False
+        elif isinstance(request.data, list):
+            many = True
+        else:
+            return Response(data={'detail': '数据有误'}, status=400)
+        from operator import itemgetter
+        from itertools import groupby
+        class_list = []
+        request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
+        for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
+            i = 1
+            for class_dict in items:
+                class_dict['sn'] = i
+                i += 1
+                class_list.append(class_dict)
+        s = ProductClassesPlanCreateSerializer(data=class_list, many=many, context={'request': request})
+        s.is_valid(raise_exception=True)
+        s.save()
+        return Response('新建成功')
+
+    @atomic()
+    def get(self, request, *args, **kwargs):
+        params = request.query_params
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=params.get('plan_classes_uid')).first()
+        if not pcp_obj:
+            return Response('没有对应的胶料日计划数据', status=200)
+        pcp_obj.delete_flag = True
+        pcp_obj.save()
+        PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
+        MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
+        return Response('删除成功', status=200)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductClassesPlanList(mixins.ListModelMixin, GenericViewSet):
+    """计划新增展示数据"""
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
+    serializer_class = ProductClassesPlanCreateSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = PalletFeedbacksFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -262,7 +316,7 @@ class IssuedPlan(APIView):
             "oper": self.request.user.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code": product_process.equip_code if product_process.equip_code else 0.0, # 锁定解锁
+            "equip_code": product_process.equip_code if product_process.equip_code else 0.0,  # 锁定解锁
             "reuse_time": product_process.reuse_time,
             "mini_time": product_process.mini_time,
             "max_time": product_process.over_time,
