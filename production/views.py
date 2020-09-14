@@ -1,41 +1,33 @@
 import datetime
 import re
 
-import requests
 from django.db import connection
+from django.db.models import Sum, Max, F, Value, CharField
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from basics.models import PlanSchedule
-from mes.common_code import CommonDeleteMixin
 from basics.models import PlanSchedule, Equip
+from mes.common_code import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    IfupReportCurveBackups
+    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
 from production.utils import strtoint, gen_material_export_file_response
-from work_station.api import IssueWorkStation
-from work_station.models import IfdownRecipeCb1, IfdownRecipeOil11
-from django.db.models import Sum, Max, F, Value, CharField
-import pymysql
-from mes.settings import DATABASES
 
 
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -635,14 +627,16 @@ class EquipStatusPlanList(APIView):
 
     def get(self, request, *args, **kwargs):
 
-        equip_nos = Equip.objects.filter(use_flag=True).order_by('equip_no').values_list('equip_no', flat=True)
+        equip_nos = Equip.objects.filter(use_flag=True, category__equip_type__global_name="密炼设备").order_by(
+            'equip_no').values_list('equip_no', flat=True)
 
         # 计划数据，根据设备机台号和班次分组，
         plan_data = ProductClassesPlan.objects.filter(
             product_day_plan__plan_schedule__day_time=datetime.datetime.now().date()
         ).values('work_schedule_plan__classes__global_name',
                  'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
-        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item for item in plan_data}
+        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
+                     for item in plan_data}
 
         # 实际数据，根据设备机台号和班次分组，
         actual_data = TrainsFeedbacks.objects.filter(
