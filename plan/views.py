@@ -541,7 +541,7 @@ class IssuedPlan(APIView):
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
         # ps_obj.save()
-        self.send_again_yikong(params, pcp_obj)
+        # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
 
 
