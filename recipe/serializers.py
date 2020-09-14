@@ -125,8 +125,8 @@ class ProductBatchingListSerializer(BaseModelSerializer):
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
-    condition_name = serializers.CharField(source='condition.condition', read_only=True)
-    action_name = serializers.CharField(source='action.action', read_only=True)
+    condition_name = serializers.CharField(source='condition.condition', read_only=True, default=None)
+    action_name = serializers.CharField(source='action.action', read_only=True, default=None)
 
     class Meta:
         model = ProductProcessDetail

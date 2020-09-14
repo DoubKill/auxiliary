@@ -205,7 +205,7 @@ class ProductProcessDetail(AbstractEntity):
                                          related_name='process_details')
     sn = models.CharField(max_length=64, help_text='序号')
     temperature = models.PositiveIntegerField(help_text='温度', default=0)
-    rpm = models.PositiveIntegerField(help_text='转速', default=0)
+    rpm = models.DecimalField(help_text='转速', default=0, decimal_places=1, max_digits=8)
     energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=8)
     power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=8)
     pressure = models.DecimalField(help_text='压力', default=0, decimal_places=1, max_digits=8)
