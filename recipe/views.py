@@ -15,6 +15,7 @@ from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
 from mes.permissions import PermissionClass, ProductBatchingPermissions
+from production.models import MaterialTankStatus
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
@@ -290,3 +291,20 @@ class BatchingEquip(APIView):
             id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
                                                                        'category__category_name')
         return Response(data={'results': equip_data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class TankMaterialVIew(APIView):
+    """炭黑、油料罐原材料数据"""
+
+    def get(self, request):
+        tank_type = self.request.query_params.get('tank_type')
+        equip_no = self.request.query_params.get('equip_no')
+        if not all([tank_type, equip_no]):
+            raise ValidationError('参数不足')
+        if tank_type not in ['1', '2']:
+            raise ValidationError('参数错误')
+        mat_nos = set(MaterialTankStatus.objects.filter(equip_no=equip_no,
+                                                        tank_type=tank_type).values_list('material_no', flat=True))
+        data = Material.objects.filter(material_no__in=mat_nos).values('id', 'material_name', 'material_no')
+        return Response(data={'results': data})

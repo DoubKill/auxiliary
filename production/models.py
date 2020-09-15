@@ -163,9 +163,12 @@ class QualityControl(AbstractEntity):
 
 class MaterialTankStatus(AbstractEntity):
     """储料罐状态"""
-
+    TYPE_CHOICE = (
+        ('1', '炭黑'),
+        ('2', '油料')
+    )
     equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
-    tank_type = models.CharField(max_length=64, help_text="储料罐类型", verbose_name='储料罐类型')
+    tank_type = models.CharField(max_length=64, help_text="储料罐类型", verbose_name='储料罐类型', choices=TYPE_CHOICE)
     tank_name = models.CharField(max_length=64, help_text="储料罐名称", verbose_name='储料罐名称')
     tank_no = models.CharField(max_length=64, help_text="储料罐编号", verbose_name='储料罐编号')
     material_no = models.CharField(max_length=64, help_text='原材料id', verbose_name='原材料id')
