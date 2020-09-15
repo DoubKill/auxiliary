@@ -12,7 +12,7 @@ from work_station import models as md
 
 class IssueWorkStation(object):
 
-    def __init__(self, model_name, data):
+    def __init__(self, model_name, data, ext_str=None):
         """
         传入对应的模型类与数据
         data 传入带id数据为修改中间表数据，
@@ -21,6 +21,7 @@ class IssueWorkStation(object):
         self.model = getattr(md, model_name)
         self.model_name = model_name
         self.data = data
+        self.ext_str = ext_str
 
     @property
     def model_serializer(self):
@@ -32,7 +33,11 @@ class IssueWorkStation(object):
         对接万隆中间表
         将数据存入到中间表
         """
-        self.model.objects.filter(recstatus__in=["完成", "停止"]).delete()
+        plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
+        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
+        if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
+            self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data)
         serializer.is_valid()
         try:
@@ -47,7 +52,11 @@ class IssueWorkStation(object):
         """
         # model_data = [self.model(**_) for _ in self.data]
         # self.model.objects.bulk_create(model_data)
-        self.model.objects.filter(recstatus__in=["完成", "停止"]).delete()
+        plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
+        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
+        if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
+            self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data, many=True)
         serializer.is_valid()
         try:

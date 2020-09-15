@@ -24,7 +24,7 @@ from work_station import models as md
 from plan.models import ProductClassesPlan
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
     IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
-from work_station.models import IfupReportMix
+from work_station.models import IfupReportMix, IfupReportBasis
 
 logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
@@ -140,8 +140,8 @@ def main():
                 product_no = temp.配方号  # 这里不确定是否一致
                 # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
                 pcp = ProductClassesPlan.objects.filter(
-                    # plan_classes_uid=uid
-                ).first()
+                    plan_classes_uid=uid
+                ).last()
                 begin_time_str = temp.开始时间
                 end_time_str = temp.存盘时间
                 if len(begin_time_str) == 15:
@@ -195,10 +195,14 @@ def main():
                     end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                 else:
                     continue
-                current_trains = IfupReportMix.objects.filter(
-                                                            计划号=uid,
-                                                            配方号=temp.配方号,
-                                                            机台号=temp.机台号).last().密炼车次
+                mix_obj = IfupReportMix.objects.filter(
+                        计划号=uid,
+                        配方号=temp.配方号,
+                        机台号=temp.机台号)
+                if mix_obj:
+                    current_trains = mix_obj.last().密炼车次
+                else:
+                    current_trains = current_trains
                 adapt_data = {
                     "plan_classes_uid": uid,
                     "equip_no": equip_no,  # 机台号可能需要根据规则格式化
@@ -258,7 +262,7 @@ def main():
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
     if temp:
-        if temp.__name__ == "IfupReportBasis":
+        if temp is IfupReportBasis:
             plan_no = temp.计划号
             product_no = temp.配方号
             equip_str = str(temp.机台号)

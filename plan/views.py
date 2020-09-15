@@ -23,7 +23,7 @@ from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, ProductClassesPlanCreateSerializer, \
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
     ProductClassesPlanManyCreateSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
@@ -99,6 +99,9 @@ class ProductClassesPlanManyCreate(APIView):
             return Response(data={'detail': '数据有误'}, status=400)
 
         class_list = []
+        work_list = []
+        plan_list = []
+        equip_list = []
         request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
         for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
             i = 1
@@ -106,9 +109,23 @@ class ProductClassesPlanManyCreate(APIView):
                 class_dict['sn'] = i
                 i += 1
                 class_list.append(class_dict)
+                work_list.append(class_dict['work_schedule_plan'])
+                plan_list.append(class_dict['plan_classes_uid'])
+                equip_list.append(class_dict['equip'])
+        # 举例说明：本来有四条 前端只传了三条 就会删掉多余的一条
+        pcp_set = ProductClassesPlan.objects.filter(work_schedule_plan_id__in=list(set(work_list)),
+                                                    equip_id__in=list(set(equip_list))).exclude(
+            plan_classes_uid__in=list(set(plan_list)))
+        for pcp_obj in pcp_set:
+            pcp_obj.delete_flag = True
+            pcp_obj.save()
+            PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
+            MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
+
         s = ProductClassesPlanManyCreateSerializer(data=class_list, many=many, context={'request': request})
         s.is_valid(raise_exception=True)
         s.save()
+
         return Response('新建成功')
 
     @atomic()
@@ -442,10 +459,10 @@ class IssuedPlan(APIView):
     def _sync(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).issue_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).issue_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh).batch_to_db()
+        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh, ext_str).batch_to_db()
         # RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_to_db()
         # RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
@@ -453,9 +470,10 @@ class IssuedPlan(APIView):
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_to_db()
+
         Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
-        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).issue_to_db()
+        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).issue_to_db()
 
     def _sync_update(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
