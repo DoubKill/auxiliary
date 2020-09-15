@@ -87,7 +87,7 @@ class ProductDayPlanManyCreate(APIView):
 class ProductClassesPlanManyCreate(APIView):
     """胶料日班次计划群增接口"""
 
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
 
     @atomic()
     def post(self, request, *args, **kwargs):
