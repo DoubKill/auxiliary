@@ -23,7 +23,7 @@ from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, ProductClassesPlanCreateSerializer, \
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
     ProductClassesPlanManyCreateSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
@@ -87,7 +87,7 @@ class ProductDayPlanManyCreate(APIView):
 class ProductClassesPlanManyCreate(APIView):
     """胶料日班次计划群增接口"""
 
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
 
     @atomic()
     def post(self, request, *args, **kwargs):
@@ -99,6 +99,9 @@ class ProductClassesPlanManyCreate(APIView):
             return Response(data={'detail': '数据有误'}, status=400)
 
         class_list = []
+        work_list = []
+        plan_list = []
+        equip_list = []
         request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
         for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
             i = 1
@@ -106,9 +109,23 @@ class ProductClassesPlanManyCreate(APIView):
                 class_dict['sn'] = i
                 i += 1
                 class_list.append(class_dict)
+                work_list.append(class_dict['work_schedule_plan'])
+                plan_list.append(class_dict['plan_classes_uid'])
+                equip_list.append(class_dict['equip'])
+        # 举例说明：本来有四条 前端只传了三条 就会删掉多余的一条
+        pcp_set = ProductClassesPlan.objects.filter(work_schedule_plan_id__in=list(set(work_list)),
+                                                    equip_id__in=list(set(equip_list))).exclude(
+            plan_classes_uid__in=list(set(plan_list)))
+        for pcp_obj in pcp_set:
+            pcp_obj.delete_flag = True
+            pcp_obj.save()
+            PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
+            MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
+
         s = ProductClassesPlanManyCreateSerializer(data=class_list, many=many, context={'request': request})
         s.is_valid(raise_exception=True)
         s.save()
+
         return Response('新建成功')
 
     @atomic()
@@ -281,7 +298,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        # self.send_to_yikong()  # 发送数据给易控
+        self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -551,7 +568,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        # self.send_to_yikong(params, pcp_obj)
+        self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
@@ -602,7 +619,7 @@ class IssuedPlan(APIView):
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
         # ps_obj.save()
-        # self.send_again_yikong(params, pcp_obj)
+        self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
 
 
