@@ -316,6 +316,8 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
         pass_flag = validated_data['pass_flag']
         if pass_flag:
             if instance.used_type == 1:  # 提交
+                instance.submit_user = self.context['request'].user
+                instance.submit_time = datetime.now()
                 instance.used_type = 2
             elif instance.used_type == 2:  # 启用
                 instance.used_type = 4
@@ -333,6 +335,8 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.obsolete_time = datetime.now()
             else:  # 驳回
                 instance.used_type = 5
+                instance.reject_user = self.context['request'].user
+                instance.reject_time = datetime.now()
         instance.last_updated_user = self.context['request'].user
         instance.save()
         return instance
