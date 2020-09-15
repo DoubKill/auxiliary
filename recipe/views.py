@@ -295,7 +295,7 @@ class BatchingEquip(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class TankMaterialVIew(APIView):
-    """炭黑、油料罐原材料数据"""
+    """炭黑、油料罐原材料数据，参数：tank_type=(1:炭黑，2:油料)&equip_no="""
 
     def get(self, request):
         tank_type = self.request.query_params.get('tank_type')
