@@ -342,12 +342,12 @@ class IssuedPlan(APIView):
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
-            "if_not": 1 if product_process.reuse_flag else 0,
+            "if_not": 0 if product_process.reuse_flag else -1,
             "temp_zz": product_process.zz_temp,
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
             "tempuse": 1 if product_process.temp_use_flag else 0,
-            "usenot": 1 if product_process.use_flag else 0,
+            "usenot": 0 if product_batching.used_type == 4 else 1,
             "recstatus": "等待",
         }
         return data
@@ -415,8 +415,8 @@ class IssuedPlan(APIView):
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
                 "act_code": ppd.action.action,
-                "set_pres": int(ppd.pressure) if ppd.pressure else 0,
-                "set_rota": ppd.rpm,
+                "set_pres": int(ppd.rpm) if ppd.rpm else 0,
+                "set_rota": ppd.pressure if ppd.pressure else 0.0,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "recstatus": "等待",
                 "sn": ppd.sn
@@ -459,10 +459,10 @@ class IssuedPlan(APIView):
     def _sync(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).issue_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).issue_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh).batch_to_db()
+        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh, ext_str).batch_to_db()
         # RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_to_db()
         # RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
@@ -470,9 +470,10 @@ class IssuedPlan(APIView):
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_to_db()
+
         Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
-        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).issue_to_db()
+        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).issue_to_db()
 
     def _sync_update(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
