@@ -29,5 +29,5 @@ urlpatterns = [
     path('api-token-auth/', obtain_jwt_token),
     path('api-token-refresh/', refresh_jwt_token),
     path('synchronization/', Synchronization.as_view()),  # mes和上辅机同步接口
-    path('update-password/', UpdatePassWord.as_view()),  # mes和上辅机同步接口
+    path('update-password/', UpdatePassWord.as_view()),  # 修改密码接口
 ]
