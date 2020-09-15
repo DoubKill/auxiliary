@@ -339,19 +339,21 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
                               'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
                 model_name = getattr(md, model_list[0] + ext_str)
-                instance = model_name.objects.filter().first()
-                if not instance:
+                mid_plan_instance = model_name.objects.filter().first()
+                if not mid_plan_instance:
                     raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-                if instance.recstatus == "车次需更新":
+                if mid_plan_instance.recstatus == "车次需更新":
                     recstatus = "车次需更新"
-                elif instance.recstatus == "运行中":
+                elif mid_plan_instance.recstatus == "运行中":
                     recstatus = "车次需更新"
-                elif instance.recstatus == "配方车次需更新":
+                elif mid_plan_instance.recstatus == "配方车次需更新":
                     recstatus = "配方车次需更新"
-                elif instance.recstatus == '配方需重传':
+                elif mid_plan_instance.recstatus == '配方需重传':
                     recstatus = "配方车次需更新"
                 else:
                     raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
+                mid_plan_instance.setno = trains
+                mid_plan_instance.save()
                 for model_str in model_list:
                     model_name = getattr(md, model_str + ext_str)
                     model_name.objects.all().update(recstatus=recstatus)

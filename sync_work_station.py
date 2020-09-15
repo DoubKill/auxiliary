@@ -24,41 +24,41 @@ from work_station import models as md
 from plan.models import ProductClassesPlan
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
     IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
-from work_station.models import IfupReportMix
+from work_station.models import IfupReportMix, IfupReportBasis
 
 logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
 
 
-class MesUpClient(object):
-
-    UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
-    Client = requests.request
-    mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
-    API_DICT = {
-        "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
-        "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
-        "EquipStatus": "/api/v1/equip-status/",
-        "PlanStatus": "/api/v1/plan-status/"
-    }
-
-    @atomic
-    @classmethod
-    def update(cls):
-        sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
-        for model_name in cls.UP_TABLE_LIST:
-            temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
-            temp_id = temp.config_value
-            model = getattr(md, model_name)
-            model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
-            if model_set:
-                new_temp_id = model_set.last().id + 1
-            else:
-                new_temp_id = temp_id
-            temp.config_value = new_temp_id
-            ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
-            if ret.status_code <300:
-                temp.save()
+# class MesUpClient(object):
+#
+#     UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
+#     Client = requests.request
+#     mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
+#     API_DICT = {
+#         "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
+#         "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
+#         "EquipStatus": "/api/v1/equip-status/",
+#         "PlanStatus": "/api/v1/plan-status/"
+#     }
+#
+#     @atomic
+#     @classmethod
+#     def update(cls):
+#         sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
+#         for model_name in cls.UP_TABLE_LIST:
+#             temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
+#             temp_id = temp.config_value
+#             model = getattr(md, model_name)
+#             model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
+#             if model_set:
+#                 new_temp_id = model_set.last().id + 1
+#             else:
+#                 new_temp_id = temp_id
+#             temp.config_value = new_temp_id
+#             ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
+#             if ret.status_code <300:
+#                 temp.save()
 
 
 def one_instance(func):
@@ -140,8 +140,8 @@ def main():
                 product_no = temp.配方号  # 这里不确定是否一致
                 # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
                 pcp = ProductClassesPlan.objects.filter(
-                    # plan_classes_uid=uid
-                ).first()
+                    plan_classes_uid=uid
+                ).last()
                 begin_time_str = temp.开始时间
                 end_time_str = temp.存盘时间
                 if len(begin_time_str) == 15:
@@ -195,10 +195,14 @@ def main():
                     end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                 else:
                     continue
-                current_trains = IfupReportMix.objects.filter(
-                                                            计划号=uid,
-                                                            配方号=temp.配方号,
-                                                            机台号=temp.机台号).last().密炼车次
+                mix_obj = IfupReportMix.objects.filter(
+                        计划号=uid,
+                        配方号=temp.配方号,
+                        机台号=temp.机台号)
+                if mix_obj:
+                    current_trains = mix_obj.last().密炼车次
+                else:
+                    current_trains = current_trains
                 adapt_data = {
                     "plan_classes_uid": uid,
                     "equip_no": equip_no,  # 机台号可能需要根据规则格式化
@@ -258,7 +262,7 @@ def main():
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
     if temp:
-        if temp.__name__ == "IfupReportBasis":
+        if temp is IfupReportBasis:
             plan_no = temp.计划号
             product_no = temp.配方号
             equip_str = str(temp.机台号)
