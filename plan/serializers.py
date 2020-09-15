@@ -110,8 +110,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
-            detail['equip'] = instance.equip
-            detail['product_batching'] = instance.product_batching
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
