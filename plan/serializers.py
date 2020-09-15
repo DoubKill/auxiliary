@@ -110,8 +110,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
-            detail['equip'] = instance.equip
-            detail['product_batching'] = instance.product_batching
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
@@ -136,8 +134,8 @@ class ProductBatchingClassesPlanSerializer(BaseModelSerializer):
 
 
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
-    equip_name = serializers.CharField(source='equip.equip_no', read_only=True, help_text='机台名')
-    stage_product_batch_no = serializers.CharField(source='product_batching.stage_product_batch_no',
+    equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
+    stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
     classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')

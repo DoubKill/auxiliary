@@ -39,11 +39,11 @@ class ProductClassesPlan(AbstractEntity):
     plan_classes_uid = models.CharField(verbose_name='班次计划唯一码', help_text='班次计划唯一码',
                                         max_length=64)
     note = models.CharField(max_length=64, help_text='备注', blank=True, null=True)
-    equip = models.ForeignKey(Equip, on_delete=models.DO_NOTHING, help_text='机台id', verbose_name='机台id',
-                              related_name='equip_product_classes_plan')
-    product_batching = models.ForeignKey(ProductBatching, on_delete=models.DO_NOTHING, help_text='配料id',
-                                         verbose_name='配料id',
-                                         related_name='pb_product_classes_plan')
+    # equip = models.ForeignKey(Equip, on_delete=models.DO_NOTHING, help_text='机台id', verbose_name='机台id',
+    #                           related_name='equip_product_classes_plan')
+    # product_batching = models.ForeignKey(ProductBatching, on_delete=models.DO_NOTHING, help_text='配料id',
+    #                                      verbose_name='配料id',
+    #                                      related_name='pb_product_classes_plan')
 
     @property
     def total_time(self):

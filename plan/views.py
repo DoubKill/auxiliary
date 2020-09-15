@@ -128,7 +128,7 @@ class ProductClassesPlanManyCreate(APIView):
 class ProductClassesPlanList(mixins.ListModelMixin, GenericViewSet):
     """计划新增展示数据"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
-    serializer_class = ProductClassesPlanCreateSerializer
+    serializer_class = ProductClassesPlanManyCreateSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SinglePageNumberPagination
     filter_backends = (DjangoFilterBackend,)
