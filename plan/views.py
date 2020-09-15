@@ -325,12 +325,12 @@ class IssuedPlan(APIView):
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
-            "if_not": 1 if product_process.reuse_flag else 0,
+            "if_not": 0 if product_process.reuse_flag else -1,
             "temp_zz": product_process.zz_temp,
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
             "tempuse": 1 if product_process.temp_use_flag else 0,
-            "usenot": 1 if product_process.use_flag else 0,
+            "usenot": 0 if product_batching.used_type == 4 else 1,
             "recstatus": "等待",
         }
         return data
@@ -398,8 +398,8 @@ class IssuedPlan(APIView):
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
                 "act_code": ppd.action.action,
-                "set_pres": int(ppd.pressure) if ppd.pressure else 0,
-                "set_rota": ppd.rpm,
+                "set_pres": int(ppd.rpm) if ppd.rpm else 0,
+                "set_rota": ppd.pressure if ppd.pressure else 0.0,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "recstatus": "等待",
                 "sn": ppd.sn
