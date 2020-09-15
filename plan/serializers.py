@@ -3,7 +3,7 @@ from collections import OrderedDict
 from django.db.transaction import atomic
 from rest_framework import serializers
 
-from basics.models import PlanSchedule, WorkSchedulePlan, Equip
+from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
 from mes.base_serializer import BaseModelSerializer
 from mes.common_code import WebService
 from mes.conf import COMMON_READ_ONLY_FIELDS
@@ -13,11 +13,11 @@ from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
 
 
-class ProductClassesPlanCreateSerializer(BaseModelSerializer):
+class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
 
     classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
-    product_no = serializers.CharField(source='product_batching.stage_product_batch_no',read_only=True)
+    product_no = serializers.CharField(source='product_batching.stage_product_batch_no', read_only=True)
 
     class Meta:
         model = ProductClassesPlan
@@ -46,6 +46,17 @@ class ProductClassesPlanCreateSerializer(BaseModelSerializer):
                                             material_demanded=pbd_obj.actual_weight * instance.plan_trains,
                                             plan_classes_uid=instance.plan_classes_uid)
         return instance
+
+
+class ProductClassesPlanCreateSerializer(BaseModelSerializer):
+    classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
+    classes = serializers.PrimaryKeyRelatedField(queryset=GlobalCode.objects.all(),
+                                                 help_text='班次id（公共代码）', write_only=True)
+
+    class Meta:
+        model = ProductClassesPlan
+        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid')
+        read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
 class ProductDayPlanSerializer(BaseModelSerializer):
