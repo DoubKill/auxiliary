@@ -203,7 +203,7 @@ class BaseAction(AbstractEntity):
 class ProductProcessDetail(AbstractEntity):
     product_batching = models.ForeignKey(ProductBatching, help_text='配方id', on_delete=models.DO_NOTHING,
                                          related_name='process_details')
-    sn = models.CharField(max_length=64, help_text='序号')
+    sn = models.PositiveIntegerField(help_text='序号')
     temperature = models.PositiveIntegerField(help_text='温度', default=0)
     rpm = models.DecimalField(help_text='转速', default=0, decimal_places=1, max_digits=8)
     energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=8)

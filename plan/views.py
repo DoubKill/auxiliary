@@ -402,8 +402,12 @@ class IssuedPlan(APIView):
                 "set_rota": ppd.rpm,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "recstatus": "等待",
+                "sn": ppd.sn
             }
             datas.append(data)
+        datas.sort(key=lambda x: x.get("sn"))
+        for x in datas:
+            x.pop("sn")
         return datas
 
     def _map_Shengchanjihua(self, params, pcp_obj):
