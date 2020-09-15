@@ -257,43 +257,44 @@ def main():
             logger.error("出现未知同步表，请立即检查")
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
-    if temp and temp.__name__ == "IfupReportBasis":
-        plan_no = temp.计划号
-        product_no = temp.配方号
-        equip_str = str(temp.机台号)
-        if len(equip_str) == 1:
-            equip_no = "Z0" + equip_str
-        else:
-            equip_no = "Z" + equip_str
-        product_time = temp.存盘时间
-        actual_trains = temp.车次号
-        plan_trains = pcp.plan_trains
-        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix',
-                      # 'IfdownRecipePloy', 'IfdownRecipeOil1','IfdownRecipeCb',
-                      'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-        if actual_trains < plan_trains:
-            status = "运行中"
-            model_name = getattr(md, model_list[0] + equip_str)
-            instance = model_name.objects.all().first()
-            if instance:
-                if instance.recstatus == "停止":
-                    status = "停止"
-        # elif: 这里预留一个分支判断，当满足时可能计划被删除
-        else:
-            status = "已完成"
-            for model_str in model_list:
-                model_name = getattr(md, model_str + equip_str)
-                model_name.objects.all().update(recstatus='完成')
-        operation_user = temp.员工代号
-        if not operation_user:
-            operation_user = ""
-        PlanStatus.objects.create(plan_classes_uid=plan_no,
-                                       product_no=product_no,
-                                       equip_no=equip_no,
-                                       operation_user=operation_user,
-                                       product_time=product_time,
-                                       status=status
-                                       )
+    if temp:
+        if temp.__name__ == "IfupReportBasis":
+            plan_no = temp.计划号
+            product_no = temp.配方号
+            equip_str = str(temp.机台号)
+            if len(equip_str) == 1:
+                equip_no = "Z0" + equip_str
+            else:
+                equip_no = "Z" + equip_str
+            product_time = temp.存盘时间
+            actual_trains = temp.车次号
+            plan_trains = pcp.plan_trains
+            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix',
+                          # 'IfdownRecipePloy', 'IfdownRecipeOil1','IfdownRecipeCb',
+                          'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+            if actual_trains < plan_trains:
+                status = "运行中"
+                model_name = getattr(md, model_list[0] + equip_str)
+                instance = model_name.objects.all().first()
+                if instance:
+                    if instance.recstatus == "停止":
+                        status = "停止"
+            # elif: 这里预留一个分支判断，当满足时可能计划被删除
+            else:
+                status = "已完成"
+                for model_str in model_list:
+                    model_name = getattr(md, model_str + equip_str)
+                    model_name.objects.all().update(recstatus='完成')
+            operation_user = temp.员工代号
+            if not operation_user:
+                operation_user = ""
+            PlanStatus.objects.create(plan_classes_uid=plan_no,
+                                           product_no=product_no,
+                                           equip_no=equip_no,
+                                           operation_user=operation_user,
+                                           product_time=product_time,
+                                           status=status
+                                           )
     # MesUpClient.update()
 
 
