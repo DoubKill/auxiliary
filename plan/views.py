@@ -23,7 +23,8 @@ from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, ProductClassesPlanCreateSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, ProductClassesPlanCreateSerializer, \
+    ProductClassesPlanManyCreateSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
@@ -105,7 +106,7 @@ class ProductClassesPlanManyCreate(APIView):
                 class_dict['sn'] = i
                 i += 1
                 class_list.append(class_dict)
-        s = ProductClassesPlanCreateSerializer(data=class_list, many=many, context={'request': request})
+        s = ProductClassesPlanManyCreateSerializer(data=class_list, many=many, context={'request': request})
         s.is_valid(raise_exception=True)
         s.save()
         return Response('新建成功')
