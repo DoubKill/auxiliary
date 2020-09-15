@@ -80,6 +80,27 @@ def one_instance(func):
     return f
 
 
+def plan_status_monitor(equip_no, plan_uid, product_no, oper):
+    ps = PlanStatus.objects.filter(equip_no=equip_no, product_no=product_no, plan_classes_uid=plan_uid).last()
+    if ps:
+        if ps.status == "已下达":
+            if "0" in equip_no:
+                en = equip_no[-1]
+            else:
+                en = equip_no[1:3]
+            model = getattr(md, "IfdownShengchanjihua"+en)
+            if model.objects.filter(recstatus="运行中"):
+                PlanStatus.objects.create(
+                    plan_classes_uid=plan_uid,
+                    product_no=product_no,
+                    equip_no=equip_no,
+                    operation_user=oper,
+                    product_time= datetime.datetime.now(),
+                    status="运行中"
+                )
+
+
+
 def main():
     # temp_list = dir(md)  # 原计划动态导入中间表，改为写死
     # 手动对中间表模型进行排序确保业务逻辑正确
@@ -95,8 +116,16 @@ def main():
             """设备状态表"""
             # 每次循环最后检测，补充修改设备状态
             for temp in temp_model_set:
+                if temp.运行状态 == 1:
+                    equip_status = "运行中"
+                elif temp.运行状态 == 2:
+                    equip_status = "停机"
+                elif temp.运行状态 == 3:
+                    equip_status = "故障"
+                else:
+                    equip_status = "unknown"
                 EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
-                                           equip_no=temp.机台号).update(status=temp.运行状态)
+                                           equip_no=temp.机台号).update(status=equip_status)
 
         elif m == "IfupReportBasis":
             """车次报表主信息"""
@@ -110,7 +139,9 @@ def main():
                     equip_no = "Z" + equip_no
                 product_no = temp.配方号  # 这里不确定是否一致
                 # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
-                pcp = ProductClassesPlan.objects.filter(plan_classes_uid=uid).first()
+                pcp = ProductClassesPlan.objects.filter(
+                    # plan_classes_uid=uid
+                ).first()
                 begin_time_str = temp.开始时间
                 end_time_str = temp.存盘时间
                 if len(begin_time_str) == 15:
@@ -127,6 +158,7 @@ def main():
                     end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                 else:
                     continue
+                plan_status_monitor(equip_no, uid, product_no, temp.员工代号)
                 adapt_data_trains = {
                     "plan_classes_uid": uid,
                     "plan_trains": pcp.plan_trains,
@@ -163,8 +195,10 @@ def main():
                     end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
                 else:
                     continue
-                current_trains = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号,
-                                                              机台号=temp.机台号).last().密炼车次
+                current_trains = IfupReportMix.objects.filter(
+                                                            计划号=uid,
+                                                            配方号=temp.配方号,
+                                                            机台号=temp.机台号).last().密炼车次
                 adapt_data = {
                     "plan_classes_uid": uid,
                     "equip_no": equip_no,  # 机台号可能需要根据规则格式化
@@ -215,66 +249,52 @@ def main():
                     "material_name": material_name,
                     "product_time": product_time
                 }
-                sync_data_list.append(**adapt_data)
+                sync_data_list.append(ExpendMaterial(**adapt_data))
             ExpendMaterial.objects.bulk_create(sync_data_list)
             IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
         else:
             # 该分支正常情况执行，若执行需告警
             logger.error("出现未知同步表，请立即检查")
-            pass
-        # except Exception as e:
-        #     logger.error(f"同步过程出现异常，参考异常:{e}，请及时修正")
-        # else:
-            # logger.info(f"{datetime.datetime.now()}|上行同步完成")
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
-        # 适配器模式作废，直接if elif搞
-        # 获取映射model
-        # 生成model对应data
-        # 进行更新
-        # temp_plan_no_list = temp_model.objects.filter(recstatus=2)
-        # temp_set = temp_model.objects.filter(recstatus="按照涉及改为中文的话这部分状态对应的字段需要改为字符类型")
-        # 获取映射model
-        # sync_model = sync_model_map.get(m)
-        # sync_data = {}
-        # sync_model, data = mid_model_map.get(m)
-        # sync_model.objects.create(**data)
     if temp:
-        plan_no = temp.计划号
-        product_no = temp.配方号
-        equip_str = str(temp.机台号)
-        if len(equip_str) == 1:
-            equip_no = "Z0" + equip_str
-        else:
-            equip_no = "Z" + equip_str
-        product_time = temp.存盘时间
-        actual_trains = temp.车次号
-        plan_trains = pcp.plan_trains
-        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                      'IfdownRecipeCb', 'IfdownPmtRecipe']
-        if actual_trains < plan_trains:
-            status = "运行中"
-            model_name = getattr(md, model_list[0] + equip_str)
-            instance = model_name.objects.all().first()
-            if instance:
-                if instance.recstatus == "停止":
-                    status = "停止"
-        # elif: 这里预留一个分支判断，当满足时可能计划被删除
-        else:
-            status = "已完成"
-            for model_str in model_list:
-                model_name = getattr(md, model_str + equip_str)
-                model_name.objects.all().update(recstatus='完成')
-        operation_user = temp.员工代号
-        if not operation_user:
-            operation_user = ""
-        PlanStatus.objects.create(plan_classes_uid=plan_no,
-                                       product_no=product_no,
-                                       equip_no=equip_no,
-                                       operation_user=operation_user,
-                                       product_time=product_time,
-                                       status=status
-                                       )
+        if temp.__name__ == "IfupReportBasis":
+            plan_no = temp.计划号
+            product_no = temp.配方号
+            equip_str = str(temp.机台号)
+            if len(equip_str) == 1:
+                equip_no = "Z0" + equip_str
+            else:
+                equip_no = "Z" + equip_str
+            product_time = temp.存盘时间
+            actual_trains = temp.车次号
+            plan_trains = pcp.plan_trains
+            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix',
+                          # 'IfdownRecipePloy', 'IfdownRecipeOil1','IfdownRecipeCb',
+                          'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+            if actual_trains < plan_trains:
+                status = "运行中"
+                model_name = getattr(md, model_list[0] + equip_str)
+                instance = model_name.objects.all().first()
+                if instance:
+                    if instance.recstatus == "停止":
+                        status = "停止"
+            # elif: 这里预留一个分支判断，当满足时可能计划被删除
+            else:
+                status = "已完成"
+                for model_str in model_list:
+                    model_name = getattr(md, model_str + equip_str)
+                    model_name.objects.all().update(recstatus='完成')
+            operation_user = temp.员工代号
+            if not operation_user:
+                operation_user = ""
+            PlanStatus.objects.create(plan_classes_uid=plan_no,
+                                           product_no=product_no,
+                                           equip_no=equip_no,
+                                           operation_user=operation_user,
+                                           product_time=product_time,
+                                           status=status
+                                           )
     # MesUpClient.update()
 
 
@@ -291,80 +311,4 @@ if __name__ == "__main__":
     # 什么时候写入车次反馈数据什么时候回写入批次反馈数据，跟万隆对接只有车次数据
     # ifup上行中间表是在每车完成同步插入数据的吗, 理论上来说对于万隆应该是个双写的逻辑
     run()
-
-    sync_model_map = {
-        "IfupMachineStatus": EquipStatus,
-        "IfupReportBasis": (),
-        "IfupReportCurve": (),
-        "IfupReportMix": (),
-        "IfupReportWeight": (),
-    }
-    field_map = {
-
-        "IfupMachineStatus": {
-            "计划号": "plan_classes_uid",
-            "配方号": "",
-            "运行状态": "status",
-            "机台号": "equip_no",
-        },
-
-        "IfupReportBasis": {
-            "车次号": "",
-            "开始时间": "start_time",  # 格式 2020/4/15 16:08,
-            "消耗时间": "",
-            "间隔时间": "",
-            "排胶温度": "temperature",
-            "排胶功率": "power",
-            "排胶能量": "energy",
-            "作业方式": "",
-            "控制方式": "",
-            "员工代号": "operation_user",
-            "总重量": "",
-            "胶料重量": "actual_weight",
-            "炭黑重量": "",
-            "油1重量": "",
-            "油2重量": "",
-            "加胶时间": "",
-            "加炭黑时间": "",
-            "加油1时间": "",
-            "加油2时间": "",
-        },
-
-        "IfupReportCurve": {
-            "温度": "temperature",
-            "能量": "energy",
-            "功率": "power",
-            "压力": "pressure",
-            "转速": "rpm",
-        },
-
-        "IfupReportMix": {
-            "步骤号": "",
-            "条件": "",
-            "时间": "",
-            "温度": "temperature",
-            "能量": "energy",
-            "功率": "power",
-            "压力": "pressure",
-            "转速": "rpm",
-            "动作": "",
-            "密炼车次": "",
-            "计划号": "plan_classes_uid",
-            "配方号": "",
-            "机台号": "equip_no",
-        },
-
-        "IfupReportWeight": {
-            "车次号": "",
-            "物料名称": "",
-            "设定重量": "",
-            "实际重量": "",
-            "秤状态": "",
-            "计划号": "plan_classes_uid",
-            "配方号": "",
-            "机台号": "equip_no",
-            "物料编码": "",
-            "物料类型": "",
-            "存盘时间": "",
-        }
-    }
+    # 后续进程函数或者类封装

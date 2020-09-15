@@ -1,7 +1,8 @@
 from django.db import models
-from system.models import AbstractEntity
+
 from basics.models import Equip, PlanSchedule, ClassesDetail, WorkSchedulePlan
 from recipe.models import ProductBatching, Material
+from system.models import AbstractEntity
 
 
 # Create your models here.
@@ -26,7 +27,7 @@ class ProductClassesPlan(AbstractEntity):
     """胶料日班次计划表"""
     product_day_plan = models.ForeignKey(ProductDayPlan, on_delete=models.DO_NOTHING, help_text='胶料日计划id',
                                          verbose_name='胶料日计划id',
-                                         related_name='pdp_product_classes_plan')
+                                         related_name='pdp_product_classes_plan', null=True)
     sn = models.PositiveIntegerField(verbose_name='顺序', help_text='顺序')
     plan_trains = models.PositiveIntegerField(verbose_name='车次', help_text='车次')
     time = models.DecimalField(help_text='时间（分钟）', blank=True, null=True, decimal_places=2, max_digits=8)
@@ -38,13 +39,18 @@ class ProductClassesPlan(AbstractEntity):
     plan_classes_uid = models.CharField(verbose_name='班次计划唯一码', help_text='班次计划唯一码',
                                         max_length=64)
     note = models.CharField(max_length=64, help_text='备注', blank=True, null=True)
+    # equip = models.ForeignKey(Equip, on_delete=models.DO_NOTHING, help_text='机台id', verbose_name='机台id',
+    #                           related_name='equip_product_classes_plan')
+    # product_batching = models.ForeignKey(ProductBatching, on_delete=models.DO_NOTHING, help_text='配料id',
+    #                                      verbose_name='配料id',
+    #                                      related_name='pb_product_classes_plan')
 
     @property
     def total_time(self):
         return self.time * 60
 
     class Meta:
-        unique_together = (("product_day_plan", "plan_classes_uid"), )#("sn", "work_schedule_plan")
+        unique_together = (("product_day_plan", "plan_classes_uid"),)  # ("sn", "work_schedule_plan")
         db_table = 'product_classes_plan'
         verbose_name_plural = verbose_name = '胶料日班次计划'
 

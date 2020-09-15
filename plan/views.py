@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from itertools import groupby
+from operator import itemgetter
 
 from django.db.models import Max
 from django.db.transaction import atomic
@@ -17,10 +19,12 @@ from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService
 from mes.derorators import api_recorder
+from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
+    ProductClassesPlanManyCreateSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
@@ -77,6 +81,75 @@ class ProductDayPlanManyCreate(APIView):
         s.is_valid(raise_exception=True)
         s.save()
         return Response('新建成功')
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductClassesPlanManyCreate(APIView):
+    """胶料日班次计划群增接口"""
+
+    # permission_classes = (IsAuthenticated,)
+
+    @atomic()
+    def post(self, request, *args, **kwargs):
+        if isinstance(request.data, dict):
+            many = False
+        elif isinstance(request.data, list):
+            many = True
+        else:
+            return Response(data={'detail': '数据有误'}, status=400)
+
+        class_list = []
+        work_list = []
+        plan_list = []
+        equip_list = []
+        request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
+        for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
+            i = 1
+            for class_dict in items:
+                class_dict['sn'] = i
+                i += 1
+                class_list.append(class_dict)
+                work_list.append(class_dict['work_schedule_plan'])
+                plan_list.append(class_dict['plan_classes_uid'])
+                equip_list.append(class_dict['equip'])
+        # 举例说明：本来有四条 前端只传了三条 就会删掉多余的一条
+        pcp_set = ProductClassesPlan.objects.filter(work_schedule_plan_id__in=list(set(work_list)),
+                                                    equip_id__in=list(set(equip_list))).exclude(
+            plan_classes_uid__in=list(set(plan_list)))
+        for pcp_obj in pcp_set:
+            pcp_obj.delete_flag = True
+            pcp_obj.save()
+            PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
+            MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
+
+        s = ProductClassesPlanManyCreateSerializer(data=class_list, many=many, context={'request': request})
+        s.is_valid(raise_exception=True)
+        s.save()
+
+        return Response('新建成功')
+
+    @atomic()
+    def get(self, request, *args, **kwargs):
+        params = request.query_params
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=params.get('plan_classes_uid')).first()
+        if not pcp_obj:
+            return Response('没有对应的胶料日计划数据', status=200)
+        pcp_obj.delete_flag = True
+        pcp_obj.save()
+        PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
+        MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
+        return Response('删除成功', status=200)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductClassesPlanList(mixins.ListModelMixin, GenericViewSet):
+    """计划新增展示数据"""
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
+    serializer_class = ProductClassesPlanManyCreateSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SinglePageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = PalletFeedbacksFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -262,10 +335,10 @@ class IssuedPlan(APIView):
             "oper": self.request.user.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code": product_process.equip_code,
+            "equip_code": product_process.equip_code if product_process.equip_code else 0.0,  # 锁定解锁
             "reuse_time": product_process.reuse_time,
             "mini_time": product_process.mini_time,
-            "max_time": product_process.max_time,
+            "max_time": product_process.over_time,
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
@@ -341,13 +414,17 @@ class IssuedPlan(APIView):
                 "set_temp": int(ppd.temperature) if ppd.temperature else 0,
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
-                "act_code": ppd.action.code,
+                "act_code": ppd.action.action,
                 "set_pres": int(ppd.pressure) if ppd.pressure else 0,
                 "set_rota": ppd.rpm,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "recstatus": "等待",
+                "sn": ppd.sn
             }
             datas.append(data)
+        datas.sort(key=lambda x: x.get("sn"))
+        for x in datas:
+            x.pop("sn")
         return datas
 
     def _map_Shengchanjihua(self, params, pcp_obj):
@@ -362,7 +439,7 @@ class IssuedPlan(APIView):
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
-            'actno': params.get("actual_trains") if params.get("actual_trains") else 1,  # 当前车次
+            'actno': 0,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
             'state': '等待',  # 计划状态：等待，运行中，完成
             'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序

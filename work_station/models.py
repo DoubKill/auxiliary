@@ -24,7 +24,7 @@ class IfdownPmtRecipe1(models.Model):
     equip_code = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)  # 锁定/解锁
     reuse_time = models.IntegerField(blank=True, null=True)  # 回收时间
     mini_time = models.IntegerField(blank=True, null=True)   # 超温最短时间
-    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # 超温最长时间
+    max_time = models.IntegerField(db_column='Max_time', blank=True, null=True)  # 炼胶超时时间
     mini_temp = models.IntegerField(blank=True, null=True)   # 进胶最低温度
     max_temp = models.IntegerField(blank=True, null=True)    # 进胶最高温度
     over_temp = models.IntegerField(blank=True, null=True)   # 超温温度

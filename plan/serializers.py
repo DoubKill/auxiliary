@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 from django.db.transaction import atomic
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
 from basics.models import PlanSchedule, WorkSchedulePlan, Equip, GlobalCode
 from mes.base_serializer import BaseModelSerializer
@@ -12,6 +11,49 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, Pr
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
+
+
+class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
+    """胶料日班次计划序列化"""
+
+    classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
+    product_no = serializers.CharField(source='product_batching.stage_product_batch_no', read_only=True)
+    status = serializers.SerializerMethodField(read_only=True, help_text='计划状态')
+
+    def get_status(self, obj):
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
+        if plan_status:
+            return plan_status.status
+        else:
+            return None
+
+    class Meta:
+        model = ProductClassesPlan
+        exclude = ('product_day_plan',)
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    @atomic()
+    def create(self, validated_data):
+        plan_classes_uid = validated_data['plan_classes_uid']
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, delete_flag=False).first()
+        if not pcp_obj:
+            instance = super().create(validated_data)
+        else:
+            instance = super().update(pcp_obj, validated_data)
+            PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(delete_flag=True)
+            MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
+        # 创建计划状态
+        PlanStatus.objects.create(plan_classes_uid=instance.plan_classes_uid, equip_no=instance.equip.equip_no,
+                                  product_no=instance.product_batching.stage_product_batch_no,
+                                  status='等待', operation_user=self.context['request'].user.username)
+        # 创建原材料需求量
+        for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+            MaterialDemanded.objects.create(product_classes_plan=instance,
+                                            work_schedule_plan=instance.work_schedule_plan,
+                                            material=pbd_obj.material,
+                                            material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+                                            plan_classes_uid=instance.plan_classes_uid)
+        return instance
 
 
 class ProductClassesPlanCreateSerializer(BaseModelSerializer):
@@ -107,7 +149,7 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
     operation_user = serializers.SerializerMethodField(read_only=True, help_text='操作员')
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
-    day_time = serializers.DateField(source='product_day_plan.plan_schedule.day_time', read_only=True)
+    day_time = serializers.DateField(source='work_schedule_plan.plan_schedule.day_time', read_only=True)
     group = serializers.CharField(source='work_schedule_plan.group.global_name', read_only=True, help_text='班组')
     begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
@@ -268,7 +310,6 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             if not success_flag:
                 raise serializers.ValidationError("收皮机错误")
         except Exception as e:
-            print(e)
             raise serializers.ValidationError("收皮机连接超时")
 
     @atomic()
@@ -287,43 +328,43 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by(
             'created_date').last()
         if not tfb_obj:
-            raise serializers.ValidationError({'trains': "车次产出反馈没有数据"})
+            # raise serializers.ValidationError({'trains': "车次产出反馈没有数据"})
+            pass
         else:
             if validated_data.get('trains') - tfb_obj.actual_trains < 2:
                 raise serializers.ValidationError({'trains': "修改车次至少要比当前车次大于或等于2次"})
-            else:
-                trains = validated_data.get('trains')
-                instance.plan_trains = trains
-                instance.save()
+        trains = validated_data.get('trains')
+        instance.plan_trains = trains
+        instance.save()
 
-                equip_no = instance.product_day_plan.equip.equip_no
-                if "0" in equip_no:
-                    ext_str = equip_no[-1]
-                else:
-                    ext_str = equip_no[1:]
+        equip_no = instance.product_day_plan.equip.equip_no
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
 
-                from work_station import models as md
-                model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                              'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-                model_name = getattr(md, model_list[0] + ext_str)
-                instance = model_name.objects.filter().first()
-                if not instance:
-                    raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-                if instance.recstatus == "车次需更新":
-                    recstatus = "车次需更新"
-                elif instance.recstatus == "运行中":
-                    recstatus = "车次需更新"
-                elif instance.recstatus == "配方车次需更新":
-                    recstatus = "配方车次需更新"
-                elif instance.recstatus == '配方需重传':
-                    recstatus = "配方车次需更新"
-                else:
-                    raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
-                for model_str in model_list:
-                    model_name = getattr(md, model_str + ext_str)
-                    model_name.objects.all().update(recstatus=recstatus)
-                self.send_to_yikong(validated_data)
-                return instance
+        from work_station import models as md
+        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
+                      'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+        model_name = getattr(md, model_list[0] + ext_str)
+        instance = model_name.objects.filter().first()
+        if not instance:
+            raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
+        if instance.recstatus == "车次需更新":
+            recstatus = "车次需更新"
+        elif instance.recstatus == "运行中":
+            recstatus = "车次需更新"
+        elif instance.recstatus == "配方车次需更新":
+            recstatus = "配方车次需更新"
+        elif instance.recstatus == '配方需重传':
+            recstatus = "配方车次需更新"
+        else:
+            raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
+        for model_str in model_list:
+            model_name = getattr(md, model_str + ext_str)
+            model_name.objects.all().update(recstatus=recstatus)
+        self.send_to_yikong(validated_data)
+        return instance
 
 
 class ProductClassesPlanSerializer(BaseModelSerializer):
@@ -380,7 +421,6 @@ class PlanReceiveSerializer(BaseModelSerializer):
             detail['work_schedule_plan'] = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan_no)
             product_classes_list[i] = ProductClassesPlan(**detail)
         pcp_obj_list = ProductClassesPlan.objects.bulk_create(product_classes_list)
-        print(pcp_obj_list)
         for pcp_obj in pcp_obj_list:
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
                                       product_no=instance.product_batching.stage_product_batch_no,
