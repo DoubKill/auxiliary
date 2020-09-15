@@ -62,7 +62,7 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if ProductBatchingDetail.objects.filter(material=instance).exists():
-            raise ValidationError('该原材料已关联配方，无法删除')
+            raise ValidationError('该原材料已关联配方，无法停用')
         else:
             return super().destroy(request, *args, **kwargs)
 
@@ -183,12 +183,14 @@ class ProductBatchingViewSet(ModelViewSet):
 
     def get_queryset(self):
         if self.action == 'list':
-            return ProductBatching.objects.filter(delete_flag=False).order_by('-created_date').values(
+            return ProductBatching.objects.filter(delete_flag=False, used_type__in=(1, 2, 4)
+                                                  ).order_by('-created_date').values(
                 'id', 'stage_product_batch_no', 'product_info__product_name',
                 'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
                 'used_type', 'batching_weight', 'production_time_interval',
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
-                'created_date', 'created_user__username', 'batching_type', 'dev_type_id'
+                'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
+                'equip__category__category_name'
             )
         else:
             return self.queryset
@@ -283,7 +285,8 @@ class BatchingEquip(APIView):
             dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
-        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type).values_list('equip_id', flat=True))
+        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type, used_type__in=(1, 2, 4)).values_list('equip_id', flat=True))
         equip_data = Equip.objects.exclude(
-            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name')
+            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
+                                                                       'category__category_name')
         return Response(data={'results': equip_data})

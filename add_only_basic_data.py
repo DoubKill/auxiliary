@@ -12,7 +12,6 @@ import traceback
 import random
 import django
 
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
@@ -21,7 +20,7 @@ from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetai
 from recipe.models import Material, ProductInfo, BaseAction, BaseCondition
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from production.models import MaterialTankStatus
-
+from django.contrib.auth.models import Permission
 
 last_names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许',
               '何', '吕', '施', '张', '孔', '曹', '严', '华', '金', '魏', '陶', '姜', '戚', '谢', '邹', '喻', '柏', '水', '窦', '章',
@@ -98,7 +97,7 @@ def add_global_codes():
         elif i == 3:
             items = ['天然胶', '合成胶', '炭黑', '白色填料', '防老剂', '再生胶', '增塑剂', '粘合剂', '活化剂', '树脂', '硫化机',
                      '其他化工类', 'CMB', '待处料', 'FM', 'HMB', 'NF', 'RE', 'RFM', 'RMB', '1MB', '2MB', '3MB', '胎圈钢丝',
-                     '纤维帘丝', '钢丝类', '帘布', '钢丝帘线']
+                     '纤维帘丝', '钢丝类', '帘布', '钢丝帘线', '油料']
         elif i == 4:
             items = ['1MB', '2MB', 'FM']
         elif i == 5:
@@ -1164,7 +1163,7 @@ def add_schedules():
 
 
 def add_equip_attribute():
-    equip_type_ids = list(GlobalCode.objects.filter(global_type__type_name='设备类型').values_list('id', flat=True))
+    equip_type_ids = list(GlobalCode.objects.filter(global_name='密炼设备').values_list('id', flat=True))
     process_ids = list(GlobalCode.objects.filter(global_type__type_name='工序').values_list('id', flat=True))
     j = 1000
     cat_names = ['LB02', 'F370', 'E550', 'G320', 'MN01', 'LB01']
@@ -1186,14 +1185,14 @@ def add_equips():
     equip_level_ids = list(GlobalCode.objects.filter(global_type__type_name='设备层次').values_list('id', flat=True))
     attr_ids = list(EquipCategoryAttribute.objects.values_list('id', flat=True))
     data = [
-            ['Z01', '混炼机(1#)'], ['Z02', '混炼机(2#)'],
-            ['Z03', '终炼机(3#)'], ['Z04', '混炼机(4#)'],
-            ['Z05', '终炼机(5#)'], ['Z06', '混炼机(6#)'],
-            ['Z07', '终炼机(7#)'], ['Z08', '终炼机(8#)'],
-            ['Z09', '混炼机(9#)'], ['Z10', '混炼机(10#)'],
-            ['Z11', '混炼机(11#)'], ['Z12', '终炼机(12#)'],
-            ['Z13', '混炼机(13#)'], ['Z14', '终炼机(14#)'],
-            ['Z15', '混炼机(15#)']]
+        ['Z01', '混炼机(1#)'], ['Z02', '混炼机(2#)'],
+        ['Z03', '终炼机(3#)'], ['Z04', '混炼机(4#)'],
+        ['Z05', '终炼机(5#)'], ['Z06', '混炼机(6#)'],
+        ['Z07', '终炼机(7#)'], ['Z08', '终炼机(8#)'],
+        ['Z09', '混炼机(9#)'], ['Z10', '混炼机(10#)'],
+        ['Z11', '混炼机(11#)'], ['Z12', '终炼机(12#)'],
+        ['Z13', '混炼机(13#)'], ['Z14', '终炼机(14#)'],
+        ['Z15', '混炼机(15#)']]
 
     for item in data:
         try:
@@ -1376,7 +1375,7 @@ def add_tanks():
                 low_speed=2,
             )
         for i in range(1, 6):
-            m = materials[i+10]
+            m = materials[i + 10]
             MaterialTankStatus.objects.get_or_create(
                 equip_no=equip.equip_no,
                 tank_type='2',
@@ -1395,6 +1394,90 @@ def add_tanks():
             )
 
 
+def add_oil_material():
+    """油料原材料"""
+    t = GlobalCode.objects.get(global_name='油料')
+    data = [{'created_date': datetime.datetime(2020, 9, 9, 18, 25, 13, 205552),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 48, 58, 898137), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': 1, 'delete_user_id': None,
+             'material_no': '010208043', 'material_name': '环保油（VIVATEC 700）（宁波汗圣）（萨科汕）', 'for_short': '',
+             'material_type_id': 71, 'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 26, 18, 191336),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 26, 18, 191363), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208019', 'material_name': '环烷油（荆门）（中石化）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 27, 13, 561686),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 27, 13, 561711), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208032', 'material_name': '环烷油（辽河）（文洁）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True}, {'created_date': datetime.datetime(2020, 9, 9, 18, 28, 4, 57954),
+                                                       'last_updated_date': datetime.datetime(2020, 9, 9, 18, 28, 4,
+                                                                                              57980),
+                                                       'delete_date': None, 'delete_flag': False, 'created_user_id': 1,
+                                                       'last_updated_user_id': None, 'delete_user_id': None,
+                                                       'material_no': '010208050',
+                                                       'material_name': '环烷油TUDALEN3358（汉圣）', 'for_short': '',
+                                                       'material_type_id': 71, 'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 30, 37, 399622),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 30, 37, 399647), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208036', 'material_name': '高芳烃软化剂（安徽新源）（新浙）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 31, 17, 100428),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 45, 1, 69033), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': 1, 'delete_user_id': None,
+             'material_no': '010208018', 'material_name': '高芳烃软化剂（丰润）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 32, 12, 494942),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 32, 12, 494969), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208025', 'material_name': '高芳烃软化剂（兰州红叶）（中石化）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 32, 57, 929471),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 32, 57, 929497), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208014', 'material_name': '橡胶操作油（丰润）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 33, 30, 370639),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 33, 30, 370663), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208015', 'material_name': '橡胶操作油（中石化）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True}, {'created_date': datetime.datetime(2020, 9, 9, 18, 34, 0, 712974),
+                                                       'last_updated_date': datetime.datetime(2020, 9, 9, 18, 34, 0,
+                                                                                              712999),
+                                                       'delete_date': None, 'delete_flag': False, 'created_user_id': 1,
+                                                       'last_updated_user_id': None, 'delete_user_id': None,
+                                                       'material_no': '010208030', 'material_name': '橡胶操作油（文洁）',
+                                                       'for_short': '', 'material_type_id': 71, 'package_unit_id': 6,
+                                                       'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 34, 30, 941038),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 34, 30, 941100), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010208047', 'material_name': '橡胶操作油（润程）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 35, 15, 963680),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 46, 56, 93440), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': 1, 'delete_user_id': None,
+             'material_no': '010701315', 'material_name': '320中负荷齿轮油（常州）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True},
+            {'created_date': datetime.datetime(2020, 9, 9, 18, 36, 18, 729413),
+             'last_updated_date': datetime.datetime(2020, 9, 9, 18, 36, 18, 729442), 'delete_date': None,
+             'delete_flag': False, 'created_user_id': 1, 'last_updated_user_id': None, 'delete_user_id': None,
+             'material_no': '010701312', 'material_name': '320中负荷齿轮油（万事达）', 'for_short': '', 'material_type_id': 71,
+             'package_unit_id': 6, 'use_flag': True}, {'created_date': datetime.datetime(2020, 9, 9, 18, 38, 3, 187563),
+                                                       'last_updated_date': datetime.datetime(2020, 9, 9, 18, 46, 17,
+                                                                                              110487),
+                                                       'delete_date': None, 'delete_flag': False, 'created_user_id': 1,
+                                                       'last_updated_user_id': 1, 'delete_user_id': None,
+                                                       'material_no': '010701200', 'material_name': '320中负荷齿轮油（富阳富成）',
+                                                       'for_short': '', 'material_type_id': 71, 'package_unit_id': 6,
+                                                       'use_flag': True}]
+    for item in data:
+        item['material_type_id'] = t.id
+        Material.objects.create(**item)
+
+
 def add_system_config():
     SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
     ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
@@ -1403,7 +1486,13 @@ def add_system_config():
     ChildSystemInfo.objects.create(link_address="10.4.10.100", system_type="gz", system_name="收皮终端", status="联网")
 
 
+# 删除中间表权限
+def delete_permission():
+    Permission.objects.filter(name__contains='if').delete()
+
+
 if __name__ == '__main__':
+    delete_permission()  # 删除中间表的权限
     add_global_codes()
     print("global_codes is ok")
     add_materials()
@@ -1427,3 +1516,4 @@ if __name__ == '__main__':
     add_condition_action()
     add_tanks()
     add_system_config()
+    add_oil_material()

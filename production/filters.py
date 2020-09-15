@@ -1,4 +1,5 @@
 import django_filters
+
 from production.models import *
 
 
@@ -91,6 +92,5 @@ class MaterialStatisticsFilter(django_filters.rest_framework.FilterSet):
     masterial_type = django_filters.CharFilter(field_name='masterial_type', help_text='原材料类型')
 
     class Meta:
-
         model = ExpendMaterial
         fields = ('st', 'et', 'equip_no', 'product_no', 'masterial_type',)

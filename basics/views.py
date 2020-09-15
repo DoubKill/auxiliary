@@ -186,7 +186,9 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.filter(use_flag=1).values('id', 'equip_no', 'equip_name', 'category')
+            # 目前写死过滤密炼设备，后期如有更改则需前端修改参数
+            data = queryset.filter(use_flag=1, category__equip_type__global_name='密炼设备'
+                                   ).values('id', 'equip_no', 'equip_name', 'category__category_name')
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)

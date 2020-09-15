@@ -9,7 +9,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
 from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
-from recipe.models import ProductBatching
+from recipe.models import ProductBatching, Material
 from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     IfupReportCurveBackups
 from django.db.models import Sum, Max
@@ -171,11 +171,21 @@ class ProductionRecordSerializer(BaseModelSerializer):
 
 class MaterialTankStatusSerializer(BaseModelSerializer):
     """称量参数"""
+    material_name1 = serializers.SerializerMethodField(read_only=True, help_text='原材料名称')
+
+    def get_material_name1(self, obj):
+        tfb_obj = Material.objects.filter(material_no=obj.material_no).first()
+        if tfb_obj:
+            return tfb_obj.material_name
+        else:
+            return None
 
     class Meta:
         model = MaterialTankStatus
         fields = (
-            "id", "equip_no", "tank_type", "tank_name", "material_name", "low_value", "advance_value", "adjust_value",
+            "id", "material_name1", "material_no", "equip_no", "tank_type", "tank_name", "low_value",
+            "advance_value",
+            "adjust_value",
             "dot_time",
             "fast_speed",
             "low_speed", "use_flag")
