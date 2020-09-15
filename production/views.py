@@ -641,7 +641,7 @@ class EquipStatusPlanList(APIView):
         # 实际数据，根据设备机台号和班次分组，
         actual_data = TrainsFeedbacks.objects.filter(
             created_date__date=datetime.datetime.now().date()
-        ).values('equip_no', 'classes').annotate(actual_num=Sum('plan_trains'),
+        ).values('equip_no', 'classes').annotate(actual_num=Sum('actual_trains'),
                                                  ret=Max(Concat(F('equip_no'), Value(","),
                                                                 F('created_date'), Value(","),
                                                                 F('product_no'), output_field=CharField()
