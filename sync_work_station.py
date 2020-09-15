@@ -30,35 +30,35 @@ logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
 
 
-class MesUpClient(object):
-
-    UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
-    Client = requests.request
-    mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
-    API_DICT = {
-        "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
-        "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
-        "EquipStatus": "/api/v1/equip-status/",
-        "PlanStatus": "/api/v1/plan-status/"
-    }
-
-    @atomic
-    @classmethod
-    def update(cls):
-        sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
-        for model_name in cls.UP_TABLE_LIST:
-            temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
-            temp_id = temp.config_value
-            model = getattr(md, model_name)
-            model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
-            if model_set:
-                new_temp_id = model_set.last().id + 1
-            else:
-                new_temp_id = temp_id
-            temp.config_value = new_temp_id
-            ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
-            if ret.status_code <300:
-                temp.save()
+# class MesUpClient(object):
+#
+#     UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
+#     Client = requests.request
+#     mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
+#     API_DICT = {
+#         "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
+#         "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
+#         "EquipStatus": "/api/v1/equip-status/",
+#         "PlanStatus": "/api/v1/plan-status/"
+#     }
+#
+#     @atomic
+#     @classmethod
+#     def update(cls):
+#         sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
+#         for model_name in cls.UP_TABLE_LIST:
+#             temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
+#             temp_id = temp.config_value
+#             model = getattr(md, model_name)
+#             model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
+#             if model_set:
+#                 new_temp_id = model_set.last().id + 1
+#             else:
+#                 new_temp_id = temp_id
+#             temp.config_value = new_temp_id
+#             ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
+#             if ret.status_code <300:
+#                 temp.save()
 
 
 def one_instance(func):
