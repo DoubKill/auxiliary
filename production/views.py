@@ -15,9 +15,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin
+from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
+from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -42,6 +43,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
         创建车次/批次产出反馈
     """
     queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = TrainsFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -80,6 +82,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
             托盘产出反馈反馈
     """
     queryset = PalletFeedbacks.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = PalletFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -100,6 +103,7 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
     """
     queryset = EquipStatus.objects.filter(delete_flag=False)
     pagination_class = None
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = EquipStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -120,6 +124,7 @@ class PlanStatusViewSet(mixins.CreateModelMixin,
         创建计划状态变更
     """
     queryset = PlanStatus.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = PlanStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -140,6 +145,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         创建原材料消耗
     """
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ExpendMaterialSerializer
     filter_backends = [OrderingFilter]
@@ -186,7 +192,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
+        sql_str = f"""select equip_no, product_no, material_no, material_type, 
                             material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
                             from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
                 """
@@ -260,6 +266,8 @@ class QualityControlViewSet(mixins.CreateModelMixin,
 
 class PlanRealityViewSet(mixins.ListModelMixin,
                          GenericViewSet):
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -350,6 +358,8 @@ class PlanRealityViewSet(mixins.ListModelMixin,
 class ProductActualViewSet(mixins.ListModelMixin,
                            GenericViewSet):
     """密炼实绩"""
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -623,7 +633,7 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 
 class EquipStatusPlanList(APIView):
     """主页面展示"""
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, *args, **kwargs):
 
@@ -638,14 +648,19 @@ class EquipStatusPlanList(APIView):
         plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
                      for item in plan_data}
 
+        # 先按照计划uid分组，取出最大的一条实际数据
+        max_ids = TrainsFeedbacks.objects.filter(
+            created_date__date=datetime.datetime.now().date()
+        ).values('plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
+
         # 实际数据，根据设备机台号和班次分组，
         actual_data = TrainsFeedbacks.objects.filter(
-            created_date__date=datetime.datetime.now().date()
-        ).values('plan_classes_uid').annotate(actual_num=Sum('actual_trains'),
-                                              ret=Max(Concat(F('equip_no'), Value(","),
-                                                             F('created_date'), Value(","),
-                                                             F('product_no'), output_field=CharField()
-                                                             )))
+            id__in=max_ids).values('equip_no', 'classes').annotate(
+            actual_num=Sum('actual_trains'),
+            ret=Max(Concat(F('equip_no'), Value(","),
+                           F('created_date'), Value(","),
+                           F('product_no'), output_field=CharField()
+                           )))
         actual_data = {item['equip_no'] + item['classes']: item for item in actual_data}
 
         # 机台反馈数据
@@ -694,72 +709,54 @@ class EquipStatusPlanList(APIView):
 class EquipDetailedList(APIView):
     """主页面详情展示机"""
 
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
     def get(self, request, *args, **kwargs):
         params = self.request.query_params
         equip_no = params.get('equip_no')
-        air_list = f'''select
-       equip_status.equip_no,
-       equip_status.status,
-       product_batching.stage_product_batch_no as product_no,
-       equip_status.current_trains,
-       global_code.global_name                 as classes_name
-from equip_status
-         left join product_classes_plan
-                   on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and product_classes_plan.delete_flag=FALSE
-         left join product_day_plan on product_classes_plan.product_day_plan_id = product_day_plan.id
-         left join product_batching on product_day_plan.product_batching_id = product_batching.id
-         left join work_schedule_plan on product_classes_plan.work_schedule_plan_id = work_schedule_plan.id
-         left join global_code on work_schedule_plan.classes_id = global_code.id
-where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE
-order by equip_status.product_time desc
-limit 1;'''
+        product_no = params.get('product_no')
         ret_data = {}
-        cursor = connection.cursor()
-        cursor.execute(air_list)
-        equip_list = cursor.fetchall()
-        if not equip_list:
-            ret_data['equip_no'] = None
-            ret_data['status'] = None
-            ret_data['product_no'] = None
-            ret_data['current_trains'] = None
+        # 当前班次
+        tfb_obj = TrainsFeedbacks.objects.filter(equip_no=equip_no, product_no=product_no, delete_flag=False).order_by(
+            'created_date').last()
+        if not tfb_obj:
             ret_data['classes_name'] = None
             ret_data['product_list'] = []
             ret_data['status_list'] = []
         else:
-            equip_list = equip_list[0]
-            ret_data['equip_no'] = equip_list[0]
-            ret_data['status'] = equip_list[1]
-            ret_data['product_no'] = equip_list[2]
-            ret_data['current_trains'] = equip_list[3]
-            ret_data['classes_name'] = equip_list[4]
+            ret_data['classes_name'] = tfb_obj.classes
             ret_data['product_list'] = []
             ret_data['status_list'] = []
-        air_product_list = f'''select
-       product_batching.stage_product_batch_no,
-       SUM(distinct product_classes_plan.plan_trains) AS plan_num,
-       SUM(distinct trains_feedbacks.actual_trains)   AS actual_num
-from equip_status
-         left join product_classes_plan
-                   on equip_status.plan_classes_uid = product_classes_plan.plan_classes_uid and product_classes_plan.delete_flag = FALSE
-         left join product_day_plan on product_classes_plan.product_day_plan_id = product_day_plan.id
-         left join product_batching on product_day_plan.product_batching_id = product_batching.id
-         left JOIN trains_feedbacks
-                   ON trains_feedbacks.plan_classes_uid = product_classes_plan.plan_classes_uid and trains_feedbacks.delete_flag = FALSE
-where equip_status.equip_no = '{equip_no}'  and equip_status.delete_flag=FALSE and to_days(equip_status.created_date)=to_days(now())
-group by product_batching.stage_product_batch_no;'''
-        cursor = connection.cursor()
-        cursor.execute(air_product_list)
-        product_list = cursor.fetchall()
-        if not product_list:
-            ret_data['product_list'] = None
-        else:
-            for _ in product_list:
-                p_list = {}
-                p_list['product_no'] = _[0]
-                p_list['plan_num'] = _[1]
-                p_list['actual_num'] = _[2]
-                ret_data['product_list'].append(p_list)
 
+        # 当前机台当前班次计划车次
+        eq_uid_list = EquipStatus.objects.filter(equip_no=equip_no, delete_flag=False,
+                                                 created_date__date=datetime.datetime.now().date()
+                                                 ).values_list(
+            'plan_classes_uid')
+        pcp_plan = ProductClassesPlan.objects.filter(plan_classes_uid__in=eq_uid_list, delete_flag=False,
+                                                     work_schedule_plan__classes__global_name=ret_data[
+                                                         'classes_name']).values(
+            'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
+        for pcp_dict in pcp_plan:
+            product_dict = {}
+            product_dict['product_no'] = pcp_dict['product_day_plan__product_batching__stage_product_batch_no']
+            product_dict['sum_plan_trains'] = pcp_dict['sum_plan_trains']
+            ret_data['product_list'].append(product_dict)
+
+        # 当前机台当前班次实际车次
+        max_ids = TrainsFeedbacks.objects.filter(
+            equip_no=equip_no,
+            classes=ret_data['classes_name'],
+            created_date__date=datetime.datetime.now().date()
+        ).values('plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
+        actual_trains = TrainsFeedbacks.objects.filter(
+            id__in=max_ids).values('product_no').annotate(actual_trains=Sum('actual_trains'))
+        for product_dict in ret_data['product_list']:
+            for actual_trains_dict in actual_trains:
+                if product_dict['product_no'] == actual_trains_dict['product_no']:
+                    product_dict['actual_trains'] = actual_trains_dict['actual_trains']
+
+        # 机台状态统计
         air_status_list = f'''select
        equip_status.status,
        count(equip_status.status) as count_status
@@ -771,7 +768,7 @@ group by equip_status.status;
         cursor.execute(air_status_list)
         status_list = cursor.fetchall()
         if not status_list:
-            ret_data['status_list'] = None
+            ret_data['status_list'] = []
         else:
             for _ in status_list:
                 s_list = {}
@@ -857,6 +854,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
     queryset = TrainsFeedbacks.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         params = request.query_params
