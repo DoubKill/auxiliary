@@ -275,7 +275,7 @@ class StopPlan(APIView):
             return Response({'_': "计划状态变更没有数据"}, status=400)
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
-        ps_obj.status = '停止'
+        ps_obj.status = '待停止'
         ps_obj.save()
 
         # temp_data = {
@@ -298,7 +298,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        self.send_to_yikong()  # 发送数据给易控
+        # self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -568,7 +568,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        self.send_to_yikong(params, pcp_obj)
+        # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
@@ -619,7 +619,7 @@ class IssuedPlan(APIView):
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
         # ps_obj.save()
-        self.send_again_yikong(params, pcp_obj)
+        # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
 
 
