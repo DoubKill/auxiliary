@@ -172,6 +172,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def validate_stage_product_batch_no(self, value):
         if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", value):
             raise serializers.ValidationError(f"胶料编码的值{value}输入/长度不合规，请规范后重试")
+        return value
 
     @atomic()
     def create(self, validated_data):
