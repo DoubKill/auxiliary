@@ -442,12 +442,12 @@ class UpdatePassWord(APIView):
         old_password = params.get('old_password', None)
         new_password = params.get('new_password', None)
         if not old_password:
-            return Response({"old_password": "旧密码必传"}, status=200)
+            return Response({"old_password": "旧密码必传"}, status=400)
         if not new_password:
-            return Response({"new_password": "新密码必传"}, status=200)
+            return Response({"new_password": "新密码必传"}, status=400)
         is_right = request.user.check_password(old_password)
         if not is_right:
-            return Response({"old_password": "旧密码错误"}, status=200)
+            return Response({"old_password": "旧密码错误"}, status=400)
         request.user.set_password(new_password)
         request.user.save()
         return Response("密码修改成功", status=200)
