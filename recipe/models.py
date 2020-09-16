@@ -112,6 +112,12 @@ class ProductBatching(AbstractEntity):
                                                decimal_places=2, max_digits=8, default=0)
     volume = models.DecimalField(verbose_name='配料体积', help_text='配料体积', decimal_places=2, max_digits=8,
                                  blank=True, null=True)
+    submit_user = models.ForeignKey(User, help_text='提交人', blank=True, null=True,
+                                    on_delete=models.DO_NOTHING, related_name='submit_batching')
+    submit_time = models.DateTimeField(help_text='提交时间', blank=True, null=True)
+    reject_user = models.ForeignKey(User, help_text='驳回人', blank=True, null=True,
+                                    on_delete=models.DO_NOTHING, related_name='reject_batching')
+    reject_time = models.DateTimeField(help_text='驳回时间', blank=True, null=True)
     used_user = models.ForeignKey(User, help_text='启用人', blank=True, null=True,
                                   on_delete=models.DO_NOTHING, related_name='used_batching')
     used_time = models.DateTimeField(help_text='启用时间', verbose_name='启用时间', blank=True, null=True)
@@ -143,6 +149,11 @@ class ProductBatchingDetail(AbstractEntity):
         (1, '自动'),
         (2, '手动'),
     )
+    TYPE_CHOICE = (
+        (1, '胶料'),
+        (2, '炭黑'),
+        (3, '油料')
+    )
     product_batching = models.ForeignKey(ProductBatching, help_text='配料标准', on_delete=models.DO_NOTHING,
                                          related_name='batching_details')
     sn = models.PositiveIntegerField(verbose_name='序号', help_text='序号')
@@ -150,6 +161,7 @@ class ProductBatchingDetail(AbstractEntity):
     actual_weight = models.DecimalField(verbose_name='重量', help_text='重量', decimal_places=2, max_digits=8)
     standard_error = models.DecimalField(help_text='误差值范围', decimal_places=2, max_digits=8, default=0)
     auto_flag = models.PositiveSmallIntegerField(help_text='手动/自动', choices=AUTO_FLAG)
+    type = models.PositiveSmallIntegerField(help_text='类别', choices=TYPE_CHOICE, default=1)
 
     class Meta:
         db_table = 'product_batching_detail'

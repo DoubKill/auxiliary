@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import UpdateAPIView
+from rest_framework.generics import UpdateAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,11 +17,11 @@ from mes.paginations import SinglePageNumberPagination
 from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from recipe.models import ProductBatching
-from system.filters import UserFilter, GroupExtensionFilter
-from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
+from system.filters import UserFilter, GroupExtensionFilter, InterfaceOperationLogFilter
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
-    ChildSystemInfoSerializer
+    ChildSystemInfoSerializer, InterfaceOperationLogSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -451,3 +451,12 @@ class UpdatePassWord(APIView):
         request.user.set_password(new_password)
         request.user.save()
         return Response("密码修改成功", status=200)
+
+
+class InterfaceOperationLogView(ListAPIView):
+    """操作日志展示接口"""
+    permission_classes = (IsAuthenticated,)
+    queryset = InterfaceOperationLog.objects.all().order_by('-create_time')
+    serializer_class = InterfaceOperationLogSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = InterfaceOperationLogFilter

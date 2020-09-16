@@ -14,7 +14,7 @@ from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
-from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 
 
 class PermissionSerializer(BaseModelSerializer):
@@ -162,5 +162,14 @@ class ChildSystemInfoSerializer(BaseModelSerializer):
 
     class Meta:
         model = ChildSystemInfo
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class InterfaceOperationLogSerializer(BaseModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = InterfaceOperationLog
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
