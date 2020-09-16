@@ -364,7 +364,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus=recstatus)
-        # self.send_to_yikong(validated_data)
+        self.send_to_yikong(validated_data)
         return instance
 
 
