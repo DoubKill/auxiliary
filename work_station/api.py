@@ -34,6 +34,8 @@ class IssueWorkStation(object):
         将数据存入到中间表
         """
         plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
+        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
         if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
             self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data)
@@ -51,6 +53,8 @@ class IssueWorkStation(object):
         # model_data = [self.model(**_) for _ in self.data]
         # self.model.objects.bulk_create(model_data)
         plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
+        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
         if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
             self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data, many=True)
