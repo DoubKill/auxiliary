@@ -722,6 +722,7 @@ class EquipDetailedList(APIView):
                                                  ).values_list(
             'plan_classes_uid')
         pcp_plan = ProductClassesPlan.objects.filter(plan_classes_uid__in=eq_uid_list, delete_flag=False,
+                                                     created_date__date=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
             'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
