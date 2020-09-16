@@ -1,10 +1,11 @@
 import xlrd
 from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
@@ -16,12 +17,11 @@ from mes.paginations import SinglePageNumberPagination
 from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from recipe.models import ProductBatching
+from system.filters import UserFilter, GroupExtensionFilter
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
     ChildSystemInfoSerializer
-from django_filters.rest_framework import DjangoFilterBackend
-from system.filters import UserFilter, GroupExtensionFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -123,7 +123,8 @@ class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除
     destroy:
         删除角色
     """
-    queryset = GroupExtension.objects.filter(delete_flag=False).order_by('-created_date').prefetch_related('user_set', 'permissions')
+    queryset = GroupExtension.objects.filter(delete_flag=False).order_by('-created_date').prefetch_related('user_set',
+                                                                                                           'permissions')
     serializer_class = GroupExtensionSerializer
     model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticated,
@@ -370,9 +371,6 @@ class SystemStatusSwitch(APIView):
         return Response("ok")
 
 
-from django.db.models import Q
-
-
 class Synchronization(APIView):
     """mes和上辅机同步接口"""
 
@@ -434,3 +432,22 @@ class Synchronization(APIView):
                     auxliary_list.append(pb_dict)
         return Response({'Upper auxiliary machine group control system': auxliary_list}, status=200)
 """
+
+
+class UpdatePassWord(APIView):
+    """修改密码接口"""
+    permission_classes = (IsAuthenticated,)
+    def post(self, request):
+        params = request.data
+        old_password = params.get('old_password', None)
+        new_password = params.get('new_password', None)
+        if not old_password:
+            return Response({"old_password": "旧密码必传"}, status=200)
+        if not new_password:
+            return Response({"new_password": "新密码必传"}, status=200)
+        is_right = request.user.check_password(old_password)
+        if not is_right:
+            return Response({"old_password": "旧密码错误"}, status=200)
+        request.user.set_password(new_password)
+        request.user.save()
+        return Response("密码修改成功", status=200)

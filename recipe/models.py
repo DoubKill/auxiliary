@@ -175,7 +175,7 @@ class ProductProcess(AbstractEntity):
     equip_code = models.PositiveIntegerField(help_text='锁定/解除', default=0)
     reuse_time = models.PositiveIntegerField(help_text='回收时间', default=0)
     mini_time = models.PositiveIntegerField(help_text='超温最短时间', default=0)
-    max_time = models.PositiveIntegerField(help_text='超温最长时间', default=0)
+    max_time = models.PositiveIntegerField(help_text='超温最长时间', default=0) # 该字段并未实际使用
     mini_temp = models.PositiveIntegerField(help_text='进胶最低温度', default=0)
     max_temp = models.PositiveIntegerField(help_text='进胶最高温度', default=0)
     over_time = models.PositiveIntegerField(help_text='炼胶超时时间', default=0)

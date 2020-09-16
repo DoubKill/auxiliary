@@ -5,7 +5,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
-    CurveInformationList, MaterialStatisticsViewSet, TrainsFeedbacksAPIView, MaterialExport
+    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport
 
 router = DefaultRouter()
 
