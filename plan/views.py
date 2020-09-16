@@ -494,11 +494,9 @@ class IssuedPlan(APIView):
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
         IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_update_to_db()
-        # 重传逻辑只修改计划状态
-        Shengchanjihua = {
-            'id': params.get("id"),  # id
-            'recstatus': '配方需重传',  # 等待， 运行中， 完成
-        }
+
+        Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
+        Shengchanjihua.update(recstatus='配方需重传')
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
     def send_to_yikong(self, params, pcp_obj):
