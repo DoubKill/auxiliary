@@ -482,10 +482,10 @@ class IssuedPlan(APIView):
     def _sync_update(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).update_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).update_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh, ext_str).batch_update_to_db()
         # RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_update_to_db()
         # RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
@@ -493,13 +493,13 @@ class IssuedPlan(APIView):
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_update_to_db()
         # 重传逻辑只修改计划状态
         Shengchanjihua = {
             'id': params.get("id"),  # id
             'recstatus': '配方需重传',  # 等待， 运行中， 完成
         }
-        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).update_to_db()
+        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
     def send_to_yikong(self, params, pcp_obj):
         # 计划下达到易控组态
