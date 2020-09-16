@@ -198,6 +198,7 @@ class DataChangeLog(models.Model):
     src_table_name = models.CharField(max_length=30, help_text='表名')
     method = models.PositiveIntegerField(choices=METHOD_CHOICE, default=1)
     content = models.TextField(help_text='变更后的内容')
+    user = models.ForeignKey(User, help_text='操作用户', blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'data_change_log'
@@ -213,7 +214,7 @@ class InterfaceOperationLog(models.Model):
     create_time = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
     method = models.CharField(help_text='请求方法', max_length=10)
     content = models.TextField(help_text='请求内容', blank=True, null=True)
-    username = models.CharField(help_text='用户名', max_length=64, blank=True, null=True)
+    user = models.ForeignKey(User, help_text='操作用户', blank=True, null=True, on_delete=models.CASCADE)
     url = models.CharField(help_text='请求路径', max_length=64, blank=True, null=True)
     results = models.PositiveIntegerField(help_text='结果', choices=RESULT_CHOICE, default=1)
     reasons = models.TextField(help_text='原因', max_length=64, blank=True, null=True)

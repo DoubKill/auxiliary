@@ -19,7 +19,8 @@ path_dict = {
     '/api/v1/plan/down-regulation/': '上调计划',
     '/api/v1/plan/update-trains/': '修改车次',
     '/api/v1/plan/issued-plan/': '计划下达',
-    '/api/v1/plan/stop-plan/': '计划停止'
+    '/api/v1/plan/stop-plan/': '计划停止',
+    'api/v1/plan/product-day-plan-manycreate/': '计划'
 }
 
 method_dict = {
@@ -69,7 +70,7 @@ def api_recorder(func):
                         operation=method_dict[method] + path_dict[path]
                     )
         except Exception:
-            pass
+            error_log.error(traceback.format_exc())
 
         try:
             resp = func(request, *args, **kwargs)
@@ -88,6 +89,6 @@ def api_recorder(func):
                                                                          request.path, round(finish - start, 3),
                                                                          value))))
             if log_instance:
-                log_instance.username = request.user.username if request.user else None
+                log_instance.user = request.user if request.user else None
                 log_instance.save()
     return inner

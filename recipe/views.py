@@ -184,14 +184,15 @@ class ProductBatchingViewSet(ModelViewSet):
 
     def get_queryset(self):
         if self.action == 'list':
-            return ProductBatching.objects.filter(delete_flag=False, used_type__in=(1, 2, 4)
-                                                  ).order_by('-created_date').values(
+            return ProductBatching.objects.exclude(
+                used_type=6).filter(delete_flag=False).order_by('-created_date').values(
                 'id', 'stage_product_batch_no', 'product_info__product_name',
                 'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
                 'used_type', 'batching_weight', 'production_time_interval',
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
-                'equip__category__category_name'
+                'equip__category__category_name', 'submit_user__username', 'reject_user__username',
+                'used_user__username', 'obsolete_user__username'
             )
         else:
             return self.queryset
