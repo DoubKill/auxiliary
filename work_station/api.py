@@ -22,6 +22,7 @@ class IssueWorkStation(object):
         self.model_name = model_name
         self.data = data
         self.ext_str = ext_str
+        self.plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
 
     @property
     def model_serializer(self):
@@ -33,10 +34,9 @@ class IssueWorkStation(object):
         对接万隆中间表
         将数据存入到中间表
         """
-        plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
-        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+        if self.plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
             raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
-        if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
+        if self.plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
             self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data)
         serializer.is_valid()
@@ -52,10 +52,9 @@ class IssueWorkStation(object):
         """
         # model_data = [self.model(**_) for _ in self.data]
         # self.model.objects.bulk_create(model_data)
-        plan_model = getattr(md, "IfdownShengchanjihua" + self.ext_str)
-        if plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
+        if self.plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
             raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
-        if plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
+        if self.plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
             self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data, many=True)
         serializer.is_valid()
@@ -68,6 +67,8 @@ class IssueWorkStation(object):
         """
         对接中间表用于修改数据
         """
+        if self.plan_model.objects.filter(recstatus__in=["等待"]).exists():
+            raise ValidationError("等待状态中的计划，无法修改工作站车次")
         id = self.data.get("id")
         recstatus = self.data.get("recstatus")
         instance = self.model.objects.filter(id=id).first()
@@ -83,7 +84,7 @@ class IssueWorkStation(object):
             elif instance.recstatus == '配方需重传':
                 self.data["recstatus"] = "配方车次需更新"
             else:
-                raise ValidationError("等待状态中的计划，无法修改工作站车次")
+                self.data["recstatus"] = '配方需重传'
         else:
             if instance.recstatus == "车次需更新":
                 self.data["recstatus"] = "配方车次需更新"
@@ -94,8 +95,9 @@ class IssueWorkStation(object):
             elif instance.recstatus == '配方需重传':
                 self.data["recstatus"] = '配方需重传'
             else:
-                raise ValidationError("等待状态中的计划，无法重传配方")
-        serializer = self.model_serializer(instance, data=self.data, partial="partial")
+                self.data["recstatus"] = '配方需重传'
+        self.model.objects.filter().delete()
+        serializer = self.model_serializer(data=self.data, many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -103,6 +105,8 @@ class IssueWorkStation(object):
         """
         批量更新中间表数据
         """
+        if self.plan_model.objects.filter(recstatus__in=["等待"]).exists():
+            raise ValidationError("等待状态中的计划，无法修改工作站车次")
         for _ in self.data:
             id = _.get("id")
             instance = self.model.objects.filter(id=id).first()
@@ -116,10 +120,11 @@ class IssueWorkStation(object):
                 elif instance.recstatus == "配方车次需更新":
                     _["recstatus"] = "配方车次需更新"
                 else:
-                    raise ValidationError("异常接收状态,仅运行中状态允许重传")
-            serializer = self.model_serializer(instance, _, partial="partial")
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+                    _["recstatus"] = "配方需重传"
+        self.model.objects.filter().delete()
+        serializer = self.model_serializer(data=self.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
     def issue_to_interface(self):
         """对接api"""
