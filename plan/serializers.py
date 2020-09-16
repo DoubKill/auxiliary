@@ -37,6 +37,7 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
+        print(validated_data)
         plan_classes_uid = validated_data['plan_classes_uid']
         pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, delete_flag=False).first()
         if not pcp_obj:
