@@ -102,7 +102,7 @@ def add_global_codes():
                      '其他化工类', 'CMB', '待处料', 'FM', 'HMB', 'NF', 'RE', 'RFM', 'RMB', '1MB', '2MB', '3MB', '胎圈钢丝',
                      '纤维帘丝', '钢丝类', '帘布', '钢丝帘线']
         elif i == 4:
-            items = ['1MB', '2MB', 'FM']
+            items = ['FM', 'HMB', 'NF', 'RE', 'RFM', 'RMB', '1MB', '2MB', '3MB']
         elif i == 5:
             items = ["a班", "b班", "c班"]
         elif i == 6:
