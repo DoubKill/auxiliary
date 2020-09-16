@@ -298,7 +298,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        self.send_to_yikong()  # 发送数据给易控
+        # self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -342,7 +342,7 @@ class IssuedPlan(APIView):
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
-            "if_not": 0 if product_process.reuse_flag else -1,
+            "if_not": -1 if product_process.reuse_flag else 0,
             "temp_zz": product_process.zz_temp,
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
@@ -422,8 +422,12 @@ class IssuedPlan(APIView):
                 "sn": ppd.sn
             }
             datas.append(data)
+        id_list = [x.get("id") for x in datas]
+        id_list.sort()
         datas.sort(key=lambda x: x.get("sn"))
         for x in datas:
+            index = datas.index(x)
+            x["id"] = id_list[index]
             x.pop("sn")
         return datas
 
@@ -442,7 +446,7 @@ class IssuedPlan(APIView):
             'actno': 0,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
             'state': '等待',  # 计划状态：等待，运行中，完成
-            'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
+            'remark': '0',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
             'recstatus': '等待',  # 等待， 运行中， 完成
         }
         return data
@@ -568,7 +572,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        self.send_to_yikong(params, pcp_obj)
+        # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
@@ -619,7 +623,7 @@ class IssuedPlan(APIView):
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
         # ps_obj.save()
-        self.send_again_yikong(params, pcp_obj)
+        # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
 
 
