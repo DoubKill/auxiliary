@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 import logging
 
@@ -168,11 +167,6 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                 stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
         return attrs
-
-    def validate_stage_product_batch_no(self, value):
-        if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", value):
-            raise serializers.ValidationError(f"胶料编码的值{value}输入/长度不合规，请规范后重试")
-        return value
 
     @atomic()
     def create(self, validated_data):
