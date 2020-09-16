@@ -97,7 +97,7 @@ class IssueWorkStation(object):
             else:
                 self.data["recstatus"] = '配方需重传'
         self.model.objects.filter().delete()
-        serializer = self.model_serializer(data=self.data, many=True)
+        serializer = self.model_serializer(data=self.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
