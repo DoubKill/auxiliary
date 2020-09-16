@@ -422,8 +422,12 @@ class IssuedPlan(APIView):
                 "sn": ppd.sn
             }
             datas.append(data)
+        id_list = [x.get("id") for x in datas]
+        id_list.sort()
         datas.sort(key=lambda x: x.get("sn"))
         for x in datas:
+            index = datas.index(x)
+            x["id"] = id_list[index]
             x.pop("sn")
         return datas
 
