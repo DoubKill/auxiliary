@@ -638,19 +638,14 @@ class EquipStatusPlanList(APIView):
         plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
                      for item in plan_data}
 
-        # 先按照计划uid分组，取出最大的一条实际数据
-        max_ids = TrainsFeedbacks.objects.filter(
-            created_date__date=datetime.datetime.now().date()
-        ).values('plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
-
         # 实际数据，根据设备机台号和班次分组，
         actual_data = TrainsFeedbacks.objects.filter(
-            id__in=max_ids).values('equip_no', 'classes').annotate(
-            actual_num=Sum('actual_trains'),
-            ret=Max(Concat(F('equip_no'), Value(","),
-                           F('created_date'), Value(","),
-                           F('product_no'), output_field=CharField()
-                           )))
+            created_date__date=datetime.datetime.now().date()
+        ).values('plan_classes_uid').annotate(actual_num=Sum('actual_trains'),
+                                              ret=Max(Concat(F('equip_no'), Value(","),
+                                                             F('created_date'), Value(","),
+                                                             F('product_no'), output_field=CharField()
+                                                             )))
         actual_data = {item['equip_no'] + item['classes']: item for item in actual_data}
 
         # 机台反馈数据
