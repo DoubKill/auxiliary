@@ -9,16 +9,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin, return_permission_params
+from mes.common_code import CommonDeleteMixin
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -266,7 +265,6 @@ class QualityControlViewSet(mixins.CreateModelMixin,
 
 class PlanRealityViewSet(mixins.ListModelMixin,
                          GenericViewSet):
-
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
@@ -734,6 +732,7 @@ class EquipDetailedList(APIView):
                                                  ).values_list(
             'plan_classes_uid')
         pcp_plan = ProductClassesPlan.objects.filter(plan_classes_uid__in=eq_uid_list, delete_flag=False,
+                                                     created_date__date=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
             'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
@@ -842,7 +841,8 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
             irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
                                                       plan_classes_uid=tfb_obk.plan_classes_uid,
-                                                      current_trains=tfb_obk.actual_trains)
+                                                      product_time__gte=tfb_obk.begin_time,
+                                                      product_time__lte=tfb_obk.end_time).order_by('created_date')
         except:
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
