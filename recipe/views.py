@@ -195,7 +195,8 @@ class ProductBatchingViewSet(ModelViewSet):
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
-                'used_user__username', 'obsolete_user__username'
+                'used_user__username', 'obsolete_user__username',
+                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id'
             )
         else:
             return self.queryset
