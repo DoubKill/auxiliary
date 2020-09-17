@@ -30,6 +30,7 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
         else:
             return None
 
+
     class Meta:
         model = ProductClassesPlan
         exclude = ('product_day_plan',)
