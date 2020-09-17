@@ -842,7 +842,8 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
             irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
                                                       plan_classes_uid=tfb_obk.plan_classes_uid,
-                                                      current_trains=tfb_obk.actual_trains)
+                                                      product_time__gte=tfb_obk.begin_time,
+                                                      product_time__lte=tfb_obk.end_time).order_by('-product_time')
         except:
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
