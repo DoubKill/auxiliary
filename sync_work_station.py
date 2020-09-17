@@ -111,14 +111,16 @@ def add_plan_status(obj, status):
         model = getattr(md, "IfdownShengchanjihua" + en)
         if model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid):
             instance = model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid).last()
-            PlanStatus.objects.create(
-                plan_classes_uid=plan_uid,
-                product_no=product_no,
-                equip_no=equip_no,
-                status=status,
-                operation_user=instance.oper,
-                product_time=datetime.datetime.now(),
-            )
+            if not PlanStatus.objects.filter(plan_classes_uid=plan_uid, product_no=product_no,
+                                         equip_no=equip_no, status=status,).exists():
+                PlanStatus.objects.create(
+                    plan_classes_uid=plan_uid,
+                    product_no=product_no,
+                    equip_no=equip_no,
+                    status=status,
+                    operation_user=instance.oper,
+                    product_time=datetime.datetime.now(),
+                )
 
 def plan_status_monitor():
     """计划状态监听"""
