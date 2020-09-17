@@ -348,6 +348,7 @@ class IssuedPlan(APIView):
             "temp_cb": product_process.cb_temp,
             "tempuse": 0 if product_process.temp_use_flag else 1, #三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
             "usenot": 0 if product_batching.used_type == 4 else 1, #配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
+            "recstatus": "等待",
         }
         return data
 
