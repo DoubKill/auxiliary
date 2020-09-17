@@ -99,14 +99,38 @@ def update_plan_status(obj, status1, status2):
                 status=status1
             ).update(status=status2)
 
+def add_plan_status(obj, status):
+    if obj:
+        equip_no = obj.equip_no
+        product_no = obj.product_no
+        plan_uid = obj.plan_classes_uid
+        if "0" in equip_no:
+            en = equip_no[-1]
+        else:
+            en = equip_no[1:3]
+        model = getattr(md, "IfdownShengchanjihua" + en)
+        if model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid):
+            instance = model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid).last()
+            PlanStatus.objects.create(
+                plan_classes_uid=plan_uid,
+                product_no=product_no,
+                equip_no=equip_no,
+                status=status,
+                operation_user=instance.oper,
+                product_time=datetime.datetime.now(),
+            )
+
 def plan_status_monitor():
     """计划状态监听"""
     ps = PlanStatus.objects.filter(status="已下达").last()
     ps_stop = PlanStatus.objects.filter(status="待停止").last()
+    ps_complete = PlanStatus.objects.filter(status="运行中").last()
     if ps:
         update_plan_status(ps, '已下达', '运行中')
     if ps_stop:
         update_plan_status(ps_stop, '待停止', '停止')
+    if ps_complete:
+        add_plan_status(ps_stop, '完成')
 
 
 
