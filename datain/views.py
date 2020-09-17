@@ -19,25 +19,11 @@ class GlobalCodeReceive(CreateAPIView):
     serializer_class = GlobalCodeReceiveSerializer
     queryset = GlobalCode.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
 
 @method_decorator([api_recorder], name="dispatch")
 class WorkScheduleReceive(CreateAPIView):
     serializer_class = WorkScheduleReceiveSerializer
     queryset = GlobalCode.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -45,25 +31,11 @@ class ClassesDetailReceive(CreateAPIView):
     serializer_class = ClassesDetailReceiveSerializer
     queryset = GlobalCode.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
 
 @method_decorator([api_recorder], name="dispatch")
 class EquipCategoryAttributeReceive(CreateAPIView):
     serializer_class = EquipCategoryAttributeSerializer
     queryset = GlobalCode.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -71,25 +43,11 @@ class EquipReceive(CreateAPIView):
     serializer_class = EquipSerializer
     queryset = GlobalCode.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
 
 @method_decorator([api_recorder], name="dispatch")
 class PlanScheduleReceive(CreateAPIView):
     serializer_class = PlanScheduleSerializer
     queryset = GlobalCode.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -97,18 +55,12 @@ class WorkSchedulePlanReceive(CreateAPIView):
     serializer_class = WorkSchedulePlanSerializer
     queryset = GlobalCode.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
 
 @method_decorator([api_recorder], name="dispatch")
 class MaterialReceive(CreateAPIView):
     serializer_class = MaterialSerializer
     queryset = GlobalCode.objects.all()
+
 
 @method_decorator([api_recorder], name="dispatch")
 class GlobalCodeTypeReceive(CreateAPIView):
