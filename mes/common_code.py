@@ -1,4 +1,5 @@
 import logging
+import re
 
 import requests
 from rest_framework import status, mixins
@@ -131,3 +132,10 @@ class WebService(object):
                 </s:Envelope>""".format(category, ''.join(xml), category)
         res = res.encode("utf-8")
         return res
+
+
+def common_validator(**kwargs):
+    # 通用校验器，用于校验外部入参
+    for k,v in kwargs.items():
+        if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", v):
+            raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")

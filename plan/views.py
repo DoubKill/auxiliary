@@ -293,7 +293,7 @@ class StopPlan(APIView):
         for model_str in model_list:
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
-        self.send_to_yikong()  # 发送数据给易控
+        # self.send_to_yikong()  # 发送数据给易控
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -337,13 +337,12 @@ class IssuedPlan(APIView):
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
-            "if_not": 0 if product_process.reuse_flag else -1,
+            "if_not": 0 if product_process.reuse_flag else -1,  #是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
             "temp_zz": product_process.zz_temp,
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
-            "tempuse": 1 if product_process.temp_use_flag else 0,
-            "usenot": 0 if product_batching.used_type == 4 else 1,
-            "recstatus": "等待",
+            "tempuse": 0 if product_process.temp_use_flag else 1, #三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
+            "usenot": 0 if product_batching.used_type == 4 else 1, #配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
         }
         return data
 
@@ -417,8 +416,12 @@ class IssuedPlan(APIView):
                 "sn": ppd.sn
             }
             datas.append(data)
+        id_list = [x.get("id") for x in datas]
+        id_list.sort()
         datas.sort(key=lambda x: x.get("sn"))
         for x in datas:
+            index = datas.index(x)
+            x["id"] = id_list[index]
             x.pop("sn")
         return datas
 
@@ -437,7 +440,7 @@ class IssuedPlan(APIView):
             'actno': 0,  # 当前车次
             'oper': self.request.user.username,  # 操作员角色
             'state': '等待',  # 计划状态：等待，运行中，完成
-            'remark': '1',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
+            'remark': '0',  # 计划单条下发默认值为1      c 创建,  u 更新 ,  d 删除 / 在炭黑表里表示增删改  计划表里用于标注批量计划的顺序
             'recstatus': '等待',  # 等待， 运行中， 完成
         }
         return data
@@ -473,10 +476,10 @@ class IssuedPlan(APIView):
     def _sync_update(self, args, params=None, ext_str=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
-        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe).update_to_db()
+        IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).update_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
-        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh).batch_update_to_db()
+        IssueWorkStation('IfdownRecipeWeigh' + ext_str, RecipeWeigh, ext_str).batch_update_to_db()
         # RecipeCb = self._map_RecipeCb(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipeCb' + ext_str, RecipeCb).batch_update_to_db()
         # RecipeOil1 = self._map_RecipeOil1(product_batching, product_batching_details)
@@ -484,13 +487,11 @@ class IssuedPlan(APIView):
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
         RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
-        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix).batch_update_to_db()
-        # 重传逻辑只修改计划状态
-        Shengchanjihua = {
-            'id': params.get("id"),  # id
-            'recstatus': '配方需重传',  # 等待， 运行中， 完成
-        }
-        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua).update_to_db()
+        IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_update_to_db()
+
+        Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
+        Shengchanjihua.update(recstatus='配方需重传')
+        IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
     def send_to_yikong(self, params, pcp_obj):
         # 计划下达到易控组态
@@ -563,7 +564,7 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        self.send_to_yikong(params, pcp_obj)
+        # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
@@ -614,7 +615,7 @@ class IssuedPlan(APIView):
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
         # ps_obj.save()
-        self.send_again_yikong(params, pcp_obj)
+        # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
 
 

@@ -15,9 +15,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin
+from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
+from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -42,6 +43,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
         创建车次/批次产出反馈
     """
     queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = TrainsFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -80,6 +82,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
             托盘产出反馈反馈
     """
     queryset = PalletFeedbacks.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = PalletFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -100,6 +103,7 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
     """
     queryset = EquipStatus.objects.filter(delete_flag=False)
     pagination_class = None
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = EquipStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -120,6 +124,7 @@ class PlanStatusViewSet(mixins.CreateModelMixin,
         创建计划状态变更
     """
     queryset = PlanStatus.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = PlanStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -140,6 +145,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         创建原材料消耗
     """
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
+    # model_name = queryset.model.__name__.lower()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ExpendMaterialSerializer
     filter_backends = [OrderingFilter]
@@ -186,7 +192,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
+        sql_str = f"""select equip_no, product_no, material_no, material_type, 
                             material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
                             from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
                 """
@@ -260,6 +266,8 @@ class QualityControlViewSet(mixins.CreateModelMixin,
 
 class PlanRealityViewSet(mixins.ListModelMixin,
                          GenericViewSet):
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -350,6 +358,8 @@ class PlanRealityViewSet(mixins.ListModelMixin,
 class ProductActualViewSet(mixins.ListModelMixin,
                            GenericViewSet):
     """密炼实绩"""
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -623,7 +633,7 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
 
 class EquipStatusPlanList(APIView):
     """主页面展示"""
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, *args, **kwargs):
 
@@ -698,6 +708,8 @@ class EquipStatusPlanList(APIView):
 
 class EquipDetailedList(APIView):
     """主页面详情展示机"""
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, *args, **kwargs):
         params = self.request.query_params
@@ -842,6 +854,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
     queryset = TrainsFeedbacks.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
         params = request.query_params
