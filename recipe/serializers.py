@@ -64,35 +64,6 @@ class ProductInfoSerializer(BaseModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class ProductInfoCopySerializer(BaseModelSerializer):
-
-    def validate(self, attrs):
-        versions = attrs['versions']
-        factory = attrs['factory']
-        product_no = attrs['product_info_id'].product_no
-        product_info = ProductInfo.objects.filter(factory=factory, product_no=product_no).order_by('-versions').first()
-        if product_info:
-            if product_info.versions >= versions:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-                raise serializers.ValidationError('版本不得小于目前已有的版本')
-        attrs['used_type'] = 1
-        return attrs
-
-    @atomic()
-    def create(self, validated_data):
-        base_product_info = validated_data.pop('product_info_id')
-        validated_data['created_user'] = self.context['request'].user
-        validated_data['recipe_weight'] = base_product_info.recipe_weight
-        validated_data['product_no'] = base_product_info.product_no
-        validated_data['product_name'] = base_product_info.product_name
-        validated_data['precept'] = base_product_info.precept
-        instance = super().create(validated_data)
-        return instance
-
-    class Meta:
-        model = ProductInfo
-        fields = '__all__'
-
-
 class ProductBatchingDetailSerializer(BaseModelSerializer):
     material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.filter(delete_flag=False, use_flag=1))
     material_type = serializers.CharField(source='material.material_type.global_name', read_only=True)
@@ -168,15 +139,10 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def validate(self, attrs):
         stage_product_batch_no = attrs['stage_product_batch_no']
         equip = attrs['equip']
-        if ProductBatching.objects.exclude(used_type__in=(5, 6)).filter(
+        if ProductBatching.objects.exclude(used_type=6).filter(
                 stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
         return attrs
-
-    def validate_stage_product_batch_no(self, value):
-        if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", value):
-            raise serializers.ValidationError(f"胶料编码的值{value}输入/长度不合规，请规范后重试")
-        return value
 
     @atomic()
     def create(self, validated_data):
