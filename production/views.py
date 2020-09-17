@@ -603,7 +603,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
 
         #     temp_data = {
         #         # "id": 1,
-        #         "mname": i.get("masterial_name"),
+        #         "mname": i.get("material_name"),
         #         "set_weight": None,
         #         "error_allow": None,
         #         "recipe_name": "配方1",

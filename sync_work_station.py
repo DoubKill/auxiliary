@@ -130,7 +130,7 @@ def plan_status_monitor():
     if ps_stop:
         update_plan_status(ps_stop, '待停止', '停止')
     if ps_complete:
-        add_plan_status(ps_stop, '完成')
+        add_plan_status(ps_complete, '完成')
 
 
 
