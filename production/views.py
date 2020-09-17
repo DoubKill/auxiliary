@@ -731,7 +731,6 @@ class EquipDetailedList(APIView):
                                                  created_date__date=datetime.datetime.now().date()
                                                  ).values_list(
             'plan_classes_uid')
-        print(eq_uid_list)
         pcp_plan = ProductClassesPlan.objects.filter(plan_classes_uid__in=eq_uid_list, delete_flag=False,
                                                      created_date__date=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
