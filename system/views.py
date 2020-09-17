@@ -456,7 +456,7 @@ class UpdatePassWord(APIView):
 class InterfaceOperationLogView(ListAPIView):
     """操作日志展示接口"""
     permission_classes = (IsAuthenticated,)
-    queryset = InterfaceOperationLog.objects.all().order_by('-create_time')
+    queryset = InterfaceOperationLog.objects.filter(user__isnull=False).order_by('-create_time')
     serializer_class = InterfaceOperationLogSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_class = InterfaceOperationLogFilter
