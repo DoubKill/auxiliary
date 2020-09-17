@@ -727,12 +727,8 @@ class EquipDetailedList(APIView):
             ret_data['status_list'] = []
 
         # 当前机台当前班次计划车次
-        eq_uid_list = EquipStatus.objects.filter(equip_no=equip_no, delete_flag=False,
-                                                 created_date__date=datetime.datetime.now().date()
-                                                 ).values_list(
-            'plan_classes_uid')
-        pcp_plan = ProductClassesPlan.objects.filter(plan_classes_uid__in=eq_uid_list, delete_flag=False,
-                                                     created_date__date=datetime.datetime.now().date(),
+        pcp_plan = ProductClassesPlan.objects.filter(delete_flag=False, product_day_plan__equip__equip_no=equip_no,
+                                                     product_day_plan__plan_schedule__day_time=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
             'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
