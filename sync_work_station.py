@@ -291,6 +291,7 @@ def main():
             logger.error("出现未知同步表，请立即检查")
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
+    # 改部分代码目前未生效
     if temp is IfupReportBasis:
         plan_no = temp.计划号
         product_no = temp.配方号
