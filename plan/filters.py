@@ -48,7 +48,7 @@ class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
                                              help_text='结束时间')
     equip_no = django_filters.CharFilter(field_name='product_day_plan__equip__equip_no', help_text='机台编号')
     schedule_name = django_filters.CharFilter(
-        field_name='work_schedule_plan__plan_schedule__work_schedule_id', help_text='排班规则')
+        field_name='work_schedule_plan__plan_schedule__id', help_text='排班规则')
     day_time = django_filters.DateFilter(field_name='work_schedule_plan__plan_schedule__day_time', help_text='当前日期')
 
     class Meta:
