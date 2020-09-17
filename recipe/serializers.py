@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 
+from django.db.models import Max
 from django.db.transaction import atomic
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -302,9 +303,12 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
         else:
             if instance.used_type == 4:  # 弃用
                 if instance.equip:
-                    if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
-                                                 equip_no=instance.equip.equip_no,
-                                                 status__in=('已下达', '运行中')).exists():
+                    max_ids = PlanStatus.objects.filter(
+                        product_no=instance.stage_product_batch_no,
+                        equip_no=instance.equip.equip_no).values(
+                        'plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
+                    exist_status = set(PlanStatus.objects.filter(id__in=max_ids).values_list('status', flat=True))
+                    if exist_status & {'已下达', '运行中'}:
                         raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
                 instance.obsolete_user = self.context['request'].user
                 instance.used_type = 6
