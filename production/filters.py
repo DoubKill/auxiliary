@@ -60,11 +60,11 @@ class ExpendMaterialFilter(django_filters.rest_framework.FilterSet):
     et = django_filters.DateTimeFilter(field_name="product_time", help_text='结束时间', lookup_expr="lte")
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料')
-    masterial_type = django_filters.CharFilter(field_name='masterial_type', help_text='原材料类型')
+    material_type = django_filters.CharFilter(field_name='material_type', help_text='原材料类型')
 
     class Meta:
         model = ExpendMaterial
-        fields = ('st', 'et', 'equip_no', 'product_no', 'masterial_type',)
+        fields = ('st', 'et', 'equip_no', 'product_no', 'material_type',)
 
 
 class QualityControlFilter(django_filters.rest_framework.FilterSet):
@@ -91,8 +91,8 @@ class MaterialStatisticsFilter(django_filters.rest_framework.FilterSet):
     et = django_filters.DateTimeFilter(field_name="product_time", help_text='结束时间', lookup_expr="lte")
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料')
-    masterial_type = django_filters.CharFilter(field_name='masterial_type', help_text='原材料类型')
+    material_type = django_filters.CharFilter(field_name='material_type', help_text='原材料类型')
 
     class Meta:
         model = ExpendMaterial
-        fields = ('st', 'et', 'equip_no', 'product_no', 'masterial_type',)
+        fields = ('st', 'et', 'equip_no', 'product_no', 'material_type',)
