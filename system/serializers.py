@@ -6,9 +6,9 @@ update_time:
 """
 import re
 
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Permission
 from rest_framework import serializers
-from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 
@@ -57,10 +57,10 @@ class UserSerializer(BaseModelSerializer):
         return instance
 
     def create(self, validated_data):
-        partten = r"^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$"
+        partten = r"^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{3,16}$"
         password = validated_data.get('password')
         if not re.search(partten, password):
-            raise serializers.ValidationError("请输入6~16位长度包含字母和数字的密码")
+            raise serializers.ValidationError("请输入3~16位长度包含字母和数字的密码")
         validated_data['created_user'] = self.context['request'].user
         user = super().create(validated_data)
         user.set_password(password)
@@ -151,7 +151,6 @@ class SectionSerializer(BaseModelSerializer):
 
 
 class SystemConfigSerializer(BaseModelSerializer):
-
     class Meta:
         model = SystemConfig
         fields = '__all__'
@@ -159,7 +158,6 @@ class SystemConfigSerializer(BaseModelSerializer):
 
 
 class ChildSystemInfoSerializer(BaseModelSerializer):
-
     class Meta:
         model = ChildSystemInfo
         fields = '__all__'
@@ -171,5 +169,5 @@ class InterfaceOperationLogSerializer(BaseModelSerializer):
 
     class Meta:
         model = InterfaceOperationLog
-        fields = '__all__'
+        exclude = ('reasons', )
         read_only_fields = COMMON_READ_ONLY_FIELDS

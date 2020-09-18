@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 
+from django.db.models import Max
 from django.db.transaction import atomic
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -64,35 +65,6 @@ class ProductInfoSerializer(BaseModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class ProductInfoCopySerializer(BaseModelSerializer):
-
-    def validate(self, attrs):
-        versions = attrs['versions']
-        factory = attrs['factory']
-        product_no = attrs['product_info_id'].product_no
-        product_info = ProductInfo.objects.filter(factory=factory, product_no=product_no).order_by('-versions').first()
-        if product_info:
-            if product_info.versions >= versions:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-                raise serializers.ValidationError('版本不得小于目前已有的版本')
-        attrs['used_type'] = 1
-        return attrs
-
-    @atomic()
-    def create(self, validated_data):
-        base_product_info = validated_data.pop('product_info_id')
-        validated_data['created_user'] = self.context['request'].user
-        validated_data['recipe_weight'] = base_product_info.recipe_weight
-        validated_data['product_no'] = base_product_info.product_no
-        validated_data['product_name'] = base_product_info.product_name
-        validated_data['precept'] = base_product_info.precept
-        instance = super().create(validated_data)
-        return instance
-
-    class Meta:
-        model = ProductInfo
-        fields = '__all__'
-
-
 class ProductBatchingDetailSerializer(BaseModelSerializer):
     material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.filter(delete_flag=False, use_flag=1))
     material_type = serializers.CharField(source='material.material_type.global_name', read_only=True)
@@ -126,7 +98,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
                   'equip_no', 'equip_name', 'sp_num', 'stage_product_batch_no', 'production_time_interval',
                   'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
                   'category__category_name', 'submit_username', 'reject_username', 'used_username',
-                  'obsolete_username')
+                  'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
@@ -168,7 +140,7 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
     def validate(self, attrs):
         stage_product_batch_no = attrs['stage_product_batch_no']
         equip = attrs['equip']
-        if ProductBatching.objects.exclude(used_type__in=(5, 6)).filter(
+        if ProductBatching.objects.exclude(used_type=6).filter(
                 stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
         return attrs
@@ -328,12 +300,17 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_type = 4
                 instance.used_user = self.context['request'].user
                 instance.used_time = datetime.now()
+            elif instance.used_type == 5:
+                instance.used_type = 1
         else:
-            if instance.used_type == 4:  # 弃用
+            if instance.used_type in (4, 5):  # 弃用
                 if instance.equip:
-                    if PlanStatus.objects.filter(product_no=instance.stage_product_batch_no,
-                                                 equip_no=instance.equip.equip_no,
-                                                 status__in=('已下达', '运行中')).exists():
+                    max_ids = PlanStatus.objects.filter(
+                        product_no=instance.stage_product_batch_no,
+                        equip_no=instance.equip.equip_no).values(
+                        'plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
+                    exist_status = set(PlanStatus.objects.filter(id__in=max_ids).values_list('status', flat=True))
+                    if exist_status & {'已下达', '运行中'}:
                         raise serializers.ValidationError('该配方生产计划已下达或在运行中，无法废弃！')
                 instance.obsolete_user = self.context['request'].user
                 instance.used_type = 6
