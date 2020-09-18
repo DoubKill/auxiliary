@@ -6,7 +6,7 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from rest_framework import serializers
 
-from recipe.models import Material
+from recipe.models import Material, ProductInfo
 
 
 class GlobalCodeReceiveSerializer(BaseModelSerializer):
@@ -289,3 +289,11 @@ class GlobalCodeTypeSerializer(BaseModelSerializer):
         fields = ('type_no', 'type_name', 'description', 'use_flag')
         read_only_fields = COMMON_READ_ONLY_FIELDS
         extra_kwargs = {'type_no': {'validators': []}}
+
+
+class ProductInfoSerializer(BaseModelSerializer):
+
+    class Meta:
+        model = ProductInfo
+        fields = '__all__'
+        extra_kwargs = {'product_no': {'validators': []}}
