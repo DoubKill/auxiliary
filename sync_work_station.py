@@ -142,6 +142,7 @@ def main():
     bath_no = 1 # 没有批次号编码,暂时写死
     temp_model_set = None
     temp = None
+    current_trains = 0
     temp_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
     for m in temp_list:
         temp_model = getattr(md, m)
@@ -229,7 +230,6 @@ def main():
                 else:
                     continue
                 mix_obj = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号, 机台号=temp.机台号)
-                global current_trains
                 if mix_obj:
                     current_trains = mix_obj.last().密炼车次
                 else:
@@ -338,9 +338,13 @@ def main():
 @one_instance
 def run():
     logger.info("同步开始")
+    global current_trains
     while True:
-        main()
-        plan_status_monitor()
+        try:
+            main()
+            plan_status_monitor()
+        except Exception as e:
+            logger.error(e)
         time.sleep(5)
 
 if __name__ == "__main__":
