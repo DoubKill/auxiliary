@@ -1,3 +1,5 @@
+import re
+
 import xlrd
 from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
@@ -294,7 +296,20 @@ class LoginView(ObtainJSONWebToken):
     """
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        username = request.data.get("username")
+        if re.search(r'^[0-9]+$', username):
+            user = User.objects.filter(num=username).first()
+            if not user:
+                return Response('该用户不存在', status=400)
+            else:
+                data = {
+                    'username': user.username,
+                    'password': request.data.get("password")
+
+                }
+                serializer = self.get_serializer(data=data)
+        else:
+            serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
             user = serializer.object.get('user') or request.user
@@ -437,6 +452,7 @@ class Synchronization(APIView):
 class UpdatePassWord(APIView):
     """修改密码接口"""
     permission_classes = (IsAuthenticated,)
+
     def post(self, request):
         params = request.data
         old_password = params.get('old_password', None)
