@@ -26,7 +26,7 @@ class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = PalletFeedbacks
-        fields = ('plan_classes_uid', 'equip_no', 'product_no', "classes",)
+        fields = ('plan_classes_uid', 'equip_no', 'product_no', "classes", "pallet_no")
 
 
 class EquipStatusFilter(django_filters.rest_framework.FilterSet):
@@ -51,7 +51,7 @@ class PlanStatusFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = PlanStatus
-        fields = ('plan_classes_uid',)
+        fields = ('plan_classes_uid', )
 
 
 class ExpendMaterialFilter(django_filters.rest_framework.FilterSet):
