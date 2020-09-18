@@ -175,17 +175,17 @@ class ProductProcess(AbstractEntity):
     equip_code = models.PositiveIntegerField(help_text='锁定/解除', default=0)
     reuse_time = models.PositiveIntegerField(help_text='回收时间', default=0)
     mini_time = models.PositiveIntegerField(help_text='超温最短时间', default=0)
-    max_time = models.PositiveIntegerField(help_text='超温最长时间', default=0) # 该字段并未实际使用
+    max_time = models.PositiveIntegerField(help_text='超温最长时间', default=0)  # 该字段并未实际使用
     mini_temp = models.PositiveIntegerField(help_text='进胶最低温度', default=0)
     max_temp = models.PositiveIntegerField(help_text='进胶最高温度', default=0)
     over_time = models.PositiveIntegerField(help_text='炼胶超时时间', default=0)
     over_temp = models.PositiveIntegerField(help_text='超温温度', default=0)
-    reuse_flag = models.BooleanField(help_text='是否回收', default=False)
+    reuse_flag = models.BooleanField(help_text='是否回收，（true:回收,false:不回收）', default=False)
     zz_temp = models.PositiveIntegerField(help_text='转子水温', default=0)
     xlm_temp = models.PositiveIntegerField(help_text='卸料门水温', default=0)
     cb_temp = models.PositiveIntegerField(help_text='侧壁水温', default=0)
-    temp_use_flag = models.BooleanField(help_text='三区水温弃用/启用', default=True)
-    use_flag = models.BooleanField(help_text='配方弃用/启用', default=True)
+    temp_use_flag = models.BooleanField(help_text='三区水温启用/停用，（true:启用,false:停用）', default=True)
+    use_flag = models.BooleanField(help_text='配方启用/弃用，（true:启用,false:弃用）', default=True)
     batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
     sp_num = models.PositiveSmallIntegerField(help_text='收皮', default=0)
 

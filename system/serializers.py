@@ -169,7 +169,5 @@ class InterfaceOperationLogSerializer(BaseModelSerializer):
 
     class Meta:
         model = InterfaceOperationLog
-        fields = '__all__'
+        exclude = ('reasons', )
         read_only_fields = COMMON_READ_ONLY_FIELDS
-
-
