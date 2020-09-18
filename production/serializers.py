@@ -95,8 +95,20 @@ class PalletFeedbacksSerializer(BaseModelSerializer):
 
     class Meta:
         model = PalletFeedbacks
-        fields = "__all__"
+        exclude = ("created_date", "last_updated_date", "delete_date", "delete_flag",
+                   "created_user", "last_updated_user", "delete_user")
         read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class PalletSerializer(BaseModelSerializer):
+    """托盘产出反馈"""
+
+    class Meta:
+        model = PalletFeedbacks
+        exclude = ("created_date", "last_updated_date", "delete_date", "delete_flag",
+                   "created_user", "last_updated_user", "delete_user")
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
 
 
 class PlanStatusSerializer(BaseModelSerializer):
