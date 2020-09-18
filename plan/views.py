@@ -187,27 +187,30 @@ class PlanStatusList(APIView):
     def get(self, request):
         params = request.query_params
         equip_no = params.get('equip_no')
-        ps_obj = PlanStatus.objects.filter(equip_no=equip_no, status='运行中').first()
+        ps_obj = PlanStatus.objects.filter(equip_no=equip_no).last()
         plan_status_list = {}
         if not ps_obj:
             return Response({'results': plan_status_list}, 200)
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=ps_obj.plan_classes_uid).first()
-        if not pcp_obj:
+        if not ps_obj.status == '运行中':
             return Response({'results': plan_status_list}, 200)
-        plan_status_list['equip_no'] = equip_no
-        plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
-        plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
-        plan_status_list['product_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
-        plan_status_list['plan_classes_uid'] = pcp_obj.plan_classes_uid
-        plan_status_list['plan_trains'] = pcp_obj.plan_trains
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
-            'created_date').last()
-        if tfb_obj:
-            plan_status_list['actual_trains'] = tfb_obj.actual_trains
         else:
-            plan_status_list['actual_trains'] = None
-        plan_status_list['status'] = ps_obj.status
-        return Response({'results': plan_status_list}, status=200)
+            pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=ps_obj.plan_classes_uid).first()
+            if not pcp_obj:
+                return Response({'results': plan_status_list}, 200)
+            plan_status_list['equip_no'] = equip_no
+            plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
+            plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
+            plan_status_list['product_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
+            plan_status_list['plan_classes_uid'] = pcp_obj.plan_classes_uid
+            plan_status_list['plan_trains'] = pcp_obj.plan_trains
+            tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if tfb_obj:
+                plan_status_list['actual_trains'] = tfb_obj.actual_trains
+            else:
+                plan_status_list['actual_trains'] = None
+            plan_status_list['status'] = ps_obj.status
+            return Response({'results': plan_status_list}, status=200)
 
 
 @method_decorator([api_recorder], name="dispatch")
