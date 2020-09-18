@@ -300,8 +300,10 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_type = 4
                 instance.used_user = self.context['request'].user
                 instance.used_time = datetime.now()
+            elif instance.used_type == 5:
+                instance.used_type = 1
         else:
-            if instance.used_type == 4:  # 弃用
+            if instance.used_type in (4, 5):  # 弃用
                 if instance.equip:
                     max_ids = PlanStatus.objects.filter(
                         product_no=instance.stage_product_batch_no,
