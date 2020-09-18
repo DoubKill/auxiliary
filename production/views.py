@@ -26,7 +26,8 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
-    WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer
+    WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer, \
+    PalletSerializer
 from production.utils import strtoint, gen_material_export_file_response
 
 
@@ -80,14 +81,43 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
         create:
             托盘产出反馈反馈
     """
-    queryset = PalletFeedbacks.objects.filter(delete_flag=False)
+    queryset = PalletFeedbacks.objects.filter()
     # model_name = queryset.model.__name__.lower()
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
-    permission_classes = None
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = PalletFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = PalletFeedbacksFilter
+
+
+class PalletDetailViewSet(mixins.ListModelMixin,
+                             GenericViewSet):
+    """
+        list:
+            托盘产出反馈列表
+        retrieve:
+            托盘产出反馈详情
+        create:
+            托盘产出反馈反馈
+    """
+    queryset = PalletFeedbacks.objects.filter()
+    permission_classes = ()
+    serializer_class = PalletSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ('id',)
+    filter_class = PalletFeedbacksFilter
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if queryset.exists():
+            queryset = [queryset.order_by("product_time").last()]
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class EquipStatusViewSet(mixins.CreateModelMixin,
