@@ -285,9 +285,9 @@ class RecipeObsoleteAPiView(APIView):
 class BatchingEquip(APIView):
 
     def get(self, request):
-        equip_id = self.request.query_params.get('equip_id')
+        dev_type = self.request.query_params.get('dev_type')
         try:
-            dev_type = Equip.objects.get(id=equip_id).category_id
+            dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
         equip_data = Equip.objects.filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
