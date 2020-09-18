@@ -99,14 +99,40 @@ def update_plan_status(obj, status1, status2):
                 status=status1
             ).update(status=status2)
 
+def add_plan_status(obj, status):
+    if obj:
+        equip_no = obj.equip_no
+        product_no = obj.product_no
+        plan_uid = obj.plan_classes_uid
+        if "0" in equip_no:
+            en = equip_no[-1]
+        else:
+            en = equip_no[1:3]
+        model = getattr(md, "IfdownShengchanjihua" + en)
+        if model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid):
+            instance = model.objects.filter(recstatus=status, recipe=product_no, planid=plan_uid).last()
+            if not PlanStatus.objects.filter(plan_classes_uid=plan_uid, product_no=product_no,
+                                         equip_no=equip_no, status=status,).exists():
+                PlanStatus.objects.create(
+                    plan_classes_uid=plan_uid,
+                    product_no=product_no,
+                    equip_no=equip_no,
+                    status=status,
+                    operation_user=instance.oper,
+                    product_time=datetime.datetime.now(),
+                )
+
 def plan_status_monitor():
     """计划状态监听"""
     ps = PlanStatus.objects.filter(status="已下达").last()
     ps_stop = PlanStatus.objects.filter(status="待停止").last()
+    ps_complete = PlanStatus.objects.filter(status="运行中").last()
     if ps:
         update_plan_status(ps, '已下达', '运行中')
     if ps_stop:
         update_plan_status(ps_stop, '待停止', '停止')
+    if ps_complete:
+        add_plan_status(ps_complete, '完成')
 
 
 
@@ -116,6 +142,7 @@ def main():
     bath_no = 1 # 没有批次号编码,暂时写死
     temp_model_set = None
     temp = None
+    current_trains = 0
     temp_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
     for m in temp_list:
         temp_model = getattr(md, m)
@@ -203,7 +230,6 @@ def main():
                 else:
                     continue
                 mix_obj = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号, 机台号=temp.机台号)
-                global current_trains
                 if mix_obj:
                     current_trains = mix_obj.last().密炼车次
                 else:
@@ -267,6 +293,7 @@ def main():
             logger.error("出现未知同步表，请立即检查")
         logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
+    # 改部分代码目前未生效
     if temp is IfupReportBasis:
         plan_no = temp.计划号
         product_no = temp.配方号
@@ -311,9 +338,13 @@ def main():
 @one_instance
 def run():
     logger.info("同步开始")
+    global current_trains
     while True:
-        main()
-        plan_status_monitor()
+        try:
+            main()
+            plan_status_monitor()
+        except Exception as e:
+            logger.error(e)
         time.sleep(5)
 
 if __name__ == "__main__":

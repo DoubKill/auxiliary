@@ -33,6 +33,8 @@ class EquipStatusFilter(django_filters.rest_framework.FilterSet):
     """机台状态反馈过滤器"""
     plan_classes_uid = django_filters.CharFilter(field_name='plan_classes_uid', help_text='班次计划唯一码')
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机号')
+    st = django_filters.DateTimeFilter(field_name="product_time", help_text='生产时间', lookup_expr="gte")
+    et = django_filters.DateTimeFilter(field_name="product_time", help_text='生产时间', lookup_expr="lte")
 
     # product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料编号')
 
@@ -58,11 +60,11 @@ class ExpendMaterialFilter(django_filters.rest_framework.FilterSet):
     et = django_filters.DateTimeFilter(field_name="product_time", help_text='结束时间', lookup_expr="lte")
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料')
-    masterial_type = django_filters.CharFilter(field_name='masterial_type', help_text='原材料类型')
+    material_type = django_filters.CharFilter(field_name='material_type', help_text='原材料类型')
 
     class Meta:
         model = ExpendMaterial
-        fields = ('st', 'et', 'equip_no', 'product_no', 'masterial_type',)
+        fields = ('st', 'et', 'equip_no', 'product_no', 'material_type',)
 
 
 class QualityControlFilter(django_filters.rest_framework.FilterSet):
@@ -89,8 +91,8 @@ class MaterialStatisticsFilter(django_filters.rest_framework.FilterSet):
     et = django_filters.DateTimeFilter(field_name="product_time", help_text='结束时间', lookup_expr="lte")
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机台号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料')
-    masterial_type = django_filters.CharFilter(field_name='masterial_type', help_text='原材料类型')
+    material_type = django_filters.CharFilter(field_name='material_type', help_text='原材料类型')
 
     class Meta:
         model = ExpendMaterial
-        fields = ('st', 'et', 'equip_no', 'product_no', 'masterial_type',)
+        fields = ('st', 'et', 'equip_no', 'product_no', 'material_type',)
