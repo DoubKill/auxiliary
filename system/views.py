@@ -388,6 +388,7 @@ class SystemStatusSwitch(APIView):
 
 class Synchronization(APIView):
     """mes和上辅机同步接口"""
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
         auxliary_dict = {'lost_time': None, }  # 上辅机
@@ -398,7 +399,7 @@ class Synchronization(APIView):
             auxliary_dict['lost_time'] = lost_time
             auxliary_dict['plan'] = {}
             auxliary_dict['recipe'] = {}
-            # 胶料诶班次计划表
+            # 胶料日班次计划表
             pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
             if pcp_set:
                 auxliary_dict['plan']['ProductClassesPlan'] = {}
@@ -416,37 +417,24 @@ class Synchronization(APIView):
                     auxliary_dict['recipe']['ProductBatching'][pb_obj.stage_product_batch_no] = pb_dict
         return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
 
-    """
-    # 同步展示数据的另一种方法，这种前端会好处理一点。暂时先注释，前端要用的时候再换
-    def get(self, request, *args, **kwargs):
-        auxliary_list = []  # 上辅机
-        # 获取断网时间
-        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
-        if csi_obj:
-            lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
-            auxliary_list.append({'lost_time': lost_time})
-            # 胶料诶班次计划表
-            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
-            if pcp_set:
-                for pcp_obj in pcp_set:
-                    pcp_dict = pcp_obj.__dict__
-                    pcp_dict.pop('_state')
-                    pcp_dict['date_category'] = '计划'
-                    pcp_dict['table_name'] = 'ProductClassesPlan'
-                    pcp_dict['date_number'] = pcp_obj.plan_classes_uid
-                    auxliary_list.append(pcp_dict)
-            # 胶料配料标准表
-            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-            if pb_set:
-                for pb_obj in pb_set:
-                    pb_dict = pb_obj.__dict__
-                    pb_dict.pop('_state')
-                    pb_dict['date_category'] = '配方'
-                    pb_dict['table_name'] = 'ProductBatching'
-                    pb_dict['date_number'] = pb_obj.stage_product_batch_no
-                    auxliary_list.append(pb_dict)
-        return Response({'Upper auxiliary machine group control system': auxliary_list}, status=200)
-"""
+
+class Manualsync(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        from plan import models as pn
+        from recipe import models as rp
+        class_list = request.data
+        for class_dict in class_list:
+            if class_dict.pop(
+                    'manual') == 'plan':  # 一旦给新建了胶料日班次计划，后续就该新建plan_status和原材料需求表 这两张表是自己新建还是通过前端同步任务传过来 个人认为是自己写  因为前端是人过选择 存在失误
+                model_name = getattr(pn, class_dict.pop('table_name'))
+                model_name.objects.create(**class_dict)
+            elif class_dict.pop('manual') == 'recipe':
+                model_name = getattr(rp, class_dict.pop('table_name'))
+                model_name.objects.create(**class_dict)
+
+        return Response('同步成功', status=200)
 
 
 class UpdatePassWord(APIView):

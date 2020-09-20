@@ -296,6 +296,13 @@ class StopPlan(APIView):
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
         # self.send_to_yikong()  # 发送数据给易控
+        # try:
+        #     self.send_to_yikong()  # 发送数据给易控
+        # except Exception as e:
+        #     raise ValidationError('发送数据到收皮机失败，请检查收皮机或者重新停止')
+        # else:
+        #     return Response({'_': '停止成功，数据发送收皮机成功'}, status=200)
+
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -568,7 +575,12 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
-        # self.send_to_yikong(params, pcp_obj)
+        # try:
+        #     self.send_to_yikong(params, pcp_obj)  # 向收皮机发送数据
+        # except Exception as e:
+        #     raise ValidationError('发送数据到收皮机失败，请检查收皮机或者重新下达')
+        # else:
+        #     return Response({'_': '下达成功，数据发送收皮机成功'}, status=200)
         return Response({'_': '下达成功'}, status=200)
 
     def send_again_yikong(self, params, pcp_obj):
@@ -620,6 +632,12 @@ class IssuedPlan(APIView):
         # ps_obj.status = '运行'
         # ps_obj.save()
         # self.send_again_yikong(params, pcp_obj)
+        # try:
+        #     self.send_again_yikong(params, pcp_obj)  # 向收皮机发送数据
+        # except Exception as e:
+        #     raise ValidationError('发送数据到收皮机失败，请检查收皮机或者重新重传')
+        # else:
+        #     return Response({'_': '重传成功，数据发送收皮机成功'}, status=200)
         return Response({'_': '重传成功'}, status=200)
 
 

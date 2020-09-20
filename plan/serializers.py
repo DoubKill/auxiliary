@@ -30,7 +30,6 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
         else:
             return None
 
-
     class Meta:
         model = ProductClassesPlan
         exclude = ('product_day_plan',)
@@ -370,6 +369,13 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus=recstatus)
         # self.send_to_yikong(validated_data)
+        # try:
+        #     self.send_to_yikong(validated_data)  # 向收皮机发送数据
+        # except Exception as e:
+        #     raise serializers.ValidationError({'trains': '发送数据到收皮机失败，请检查收皮机或者重新修改车次'})
+        # else:
+        #     return instance
+
         return instance
 
 
