@@ -195,6 +195,15 @@ LOGGING = {
             'formatter': 'standard',
             'interval': 1,
         },
+        'sendFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'send.log'),
+            'when': 'midnight',
+            'backupCount': 10,
+            'formatter': 'standard',
+            'interval': 1,
+        },
     },
     'loggers': {
         'django.db.backends': {
@@ -221,6 +230,10 @@ LOGGING = {
         },
         'async_log': {
             'handlers': ['asyncFile'],
+            'level': 'INFO',
+        },
+        'send_log': {
+            'handlers': ['sendFile'],
             'level': 'INFO',
         }
     },
