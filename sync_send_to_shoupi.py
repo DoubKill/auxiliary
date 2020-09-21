@@ -92,11 +92,12 @@ def send_to_yikong_run():
 
 def send_to_yikong_stop():
     # 发送数据给易控
-    ps_set = PlanStatus.objects.filter(status='已下达')
+    ps_set = PlanStatus.objects.filter(status='待停止')
     if ps_set:
         for ps_obj in ps_set:
             test_dict = OrderedDict()
             test_dict['stopstate'] = '停止'
+            test_dict['planid'] = ps_obj.plan_classes_uid
             try:
                 success_flag = WebService.issue(test_dict, 'stop')
                 if not success_flag:
@@ -108,7 +109,7 @@ def send_to_yikong_stop():
 
 
 def send_to_yikong_update():
-
+    # 更新车次
     model_list = 'IfdownShengchanjihua'
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
@@ -120,6 +121,7 @@ def send_to_yikong_update():
             for scjh_obj in scjh_set:
                 test_dict = OrderedDict()
                 test_dict['updatestate'] = scjh_obj.actno
+                test_dict['planid'] = scjh_obj.planid
                 try:
                     success_flag = WebService.issue(test_dict, 'updatetrains')
                     if not success_flag:
