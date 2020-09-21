@@ -5,7 +5,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
-    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport
+    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport, PalletDetailViewSet
 
 router = DefaultRouter()
 
@@ -14,6 +14,9 @@ router.register(r'trains-feedbacks', TrainsFeedbacksViewSet)
 
 # 托盘产出反馈
 router.register(r'pallet-feedbacks', PalletFeedbacksViewSet)
+
+# bz根据RFID/pallet_no查托盘胶料信息
+router.register(r'pallet', PalletDetailViewSet)
 
 # 机台状况反馈
 router.register(r'equip-status', EquipStatusViewSet)
