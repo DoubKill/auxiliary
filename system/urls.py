@@ -32,4 +32,5 @@ urlpatterns = [
     path('synchronization/', Synchronization.as_view()),  # mes和上辅机同步接口
     path('update-password/', UpdatePassWord.as_view()),  # 修改密码接口，
     path('operations/', InterfaceOperationLogView.as_view()),  # 操作日志
+
 ]

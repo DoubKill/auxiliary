@@ -90,28 +90,31 @@ class MaterialAttributeViewSet(CommonDeleteMixin, ModelViewSet):
 
 @method_decorator([api_recorder], name="dispatch")
 class ValidateProductVersionsView(APIView):
-    """验证版本号，创建胶料工艺信息前调用，参数：xxx/?factory=产地id&site=SITEid&product_info=胶料代码id&versions=版本号"""
+    """验证配方信息是否存在，参数：xxx/?site=SITEid&product_info=胶料代码id&versions=版本号&equip=设备id&stage=段次id"""
 
     def get(self, request):
-        factory = self.request.query_params.get('factory')
         site = self.request.query_params.get('site')
         product_info = self.request.query_params.get('product_info')
         versions = self.request.query_params.get('versions')
-        if not all([versions, factory, site, product_info]):
+        equip = self.request.query_params.get('equip')
+        stage = self.request.query_params.get('stage')
+        if not all([versions, site, product_info, equip, stage]):
             raise ValidationError('参数不足')
         try:
             site = int(site)
             product_info = int(product_info)
-            factory = int(factory)
+            equip_id = int(equip)
+            stage = int(stage)
         except Exception:
             raise ValidationError('参数错误')
-        product_batching = ProductBatching.objects.filter(factory_id=factory, site_id=site,
-                                                          product_info_id=product_info
-                                                          ).order_by('-versions').first()
-        if product_batching:
-            if product_batching.versions >= versions:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-                return Response({'code': -1, 'message': '版本号不得小于现有版本号'})
-        return Response({'code': 0, 'message': ''})
+        if ProductBatching.objects.exclude(used_type=6).filter(
+                equip_id=equip_id,
+                site_id=site,
+                versions=versions,
+                product_info_id=product_info,
+                stage_id=stage).exists():
+            raise ValidationError('已存在相同机台的配方，请修改后重试！')
+        return Response('ok')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -192,7 +195,8 @@ class ProductBatchingViewSet(ModelViewSet):
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
-                'used_user__username', 'obsolete_user__username'
+                'used_user__username', 'obsolete_user__username', 'equip_id',
+                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id'
             )
         else:
             return self.queryset
@@ -279,7 +283,6 @@ class RecipeObsoleteAPiView(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class BatchingEquip(APIView):
-    """复制配方时根据机型id获取还未配料的机台"""
 
     def get(self, request):
         dev_type = self.request.query_params.get('dev_type')
@@ -287,9 +290,7 @@ class BatchingEquip(APIView):
             dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
-        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type, used_type__in=(1, 2, 4)).values_list('equip_id', flat=True))
-        equip_data = Equip.objects.exclude(
-            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
+        equip_data = Equip.objects.filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
                                                                        'category__category_name')
         return Response(data={'results': equip_data})
 

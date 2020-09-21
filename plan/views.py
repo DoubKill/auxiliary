@@ -98,17 +98,13 @@ class ProductClassesPlanManyCreate(APIView):
         else:
             return Response(data={'detail': '数据有误'}, status=400)
 
-        class_list = []
         work_list = []
         plan_list = []
         equip_list = []
+
         request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
         for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
-            i = 1
             for class_dict in items:
-                class_dict['sn'] = i
-                i += 1
-                class_list.append(class_dict)
                 work_list.append(class_dict['work_schedule_plan'])
                 plan_list.append(class_dict['plan_classes_uid'])
                 equip_list.append(class_dict['equip'])
@@ -117,28 +113,26 @@ class ProductClassesPlanManyCreate(APIView):
                                                     equip_id__in=list(set(equip_list))).exclude(
             plan_classes_uid__in=list(set(plan_list)))
         for pcp_obj in pcp_set:
+
+            # 删除前要先判断该数据的状态是不是非等待，只要等待中的加护才可以删除
+            plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if plan_status:
+                if plan_status.status != '等待':
+                    raise ValidationError("只要等待中的计划才可以删除")
+            else:
+                pass
+
+            # 删除多余的数据已经以及向关联的计划状态变更表和原材料需求量表需求量表
             pcp_obj.delete_flag = True
             pcp_obj.save()
             PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
             MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
 
-        s = ProductClassesPlanManyCreateSerializer(data=class_list, many=many, context={'request': request})
+        s = ProductClassesPlanManyCreateSerializer(data=request.data, many=many, context={'request': request})
         s.is_valid(raise_exception=True)
         s.save()
-
         return Response('新建成功')
-
-    @atomic()
-    def get(self, request, *args, **kwargs):
-        params = request.query_params
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=params.get('plan_classes_uid')).first()
-        if not pcp_obj:
-            return Response('没有对应的胶料日计划数据', status=200)
-        pcp_obj.delete_flag = True
-        pcp_obj.save()
-        PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
-        MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
-        return Response('删除成功', status=200)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -193,27 +187,30 @@ class PlanStatusList(APIView):
     def get(self, request):
         params = request.query_params
         equip_no = params.get('equip_no')
-        ps_obj = PlanStatus.objects.filter(equip_no=equip_no, status='运行中').first()
+        ps_obj = PlanStatus.objects.filter(equip_no=equip_no).last()
         plan_status_list = {}
         if not ps_obj:
             return Response({'results': plan_status_list}, 200)
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=ps_obj.plan_classes_uid).first()
-        if not pcp_obj:
+        if not ps_obj.status == '运行中':
             return Response({'results': plan_status_list}, 200)
-        plan_status_list['equip_no'] = equip_no
-        plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
-        plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
-        plan_status_list['product_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
-        plan_status_list['plan_classes_uid'] = pcp_obj.plan_classes_uid
-        plan_status_list['plan_trains'] = pcp_obj.plan_trains
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
-            'created_date').last()
-        if tfb_obj:
-            plan_status_list['actual_trains'] = tfb_obj.actual_trains
         else:
-            plan_status_list['actual_trains'] = None
-        plan_status_list['status'] = ps_obj.status
-        return Response({'results': plan_status_list}, status=200)
+            pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=ps_obj.plan_classes_uid).first()
+            if not pcp_obj:
+                return Response({'results': plan_status_list}, 200)
+            plan_status_list['equip_no'] = equip_no
+            plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
+            plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
+            plan_status_list['product_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
+            plan_status_list['plan_classes_uid'] = pcp_obj.plan_classes_uid
+            plan_status_list['plan_trains'] = pcp_obj.plan_trains
+            tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if tfb_obj:
+                plan_status_list['actual_trains'] = tfb_obj.actual_trains
+            else:
+                plan_status_list['actual_trains'] = None
+            plan_status_list['status'] = ps_obj.status
+            return Response({'results': plan_status_list}, status=200)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -342,12 +339,13 @@ class IssuedPlan(APIView):
             "mini_temp": product_process.mini_temp,
             "max_temp": product_process.max_temp,
             "over_temp": product_process.over_temp,
-            "if_not": 0 if product_process.reuse_flag else -1,  #是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
+            "if_not": 0 if product_process.reuse_flag else -1,  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
             "temp_zz": product_process.zz_temp,
             "temp_xlm": product_process.xlm_temp,
             "temp_cb": product_process.cb_temp,
-            "tempuse": 0 if product_process.temp_use_flag else 1, #三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
-            "usenot": 0 if product_batching.used_type == 4 else 1, #配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
+            "tempuse": 0 if product_process.temp_use_flag else 1,
+            # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
+            "usenot": 0 if product_batching.used_type == 4 else 1,  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
             "recstatus": "等待",
         }
         return data
