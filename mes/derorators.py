@@ -20,7 +20,11 @@ path_dict = {
     '/api/v1/plan/update-trains/': '修改车次',
     '/api/v1/plan/issued-plan/': '计划下达',
     '/api/v1/plan/stop-plan/': '计划停止',
-    'api/v1/plan/product-day-plan-manycreate/': '计划'
+    '/api/v1/plan/product-day-plan-manycreate/': '计划',
+    '/api/v1/system/personnels/': '用户',
+    '/api/v1/system/group_extension/': '角色',
+    '/api/v1/production/weigh-cb': '炭黑称量',
+    '/api/v1/production/weigh-oil': '油料称量'
 }
 
 method_dict = {

@@ -290,3 +290,23 @@ class IfupReportCurveBackups(models.Model):#TODO 既然是车次报表怎么能�
     class Meta:
         # managed = False
         db_table = 'ifup_report_curve_backups'
+
+
+
+class v_ASRS_STORE_MESVIEW(models.Model):
+
+    库房编号 = models.CharField(max_length=20, blank=True, null=True)
+    库房名称 = models.CharField(max_length=20, blank=True, null=True)
+    订单号 = models.CharField(max_length=50, blank=True, null=True)
+    托盘号 = models.CharField(max_length=50, blank=True, null=True)
+    货位地址 = models.CharField(max_length=20, blank=True, null=True)
+    数量 = models.DecimalField(max_digits=15, decimal_places=3, blank=True, null=True)
+    重量 = models.DecimalField(max_digits=15, decimal_places=3, blank=True, null=True)
+    品质状态 = models.CharField(max_length=20, blank=True, null=True)
+    车号 = models.CharField(max_length=250, blank=True, null=True)
+    库存索引 = models.BigIntegerField()
+    物料编码 = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = "v_ASRS_STORE_MESVIEW"

@@ -10,8 +10,9 @@ from rest_framework.permissions import IsAuthenticated
 from basics.models import GlobalCode
 from datain.serializers import GlobalCodeReceiveSerializer, WorkScheduleReceiveSerializer, \
     ClassesDetailReceiveSerializer, EquipCategoryAttributeSerializer, EquipSerializer, PlanScheduleSerializer, \
-    WorkSchedulePlanSerializer, MaterialSerializer, GlobalCodeTypeSerializer
+    WorkSchedulePlanSerializer, MaterialSerializer, GlobalCodeTypeSerializer, ProductInfoSerializer
 from mes.derorators import api_recorder
+from recipe.models import ProductInfo
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -66,3 +67,9 @@ class MaterialReceive(CreateAPIView):
 class GlobalCodeTypeReceive(CreateAPIView):
     serializer_class = GlobalCodeTypeSerializer
     queryset = GlobalCode.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductInfoReceive(CreateAPIView):
+    serializer_class = ProductInfoSerializer
+    queryset = ProductInfo.objects.all()

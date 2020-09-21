@@ -195,7 +195,7 @@ class ProductBatchingViewSet(ModelViewSet):
                 'stage__global_name', 'site__global_name', 'processes__sp_num',
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
-                'used_user__username', 'obsolete_user__username',
+                'used_user__username', 'obsolete_user__username', 'equip_id',
                 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id'
             )
         else:
@@ -283,7 +283,6 @@ class RecipeObsoleteAPiView(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class BatchingEquip(APIView):
-    """复制配方时根据机型id获取还未配料的机台"""
 
     def get(self, request):
         dev_type = self.request.query_params.get('dev_type')
@@ -291,9 +290,7 @@ class BatchingEquip(APIView):
             dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
-        existed_equips = list(ProductBatching.objects.filter(dev_type=dev_type, used_type__in=(1, 2, 4)).values_list('equip_id', flat=True))
-        equip_data = Equip.objects.exclude(
-            id__in=existed_equips).filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
+        equip_data = Equip.objects.filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
                                                                        'category__category_name')
         return Response(data={'results': equip_data})
 
