@@ -40,7 +40,7 @@ def one_instance(func):
 
 
 def send_to_yikong_run():
-    # 下达计划
+    """下达计划"""
     ps_set = PlanStatus.objects.filter(status='已下达')
     if ps_set:
         for ps_obj in ps_set:
@@ -80,63 +80,60 @@ def send_to_yikong_run():
 
                 test_dict['sp_number'] = pcp_obj[0].get("product_day_plan__product_batching__processes__sp_num", "")
                 try:
-                    success_flag = WebService.issue(test_dict, 'plan')
-                    if not success_flag:
-                        raise ValidationError("收皮机错误")
+                    WebService.issue(test_dict, 'plan')
                 except Exception as e:
-                    raise ValidationError("收皮机连接超时")
-            else:
-                pass
-    else:
-        pass
+                    raise ValidationError(f"收皮机连接超时|{e}")
 
 
 def send_to_yikong_stop():
-    # 计划停止
+    """计划停止"""
     ps_set = PlanStatus.objects.filter(status='待停止')
     if ps_set:
         for ps_obj in ps_set:
             test_dict = OrderedDict()
             test_dict['stopstate'] = '停止'
             test_dict['planid'] = ps_obj.plan_classes_uid
+            equip_no = ps_obj.equip_no
+            if "0" in equip_no:
+                ext_str = equip_no[-1]
+            else:
+                ext_str = equip_no[1:]
+            test_dict['no'] = int(ext_str)
             try:
-                success_flag = WebService.issue(test_dict, 'stop')
-                if not success_flag:
-                    raise ValidationError("收皮机错误")
+                WebService.issue(test_dict, 'stop')
             except Exception as e:
-                raise ValidationError("收皮机连接超时")
+                raise ValidationError(f"收皮机连接超时|{e}")
     else:
         pass
 
 
 def send_to_yikong_update():
-    # 更新车次
+    """更新车次"""
     model_list = 'IfdownShengchanjihua'
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
-        model_name = getattr(md, model_list + ext_str)
+        model_name = getattr(md, model_list + str(ext_str))
         scjh_set = model_name.objects.filter(recstatus__in=['车次需更新', "配方车次需更新"])
         if not scjh_set:
             pass
         else:
             for scjh_obj in scjh_set:
                 test_dict = OrderedDict()
-                test_dict['updatestate'] = scjh_obj.actno
+                test_dict['updatestate'] = scjh_obj.setno
                 test_dict['planid'] = scjh_obj.planid
+                test_dict['no'] = ext_str
                 try:
-                    success_flag = WebService.issue(test_dict, 'updatetrains')
-                    if not success_flag:
-                        raise ValidationError("收皮机错误")
+                    WebService.issue(test_dict, 'updatetrains')
                 except Exception as e:
-                    raise ValidationError("收皮机连接超时")
+                    raise ValidationError(f"收皮机连接超时|{e}")
 
 
 def send_again_yikong_again():
-    # 配方重传
+    """配方重传"""
     model_list = 'IfdownShengchanjihua'
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
-        model_name = getattr(md, model_list + ext_str)
+        model_name = getattr(md, model_list + str(ext_str))
         scjh_set = model_name.objects.filter(recstatus__in=["配方需重传", "配方车次需更新"])
         if not scjh_set:
             pass
@@ -155,15 +152,12 @@ def send_again_yikong_again():
                     test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
                 else:
                     test_dict['sp_number'] = 0
-                test_dict['runstate'] = "运行中"  # '运行中'
+                # test_dict['runstate'] = "运行中"  # '运行中'
+                test_dict['no'] = ext_str
                 try:
-                    success_flag = WebService.issue(test_dict, 'planAgain')
-                    if success_flag:
-                        return True
-                    else:
-                        raise ValidationError("未知错误")
+                    WebService.issue(test_dict, 'planAgain')
                 except Exception as e:
-                    raise ValidationError("超时链接")
+                    raise ValidationError(f"超时链接|{e}")
 
 @one_instance
 def run():
@@ -171,31 +165,13 @@ def run():
     while True:
         # 防止报错之后脚本就直接停了
         # 计划下达
-        try:
-            send_to_yikong_run()
-        except Exception as e:
-            logger.info("计划下达错误:{}".format(e))
-            pass
-        # 计划停止
-        try:
-            send_to_yikong_stop()
-        except Exception as e:
-            logger.info("计划停止错误:{}".format(e))
-            pass
-        # 修改车次
-        try:
-            send_to_yikong_update()
-        except Exception as e:
-            logger.info("修改车次错误:{}".format(e))
-            pass
-        # 计划重传
-        try:
-            send_again_yikong_again()
-        except Exception as e:
-            logger.info("计划重传错误:{}".format(e))
-            pass
+        for fun in [send_to_yikong_run, send_to_yikong_stop, send_to_yikong_update, send_again_yikong_again]:
+            try:
+                fun()
+            except Exception as e:
+                logger.error(f"{fun.__doc__}|{e}")
 
-        time.sleep(10)  # 目前设为10秒一次 因为向收皮机发送请求设置timeout是3秒
+        time.sleep(5)  # 目前设为10秒一次 因为向收皮机发送请求设置timeout是3秒
 
 
 if __name__ == "__main__":
