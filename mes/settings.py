@@ -71,7 +71,8 @@ AUTH_USER_MODEL = 'system.User'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'dist/'),],
+        # 'DIRS': [os.path.join(BASE_DIR, 'dist/'),],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,9 +84,9 @@ TEMPLATES = [
         },
     },
 ]
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'dist/static/'),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'dist/static/'),
+# ]
 
 WSGI_APPLICATION = 'mes.wsgi.application'
 
