@@ -263,7 +263,7 @@ class StopPlan(APIView):
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
         pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
-        if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if pcp_obj.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法下达")
         if not pcp_obj:
             return Response({'_': "胶料班次日计划没有数据"}, status=400)
@@ -281,7 +281,7 @@ class StopPlan(APIView):
         #     'remark': 'u',
         #     'recstatus': '完成'
         # }
-        equip_no = pcp_obj.product_day_plan.equip.equip_no
+        equip_no = pcp_obj.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
@@ -315,7 +315,7 @@ class IssuedPlan(APIView):
         if not pcp_obj:
             raise ValidationError("无对应班次计划")
         try:
-            product_batching = pcp_obj.product_day_plan.product_batching
+            product_batching = pcp_obj.product_batching
         except:
             raise ValidationError("无对应日计划胶料配料标准")
         # 胶料配料详情，一份胶料对应多个配料
@@ -335,7 +335,7 @@ class IssuedPlan(APIView):
     def _map_PmtRecipe(self, pcp_object, product_process, product_batching):
         data = {
             "id": product_process.id,
-            "lasttime": str(pcp_object.product_day_plan.plan_schedule.day_time),
+            "lasttime": str(pcp_object.work_schedule_plan.plan_schedule.day_time),
             "oper": self.request.user.username,
             "recipe_code": product_batching.stage_product_batch_no,
             "recipe_name": product_batching.stage_product_batch_no,
@@ -521,14 +521,14 @@ class IssuedPlan(APIView):
         test_dict['machineno'] = strtoint(params.get("equip_name", 0)) if strtoint(
             params.get("equip_name", 0)) else 0  # 易控组态那边的机台euqip_no是int类型
         test_dict['finishno'] = params.get("actual_trains", 0) if params.get("actual_trains", 0) else 0
-        weight = pcp_obj.product_day_plan.product_batching.batching_weight
+        weight = pcp_obj.product_batching.batching_weight
         if weight:
-            test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+            test_dict['weight'] = pcp_obj.product_batching.batching_weight
         else:
             test_dict['weight'] = 0
-        sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        sp_number = pcp_obj.product_y_plan.product_batching.processes.sp_num
         if sp_number:
-            test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+            test_dict['sp_number'] = pcp_obj.product_batching.processes.sp_num
         else:
             test_dict['sp_number'] = 0
         try:
@@ -548,12 +548,13 @@ class IssuedPlan(APIView):
 
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
 
-        if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if pcp_obj.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法下达")
 
         # 校验计划与配方完整性
 
-        uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
+        # uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
+        uid_list = pcp_obj.equip.equip_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
         id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id",
                                                                                                               flat=True)
         status_list = PlanStatus.objects.filter(id__in=id_list)
@@ -587,14 +588,14 @@ class IssuedPlan(APIView):
         # 计划下达到易控组态
         test_dict = OrderedDict()  # 传给易控组态的数据
         test_dict['planid'] = params.get("plan_classes_uid", "")
-        weight = pcp_obj.product_day_plan.product_batching.batching_weight
+        weight = pcp_obj.product_batching.batching_weight
         if weight:
-            test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+            test_dict['weight'] = pcp_obj.product_batching.batching_weight
         else:
             test_dict['weight'] = 0
-        sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
+        sp_number = pcp_obj.product_batching.processes.sp_num
         if sp_number:
-            test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+            test_dict['sp_number'] = pcp_obj.product_batching.processes.sp_num
         else:
             test_dict['sp_number'] = 0
         test_dict['runstate'] = "运行中"  # '运行中'
@@ -614,7 +615,7 @@ class IssuedPlan(APIView):
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
-        if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if pcp_obj.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法重传")
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
