@@ -4,7 +4,6 @@ from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +20,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductBatchingPartialUpdateSerializer, RecipeReceiveSerializer
+    ProductBatchingPartialUpdateSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
     ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
 
@@ -251,17 +250,6 @@ class ConditionListView(APIView):
     def get(self, request):
         data = BaseCondition.objects.values('id', 'code', 'condition')
         return Response({'results': data})
-
-
-@method_decorator([api_recorder], name="dispatch")
-class RecipeReceiveAPiView(CreateAPIView):
-    """
-    接受上辅机配方数据接口
-    """
-    permission_classes = ()
-    authentication_classes = ()
-    serializer_class = RecipeReceiveSerializer
-    queryset = ProductBatching.objects.all()
 
 
 @method_decorator([api_recorder], name="dispatch")
