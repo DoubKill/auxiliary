@@ -1,5 +1,7 @@
+import functools
 import logging
 import os
+import socket
 import time
 
 import django
@@ -13,8 +15,28 @@ from rest_framework.exceptions import ValidationError
 from mes.common_code import WebService
 from plan.models import ProductClassesPlan
 from production.models import PlanStatus, TrainsFeedbacks
+from work_station import models as md
 
 logger = logging.getLogger('send_log')
+
+
+def one_instance(func):
+    '''
+    如果已经有实例在跑则退出
+    '''
+    @functools.wraps(func)
+    def f(*args,**kwargs):
+        try:
+        # 全局属性，否则变量会在方法退出后被销毁
+            global s
+            s = socket.socket()
+            host = socket.gethostname()
+            s.bind((host, 60124))
+        except:
+            logger.info('already has an instance, this script will not be excuted')
+            return
+        return func(*args,**kwargs)
+    return f
 
 
 def send_to_yikong_run():
@@ -86,7 +108,7 @@ def send_to_yikong_stop():
 
 
 def send_to_yikong_update():
-    from work_station import models as md
+
     model_list = 'IfdownShengchanjihua'
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
@@ -108,7 +130,6 @@ def send_to_yikong_update():
 
 def send_again_yikong_again():
     # 计划下达到易控组态
-    from work_station import models as md
     model_list = 'IfdownShengchanjihua'
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
@@ -141,7 +162,7 @@ def send_again_yikong_again():
                 except Exception as e:
                     raise ValidationError("超时链接")
 
-
+@one_instance
 def run():
     logger.info("向收皮机发送数据")
     while True:
