@@ -1,20 +1,44 @@
-from rest_framework import status
+import logging
+import re
+
+import requests
+from rest_framework import status, mixins
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from basics.models import PlanSchedule
 from mes.permissions import PermissonsDispatch
-from plan.models import ProductClassesPlan
-from system.models import User
+from system.models import User, ChildSystemInfo
+
+logger = logging.getLogger(__name__)
 
 
 class CommonDeleteMixin(object):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.delete_flag = True
-        instance.delete_user = request.user
+        if instance.use_flag:
+            instance.use_flag = 0
+        else:
+            instance.use_flag = 1
+        instance.last_updated_user = request.user
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SyncCreateMixin(mixins.CreateModelMixin):
+    # 创建时需记录同步数据的接口请继承该创建插件
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        setattr(response, "model_name", self.queryset.model.__name__)
+        return response
+
+
+class SyncUpdateMixin(mixins.UpdateModelMixin):
+    # 更新时需记录同步数据的接口请继承该更新插件
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        setattr(response, "model_name", self.queryset.model.__name__)
+        return response
 
 
 def return_permission_params(model_name):
@@ -60,14 +84,58 @@ def menu(request, menu, temp, format):
     return temp
 
 
-def get_day_plan_class_set(time_str):
-    plan_schedule = PlanSchedule.objects.filter(day_time=time_str).first()
-    day_plan_id_list = plan_schedule.ps_day_plan.filter(delete_flag=False).values_list("id", flat=True)
-    day_class_plan_set = ProductClassesPlan.objects.filter(product_day_plan__in=day_plan_id_list)
-    return day_class_plan_set
+class WebService(object):
+    client = requests.request
+    url = "http://{}:9000/planService"
 
-def get_day_plan_class_uid_list(time_str):
-    plan_schedule = PlanSchedule.objects.filter(day_time=time_str).first()
-    day_plan_id_list = plan_schedule.ps_day_plan.filter(delete_flag=False).values_list("id", flat=True)
-    day_class_plan_uid_list = ProductClassesPlan.objects.filter(product_day_plan__in=day_plan_id_list).values_list("plan_classes_uid", flat=True)
-    return day_class_plan_uid_list
+    @classmethod
+    def issue(cls, data, category, method="post"):
+        headers = {
+            'Content-Type': 'text/xml; charset=utf-8',
+            'SOAPAction': 'http://tempuri.org/INXWebService/{}'
+        }
+
+        child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
+        recv_ip = child_system.link_address
+        url = cls.url.format(recv_ip)
+        headers['SOAPAction'] = headers['SOAPAction'].format(category)
+        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
+        if rep.status_code < 300:
+            return True
+        elif rep.status_code == 500:
+            logger.error(rep.text)
+            raise ValidationError('收皮机内部错误')
+        else:
+            return False
+
+    # dict数据转soap需求xml
+    @staticmethod
+    def trans_dict_to_xml(data, category):
+        """
+        将 dict 对象转换成微信支付交互所需的 XML 格式数据
+
+        :param data: dict 对象
+        :return: xml 格式数据
+        """
+
+        xml = []
+        for k in data.keys():
+            v = data.get(k)
+            if k == 'detail' and not v.startswith('<![CDATA['):
+                v = '<![CDATA[{}]]>'.format(v)
+            xml.append('<{key}>{value}</{key}>'.format(key=k, value=v))
+        res = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"> <s:Body>
+                    <{} xmlns="http://tempuri.org/">
+                       {}
+                    </{}>
+                </s:Body>
+                </s:Envelope>""".format(category, ''.join(xml), category)
+        res = res.encode("utf-8")
+        return res
+
+
+def common_validator(**kwargs):
+    # 通用校验器，用于校验外部入参
+    for k,v in kwargs.items():
+        if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", v):
+            raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")

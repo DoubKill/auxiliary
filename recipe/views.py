@@ -1,28 +1,29 @@
 # Create your views here.
-from django.db.models import Sum
+from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from collections import OrderedDict
 
-from basics.models import GlobalCode
+from basics.models import Equip
 from basics.views import CommonDeleteMixin
+from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
-from mes.permissions import ProductInfoPermissions
-from recipe.filters import MaterialFilter, ProductInfoFilter, ProductRecipeFilter, ProductBatchingFilter, \
+from mes.permissions import PermissionClass, ProductBatchingPermissions
+from production.models import MaterialTankStatus
+from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
-from recipe.serializers import MaterialSerializer, ProductInfoSerializer, ProductInfoCreateSerializer, \
-    ProductInfoUpdateSerializer, ProductInfoPartialUpdateSerializer, ProductInfoCopySerializer, \
-    ProductRecipeListSerializer, ProductBatchingListSerializer, ProductBatchingCreateSerializer, \
-    MaterialAttributeSerializer, ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductProcessSerializer
-from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, MaterialAttribute, ProductProcess
+from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
+    ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
+    ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
+    ProductBatchingPartialUpdateSerializer, RecipeReceiveSerializer
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -37,16 +38,32 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
     destroy:
         删除原材料
     """
-    queryset = Material.objects.filter(delete_flag=False).order_by('-created_date')
+    queryset = Material.objects.filter(delete_flag=False).select_related('material_type').order_by('-created_date')
     serializer_class = MaterialSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialFilter
 
+    def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
+        else:
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.filter(use_flag=1).values('id', 'material_no',
+                                                      'material_name', 'material_type__global_name')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if ProductRecipe.objects.filter(material=instance).exists():
-            raise ValidationError('该原材料已关联配方，无法删除')
+        if ProductBatchingDetail.objects.filter(material=instance).exists():
+            raise ValidationError('该原材料已关联配方，无法停用')
         else:
             return super().destroy(request, *args, **kwargs)
 
@@ -65,31 +82,39 @@ class MaterialAttributeViewSet(CommonDeleteMixin, ModelViewSet):
     """
     queryset = MaterialAttribute.objects.filter(delete_flag=False).order_by('-created_date')
     serializer_class = MaterialAttributeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = MaterialAttributeFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
 class ValidateProductVersionsView(APIView):
-    """验证版本号，创建胶料工艺信息前调用，参数：xxx/?versions=版本&factory=产地id&product_no=胶料编码"""
+    """验证配方信息是否存在，参数：xxx/?site=SITEid&product_info=胶料代码id&versions=版本号&equip=设备id&stage=段次id"""
 
     def get(self, request):
+        site = self.request.query_params.get('site')
+        product_info = self.request.query_params.get('product_info')
         versions = self.request.query_params.get('versions')
-        factory = self.request.query_params.get('factory')
-        product_no = self.request.query_params.get('product_no')
-        if not all([versions, factory, product_no]):
+        equip = self.request.query_params.get('equip')
+        stage = self.request.query_params.get('stage')
+        if not all([versions, site, product_info, equip, stage]):
             raise ValidationError('参数不足')
         try:
-            factory = int(factory)
+            site = int(site)
+            product_info = int(product_info)
+            equip_id = int(equip)
+            stage = int(stage)
         except Exception:
             raise ValidationError('参数错误')
-        product_info = ProductInfo.objects.filter(factory_id=factory,
-                                                  product_no=product_no).order_by('-versions').first()
-        if product_info:
-            if product_info.versions >= versions:  # TODO 目前版本检测根据字符串做比较，后期搞清楚具体怎样填写版本号
-                return Response({'code': -1, 'message': '版本号不得小于现有版本号'})
-        return Response({'code': 0, 'message': ''})
+        if ProductBatching.objects.exclude(used_type=6).filter(
+                equip_id=equip_id,
+                site_id=site,
+                versions=versions,
+                product_info_id=product_info,
+                stage_id=stage).exists():
+            raise ValidationError('已存在相同机台的配方，请修改后重试！')
+        return Response('ok')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -100,78 +125,39 @@ class ProductInfoViewSet(mixins.CreateModelMixin,
                          GenericViewSet):
     """
     list:
-        胶料配方标准列表
+        胶料代码列表
     retrieve:
-        胶料配方标准详情
+        胶料代码标准详情
     create:
-        新建胶料配方标准
+        新建胶料代码
     update:
-        胶料配方标准(只有编辑状态的胶料配方才可操作)
+        修改胶料代码
     partial_update:
-        胶料应用和废弃操作
+        修改胶料代码
     """
     queryset = ProductInfo.objects.filter(delete_flag=False).order_by('-created_date')
+    serializer_class = ProductInfoSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductInfoFilter
+    model_name = queryset.model.__name__.lower()
 
     def get_permissions(self):
-        if self.action == 'partial_update':
-            return (ProductInfoPermissions(),
-                    IsAuthenticatedOrReadOnly())
+        if self.request.query_params.get('all'):
+            return ()
         else:
-            return (IsAuthenticatedOrReadOnly(),)
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return ProductInfoCreateSerializer
-        elif self.action == 'list':
-            return ProductInfoSerializer
-        elif self.action == 'partial_update':
-            return ProductInfoPartialUpdateSerializer
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.values('id', 'product_no', 'product_name')
+            return Response({'results': data})
         else:
-            return ProductInfoUpdateSerializer
+            return super().list(request, *args, **kwargs)
 
 
 @method_decorator([api_recorder], name="dispatch")
-class ProductInfoCopyView(CreateAPIView):
-    """复制配方"""
-    serializer_class = ProductInfoCopySerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-
-
-@method_decorator([api_recorder], name="dispatch")
-class ProductStageInfoView(APIView):
-    """根据产地获取所以胶料及其段次信息, 参数：xxx/?factory_id=111"""
-
-    def get(self, request):
-        factory_id = self.request.query_params.get('factory_id')
-        if not factory_id:
-            raise ValidationError('缺少必填参数')
-        try:
-            factory = GlobalCode.objects.get(id=factory_id, used_flag=0, delete_flag=False)
-        except Exception:
-            raise ValidationError('产地不存在')
-        ret = []
-        products = ProductInfo.objects.filter(factory=factory).prefetch_related('productrecipe_set')
-        for product in products:
-            # TODO 要做distinct stage，sqlite数据库暂时不支持
-            stages = product.productrecipe_set.values('stage', 'stage__global_name')
-            ret.append({'product_info': product.id, 'versions': product.versions,
-                        'product_no': product.product_no, 'stages': stages,
-                        'product_name': product.product_name, 'used_type': product.get_used_type_display()})
-        return Response(data=ret)
-
-
-class ProductRecipeListView(ListAPIView):
-    """根据胶料工艺和段次获取胶料段次配方原材料信息"""
-    queryset = ProductRecipe.objects.filter(delete_flag=False).order_by('sn')
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = ProductRecipeFilter
-    serializer_class = ProductRecipeListSerializer
-    pagination_class = None
-
-
 class ProductBatchingViewSet(ModelViewSet):
     """
     list:
@@ -181,14 +167,60 @@ class ProductBatchingViewSet(ModelViewSet):
     create:
         新建胶料配料标准
     update:
-        修改胶料配料标准
+        配料
     partial_update:
-        修改胶料配料标准
+        配料审批
     """
-    queryset = ProductBatching.objects.filter(delete_flag=False).order_by('-created_date')
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    queryset = ProductBatching.objects.filter(
+        delete_flag=False).select_related("equip__category", "product_info"
+                                          ).prefetch_related(
+                                            Prefetch('process_details',
+                                                     queryset=ProductProcessDetail.objects.filter(
+                                                         delete_flag=False).select_related('condition', 'action')),
+                                            Prefetch('batching_details',
+                                                     queryset=ProductBatchingDetail.objects.filter(
+                                                         delete_flag=False).select_related('material__material_type'))
+                                            ).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
+    model_name = queryset.model.__name__.lower()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return ProductBatching.objects.exclude(
+                used_type=6).filter(delete_flag=False).order_by('-created_date').values(
+                'id', 'stage_product_batch_no', 'product_info__product_name',
+                'equip__equip_name', 'equip__equip_no', 'dev_type__category_name',
+                'used_type', 'batching_weight', 'production_time_interval',
+                'stage__global_name', 'site__global_name', 'processes__sp_num',
+                'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
+                'equip__category__category_name', 'submit_user__username', 'reject_user__username',
+                'used_user__username', 'obsolete_user__username', 'equip_id',
+                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id'
+            )
+        else:
+            return self.queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('distinct'):
+            data = set(queryset.values_list('stage_product_batch_no', flat=True))
+            return Response({'results': data})
+        if self.request.query_params.get('all'):
+            data = queryset.values('id', 'stage_product_batch_no', 'batching_weight', 'production_time_interval')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
+
+    def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
+        elif self.action == 'partial_update':
+            return (IsAuthenticated(),
+                    ProductBatchingPermissions())
+        else:
+            return (IsAuthenticated(),
+                    PermissionClass(return_permission_params(self.model_name))())
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -197,69 +229,84 @@ class ProductBatchingViewSet(ModelViewSet):
             return ProductBatchingCreateSerializer
         elif self.action == 'retrieve':
             return ProductBatchingRetrieveSerializer
+        elif self.action == 'partial_update':
+            return ProductBatchingPartialUpdateSerializer
         else:
             return ProductBatchingUpdateSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete_flag = True
-        instance.delete_user = request.user
-        instance.save()
-        instance.batching_details.filter().update(delete_flag=True, delete_user=request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class PreProductBatchView(APIView):
-    """根据胶料工艺id和段次获取上段位配料信息(新建配料时调用)，参数:xxx/?product_info_id=1&stage_id=1"""
+@method_decorator([api_recorder], name="dispatch")
+class ActionListView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        product_info_id = self.request.query_params.get('product_info_id')
-        stage_id = self.request.query_params.get('stage_id')
+        data = BaseAction.objects.values('id', 'code', 'action')
+        return Response({'results': data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ConditionListView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = BaseCondition.objects.values('id', 'code', 'condition')
+        return Response({'results': data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeReceiveAPiView(CreateAPIView):
+    """
+    接受上辅机配方数据接口
+    """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = RecipeReceiveSerializer
+    queryset = ProductBatching.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeObsoleteAPiView(APIView):
+    """
+    接收MES弃用配方接口
+    """
+
+    def post(self, request):
+        stage_product_batch_no = self.request.data.get('stage_product_batch_no')
         try:
-            product_info_id = int(product_info_id)
-            stage_id = int(stage_id)
+            product_batching = ProductBatching.objects.get(stage_product_batch_no=stage_product_batch_no)
+        except ProductBatching.DoesNotExist:
+            return Response('暂无该配方数据', status=status.HTTP_200_OK)
+        product_batching.used_type = 6
+        product_batching.save()
+        return Response('弃用成功', status=status.HTTP_200_OK)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class BatchingEquip(APIView):
+
+    def get(self, request):
+        dev_type = self.request.query_params.get('dev_type')
+        try:
+            dev_type = int(dev_type)
         except Exception:
             raise ValidationError('参数错误')
-        recipe = ProductRecipe.objects.filter(product_info_id=product_info_id,
-                                              stage_id=stage_id).order_by('-sn').first()
-        if not recipe:
-            raise ValidationError('当前段次配方不存在')
-
-        pre_recipe = ProductRecipe.objects.exclude(stage_id=stage_id).filter(product_info_id=product_info_id,
-                                                                             sn__lt=recipe.sn
-                                                                             ).order_by('-sn').first()
-        pre_recipe_data = {}
-        if pre_recipe:
-            pre_batch = ProductBatching.objects.filter(product_info_id=product_info_id,
-                                                       stage_id=pre_recipe.stage_id).first()
-            if not pre_batch:
-                raise ValidationError('请先配置上段位的配料')
-            else:
-                ratio = ProductRecipe.objects.filter(product_info_id=product_info_id,
-                                                     sn__lte=recipe.sn
-                                                     ).aggregate(ratio=Sum('ratio'))['ratio']
-                pre_recipe_data = OrderedDict()
-                pre_recipe_data['material_type'] = pre_batch.stage.global_name
-                pre_recipe_data['ratio'] = ratio
-                pre_recipe_data['density'] = pre_batch.batching_proportion
-                pre_recipe_data['material_name'] = pre_batch.stage_product_batch_no
-                pre_recipe_data['previous_product_batching'] = pre_batch.id
-        return Response(pre_recipe_data)
+        equip_data = Equip.objects.filter(category_id=dev_type).values('id', 'equip_no', 'equip_name',
+                                                                       'category__category_name')
+        return Response(data={'results': equip_data})
 
 
-class ProcessStepsViewSet(ModelViewSet):
-    """
-    list:
-        胶料配料步序列表
-    retrieve:
-        胶料配料步序详情
-    create:
-        新建胶料配料步序
-    update:
-        修改胶料配料步序
-    partial_update:
-        修改胶料配料步序
-    """
-    queryset = ProductProcess.objects.filter(delete_flag=False).order_by('-created_date')
-    filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProductProcessSerializer
+@method_decorator([api_recorder], name="dispatch")
+class TankMaterialVIew(APIView):
+    """炭黑、油料罐原材料数据，参数：tank_type=(1:炭黑，2:油料)&equip_no="""
+
+    def get(self, request):
+        tank_type = self.request.query_params.get('tank_type')
+        equip_no = self.request.query_params.get('equip_no')
+        if not all([tank_type, equip_no]):
+            raise ValidationError('参数不足')
+        if tank_type not in ['1', '2']:
+            raise ValidationError('参数错误')
+        mat_nos = set(MaterialTankStatus.objects.filter(equip_no=equip_no,
+                                                        tank_type=tank_type).values_list('material_no', flat=True))
+        data = Material.objects.filter(material_no__in=mat_nos).values('id', 'material_name', 'material_no')
+        return Response(data={'results': data})

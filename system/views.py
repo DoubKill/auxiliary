@@ -1,22 +1,29 @@
+import re
+
 import xlrd
 from django.contrib.auth.models import Permission
 from django.utils.decorators import method_decorator
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
-from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import UpdateAPIView, ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
-from mes.common_code import menu
+from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from system.models import GroupExtension, User, Section
+from mes.permissions import PermissionClass
+from plan.models import ProductClassesPlan
+from recipe.models import ProductBatching
+from system.filters import UserFilter, GroupExtensionFilter, InterfaceOperationLogFilter
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
-    UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer
-from django_filters.rest_framework import DjangoFilterBackend
-from system.filters import UserFilter, GroupExtensionFilter
+    UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
+    ChildSystemInfoSerializer, InterfaceOperationLogSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -33,7 +40,9 @@ class PermissionViewSet(ReadOnlyModelViewSet):
     """
     queryset = Permission.objects.filter()
     serializer_class = PermissionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     pagination_class = SinglePageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
 
@@ -50,11 +59,22 @@ class UserViewSet(ModelViewSet):
     destroy:
         账号停用和启用
     """
-    queryset = User.objects.filter(delete_flag=False)
+    queryset = User.objects.filter(delete_flag=False, is_superuser=False
+                                   ).order_by('num').prefetch_related('user_permissions', 'groups')
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.filter(is_active=1, is_superuser=False).values('id', 'username')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         # 账号停用和启用
@@ -79,22 +99,25 @@ class UserViewSet(ModelViewSet):
             return UserUpdateSerializer
 
 
+@method_decorator([api_recorder], name="dispatch")
 class UserGroupsViewSet(mixins.ListModelMixin,
                         GenericViewSet):
-    queryset = User.objects.filter(delete_flag=False)
+    queryset = User.objects.filter(delete_flag=False).prefetch_related('user_permissions', 'groups')
 
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     pagination_class = SinglePageNumberPagination
     filter_class = UserFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
-class GroupExtensionViewSet(ModelViewSet):
+class GroupExtensionViewSet(CommonDeleteMixin, ModelViewSet):  # 本来是删除，现在改为是启用就改为禁用 是禁用就改为启用
     """
     list:
-        角色列表
+        角色列表,xxx?all=1查询所有
     create:
         创建角色
     update:
@@ -102,34 +125,54 @@ class GroupExtensionViewSet(ModelViewSet):
     destroy:
         删除角色
     """
-    queryset = GroupExtension.objects.filter(delete_flag=False)
+    queryset = GroupExtension.objects.filter(delete_flag=False).order_by('-created_date').prefetch_related('user_set',
+                                                                                                           'permissions')
     serializer_class = GroupExtensionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
     filter_class = GroupExtensionFilter
+
+    def get_permissions(self):
+        if self.request.query_params.get('all'):
+            return ()
+        else:
+            return (IsAuthenticated(),)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if self.request.query_params.get('all'):
+            data = queryset.filter(use_flag=1).values('id', 'name')
+            return Response({'results': data})
+        else:
+            return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == 'list':
             return GroupExtensionSerializer
         if self.action == 'create':
             return GroupExtensionSerializer
-        if self.action == 'update':
+        elif self.action == 'update':
             return GroupExtensionUpdateSerializer
-        if self.action == 'retrieve':
-            return GroupExtensionSerializer
         if self.action == 'partial_update':
             return GroupExtensionUpdateSerializer
+        else:
+            return GroupExtensionSerializer
 
 
 @method_decorator([api_recorder], name="dispatch")
 class GroupAddUserViewSet(UpdateAPIView):
     """控制角色中用户具体为哪些的视图"""
-    queryset = GroupExtension.objects.filter(delete_flag=False)
+    queryset = GroupExtension.objects.filter(delete_flag=False).prefetch_related('user_set', 'permissions')
     serializer_class = GroupUserUpdateSerializer
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
 
 
 @method_decorator([api_recorder], name="dispatch")
-class SectionViewSet(ModelViewSet):
+class SectionViewSet(CommonDeleteMixin, ModelViewSet):
     """
     list:
         角色列表
@@ -142,32 +185,10 @@ class SectionViewSet(ModelViewSet):
     """
     queryset = Section.objects.filter(delete_flag=False)
     serializer_class = SectionSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
     filter_backends = (DjangoFilterBackend,)
-
-
-class MesLogin(ObtainJSONWebToken):
-    menu = {
-        "basics": [
-            "globalcodetype",
-            "globalcode",
-            "workschedule",
-            "equip"
-        ],
-        "system": {
-            "user",
-        },
-        "auth": {
-        }
-
-    }
-
-    def post(self, request, *args, **kwargs):
-        temp = super().post(request, *args, **kwargs)
-        format = kwargs.get("format")
-        if temp.status_code != 200:
-            return temp
-        return menu(request, self.menu, temp, format)
 
 
 class ImportExcel(APIView):
@@ -227,3 +248,219 @@ class ImportExcel(APIView):
         :return:
         """
         return sheet.merged_cells
+
+
+class SystemConfigViewSet(CommonDeleteMixin, ModelViewSet):
+    """
+        list:
+            系统配置列表
+        create:
+            创建系统配置
+        update:
+            修改系统配置
+        destroy:
+            删除系统配置
+    """
+    queryset = SystemConfig.objects.filter(delete_flag=False)
+    serializer_class = SystemConfigSerializer
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
+
+
+class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
+    """
+        list:
+            子系统信息列表
+        create:
+            创建子系统信息
+        update:
+            修改子系统信息
+        destroy:
+            删除子系统信息
+    """
+    queryset = ChildSystemInfo.objects.filter(delete_flag=False)
+    serializer_class = ChildSystemInfoSerializer
+    pagination_class = SinglePageNumberPagination
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ("system_type",)
+
+
+class LoginView(ObtainJSONWebToken):
+    """
+    post
+        获取权限列表
+    """
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        if re.search(r'^[0-9]+$', username):
+            user = User.objects.filter(num=username).first()
+            if not user:
+                return Response('该用户不存在', status=400)
+            else:
+                data = {
+                    'username': user.username,
+                    'password': request.data.get("password")
+
+                }
+                serializer = self.get_serializer(data=data)
+        else:
+            serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.object.get('user') or request.user
+            token = serializer.object.get('token')
+            # 获取该用户所有权限
+            permissions = list(user.get_all_permissions())
+            # 除去前端不涉及模块
+            permission_list = []
+            for p in permissions:
+                if p.split(".")[0] not in ["contenttypes", "sessions", "work_station", "admin"]:
+                    permission_list.append(p)
+            # 生成菜单管理树
+            permissions_set = set([_.split(".")[0] for _ in permission_list])
+            permissions_tree = {__: {} for __ in permissions_set}
+            for x in permission_list:
+                first_key = x.split(".")[0]
+                second_key = x.split(".")[-1].split("_")[-1]
+                op_value = x.split(".")[-1].split("_")[0]
+                op_list = permissions_tree.get(first_key, {}).get(second_key)
+                if op_list:
+                    permissions_tree[first_key][second_key].append(op_value)
+                else:
+                    permissions_tree[first_key][second_key] = [op_value]
+            if permissions_tree.get("auth"):
+                auth = permissions_tree.pop("auth")
+                # 合并auth与system
+                if permissions_tree.get("system"):
+                    permissions_tree["system"].update(**auth)
+                else:
+                    permissions_tree["system"] = auth
+            if permissions_tree.get("recipe", {}).get("material"):
+                # 当有配方原材料的时候需要往生产里迁移映射关系
+                if not permissions_tree.get("production"):
+                    permissions_tree["production"] = {}
+                material = permissions_tree["recipe"].pop("material")
+                permissions_tree["production"].update(material=material)
+            return Response({"results": permissions_tree,
+                             "username": user.username,
+                             "token": token})
+        # 返回异常信息
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+import datetime
+
+
+class SystemStatusSwitch(APIView):
+    # post: 切换系统运行状态的接口
+    queryset = ChildSystemInfo.objects.filter(delete_flag=False)
+    model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated,
+                          PermissionClass(return_permission_params(model_name)))
+
+    def post(self, request, *args, **kwargs):
+        params = request.data
+        status = params.get("system_status")
+        if status not in ["联网", "独立"]:
+            raise ValidationError("系统运行状态只有联网/独立")
+        config = SystemConfig.objects.filter(config_name="system_name").first()
+        if not config:
+            raise ValidationError("系统配置异常，请联系管理员检查处理")
+        config_value = config.config_value
+        child_system = ChildSystemInfo.objects.filter(system_name=config_value).first()
+        if not child_system:
+            raise ValidationError("系统配置异常，请联系管理员检查处理")
+        if child_system.status_lock:
+            raise ValidationError("系统运行状态处于同步中，请稍后再试")
+        child_system.status = status
+        if status == '独立':
+            child_system.lost_time = datetime.datetime.now()
+        elif status == '联网':
+            child_system.lost_time = None
+        child_system.save()
+        return Response("ok")
+
+
+class Synchronization(APIView):
+    """mes和上辅机同步接口"""
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        auxliary_dict = {'lost_time': None, }  # 上辅机
+        # 获取断网时间
+        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
+        if csi_obj:
+            lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
+            auxliary_dict['lost_time'] = lost_time
+            auxliary_dict['plan'] = {}
+            auxliary_dict['recipe'] = {}
+            # 胶料日班次计划表
+            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
+            if pcp_set:
+                auxliary_dict['plan']['ProductClassesPlan'] = {}
+                for pcp_obj in pcp_set:
+                    pcp_dict = pcp_obj.__dict__
+                    pcp_dict.pop('_state')
+                    auxliary_dict['plan']['ProductClassesPlan'][pcp_obj.plan_classes_uid] = pcp_dict
+            # 胶料配料标准表
+            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
+            if pb_set:
+                auxliary_dict['recipe']['ProductBatching'] = {}
+                for pb_obj in pb_set:
+                    pb_dict = pb_obj.__dict__
+                    pb_dict.pop('_state')
+                    auxliary_dict['recipe']['ProductBatching'][pb_obj.stage_product_batch_no] = pb_dict
+        return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
+
+
+class Manualsync(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        from plan import models as pn
+        from recipe import models as rp
+        class_list = request.data
+        for class_dict in class_list:
+            if class_dict.pop('manual') == 'plan':
+                # 一旦给新建了胶料日班次计划，后续就该新建plan_status和原材料需求表 这两张表是自己新建还是通过前端同步任务传过来 个人认为是自己写  因为前端是人过选择 存在失误
+                model_name = getattr(pn, class_dict.pop('table_name'))
+                model_name.objects.create(**class_dict)
+            elif class_dict.pop('manual') == 'recipe':
+                model_name = getattr(rp, class_dict.pop('table_name'))
+                model_name.objects.create(**class_dict)
+
+        return Response('同步成功', status=200)
+
+
+class UpdatePassWord(APIView):
+    """修改密码接口"""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        params = request.data
+        old_password = params.get('old_password', None)
+        new_password = params.get('new_password', None)
+        if not old_password:
+            return Response({"old_password": "旧密码必传"}, status=400)
+        if not new_password:
+            return Response({"new_password": "新密码必传"}, status=400)
+        is_right = request.user.check_password(old_password)
+        if not is_right:
+            return Response({"old_password": "旧密码错误"}, status=400)
+        request.user.set_password(new_password)
+        request.user.save()
+        return Response("密码修改成功", status=200)
+
+
+class InterfaceOperationLogView(ListAPIView):
+    """操作日志展示接口"""
+    permission_classes = (IsAuthenticated,)
+    queryset = InterfaceOperationLog.objects.filter(user__isnull=False).order_by('-create_time')
+    serializer_class = InterfaceOperationLogSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = InterfaceOperationLogFilter

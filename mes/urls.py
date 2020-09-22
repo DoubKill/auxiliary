@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -41,6 +41,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/basics/', include('basics.urls')),
+    path('api/v1/datain/', include('datain.urls')),
     path('api/v1/system/', include('system.urls')),
     path('api/v1/recipe/', include('recipe.urls')),
     path('api/v1/plan/', include('plan.urls')),
@@ -53,4 +54,5 @@ if settings.DEBUG:
             path('docs/', include_docs_urls(title="Mes系统文档", description="Mes系统文档")),
             path('api-auth/', include('rest_framework.urls')),
             path('api/v1/docs/', include('docs.urls')),
+            path('', TemplateView.as_view(template_name='index.html')),
         ]

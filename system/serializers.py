@@ -6,13 +6,15 @@ update_time:
 """
 import re
 
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Permission
 from rest_framework import serializers
-from django.contrib.auth.hashers import make_password
+from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
-from system.models import GroupExtension, Group, User, Section
+from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 
 
 class PermissionSerializer(BaseModelSerializer):
@@ -25,7 +27,10 @@ class UserUpdateSerializer(BaseModelSerializer):
     is_active = serializers.BooleanField(read_only=True)
     username = serializers.CharField(required=False)
     password = serializers.CharField(required=False)
-    num = serializers.CharField(required=False)
+    num = serializers.CharField(required=False, validators=[
+        UniqueValidator(queryset=User.objects.all(),
+                        message='该用户工号已存在'),
+    ])
 
     def to_representation(self, instance):
         instance = super().to_representation(instance)
@@ -52,14 +57,22 @@ class UserSerializer(BaseModelSerializer):
         return instance
 
     def create(self, validated_data):
-        partten = r"^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$"
+        partten = r"^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{3,16}$"
         password = validated_data.get('password')
         if not re.search(partten, password):
-            raise serializers.ValidationError("请输入6~16位长度包含字母和数字的密码")
+            raise serializers.ValidationError("请输入3~16位长度包含字母和数字的密码")
+        validated_data['created_user'] = self.context['request'].user
         user = super().create(validated_data)
         user.set_password(password)
         user.save()
         return user
+
+    def validate_username(self, value):
+        if len(value) > 64:
+            raise ValidationError("用户名过长")
+        if not re.search(r'^[a-zA-Z0-9\u4e00-\u9fa5]+$', value):
+            raise serializers.ValidationError("用户名中包含非法字符")
+        return value
 
     class Meta:
         model = User
@@ -86,6 +99,14 @@ class GroupUserSerializer(BaseModelSerializer):
 class GroupExtensionSerializer(BaseModelSerializer):
     """角色组扩展序列化器"""
     user_set = UserUpdateSerializer(read_only=True, many=True)
+
+    def create(self, validated_data):
+        validated_data['created_user'] = self.context['request'].user
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['last_updated_user'] = self.context['request'].user
+        return super().update(instance, validated_data)
 
     class Meta:
         model = GroupExtension
@@ -126,4 +147,27 @@ class SectionSerializer(BaseModelSerializer):
     class Meta:
         model = Section
         fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class SystemConfigSerializer(BaseModelSerializer):
+    class Meta:
+        model = SystemConfig
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class ChildSystemInfoSerializer(BaseModelSerializer):
+    class Meta:
+        model = ChildSystemInfo
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class InterfaceOperationLogSerializer(BaseModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = InterfaceOperationLog
+        exclude = ('reasons', )
         read_only_fields = COMMON_READ_ONLY_FIELDS
