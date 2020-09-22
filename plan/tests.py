@@ -14,7 +14,7 @@ model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'If
 for model_obj in model_list:
     model_name = getattr(md, model_obj + str(i))
     model_name.objects.all().update(recstatus='运行中')
-    PlanStatus.objects.filter(id=2).update(status='运行中')
+    PlanStatus.objects.filter(id=1).update(status='运行中')
     model_name.objects.all().update(recstatus='等待')
     model_name.objects.all().delete()
     PlanStatus.objects.filter().update(status='等待')

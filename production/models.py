@@ -101,7 +101,7 @@ class PlanStatus(AbstractEntity):
     equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
     product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
     status = models.CharField(max_length=64, help_text='状态:等待、已下达、运行中、完成', verbose_name='状态',
-                              choices=(('等待', '等待'), ('已下达', '已下达'), ('运行中', '运行中'), ('完成', '完成'),('待停止','待停止')))
+                              choices=(('等待', '等待'), ('已下达', '已下达'), ('运行中', '运行中'), ('完成', '完成'), ('待停止', '待停止')))
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     actual_trains = models.IntegerField(blank=True, null=True, help_text='实际车次', verbose_name='实际车次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
@@ -273,7 +273,7 @@ class IfupReportMixBackups(models.Model):
         db_table = 'ifup_report_mix_backups'
 
 
-class IfupReportCurveBackups(models.Model):#TODO 既然是车次报表怎么能没车次呢
+class IfupReportCurveBackups(models.Model):  # TODO 既然是车次报表怎么能没车次呢
     """车次报表工艺曲线数据表"""
     序号 = models.BigAutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
@@ -292,9 +292,7 @@ class IfupReportCurveBackups(models.Model):#TODO 既然是车次报表怎么能�
         db_table = 'ifup_report_curve_backups'
 
 
-
 class v_ASRS_STORE_MESVIEW(models.Model):
-
     库房编号 = models.CharField(max_length=20, blank=True, null=True)
     库房名称 = models.CharField(max_length=20, blank=True, null=True)
     订单号 = models.CharField(max_length=50, blank=True, null=True)
