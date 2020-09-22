@@ -426,8 +426,8 @@ class Manualsync(APIView):
         from recipe import models as rp
         class_list = request.data
         for class_dict in class_list:
-            if class_dict.pop(
-                    'manual') == 'plan':  # 一旦给新建了胶料日班次计划，后续就该新建plan_status和原材料需求表 这两张表是自己新建还是通过前端同步任务传过来 个人认为是自己写  因为前端是人过选择 存在失误
+            if class_dict.pop('manual') == 'plan':
+                # 一旦给新建了胶料日班次计划，后续就该新建plan_status和原材料需求表 这两张表是自己新建还是通过前端同步任务传过来 个人认为是自己写  因为前端是人过选择 存在失误
                 model_name = getattr(pn, class_dict.pop('table_name'))
                 model_name.objects.create(**class_dict)
             elif class_dict.pop('manual') == 'recipe':

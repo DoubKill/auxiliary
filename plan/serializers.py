@@ -146,8 +146,8 @@ class ProductBatchingClassesPlanSerializer(BaseModelSerializer):
 
 
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
-    equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
-    stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
+    equip_name = serializers.CharField(source='equip.equip_no', read_only=True, help_text='机台名')
+    stage_product_batch_no = serializers.CharField(source='product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
     classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
@@ -207,13 +207,13 @@ class UpRegulationSerializer(BaseModelSerializer):
         update_dict = {'delete_flag': False}
         equip_no = validated_data.get('equip_no', None)
         if equip_no:
-            update_dict['product_day_plan__equip__equip_no'] = equip_no
+            update_dict['equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
-            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
+            update_dict['product_batching__stage_product_batch_no'] = product_batching
         begin_times = validated_data.get('begin_times', None)
         end_times = validated_data.get('end_times', None)
         if begin_times and end_times:
@@ -263,13 +263,13 @@ class DownRegulationSerializer(BaseModelSerializer):
         update_dict = {'delete_flag': False}
         equip_no = validated_data.get('equip_no', None)
         if equip_no:
-            update_dict['product_day_plan__equip__equip_no'] = equip_no
+            update_dict['equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
-            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
+            update_dict['product_batching__stage_product_batch_no'] = product_batching
         begin_times = validated_data.get('begin_times', None)
         end_times = validated_data.get('end_times', None)
         if begin_times and end_times:
@@ -318,7 +318,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if instance.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         # if validated_data.get('trains') - instance.plan_trains <= 2:
         #     raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
@@ -340,7 +340,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
 
-        equip_no = instance.product_day_plan.equip.equip_no
+        equip_no = instance.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
