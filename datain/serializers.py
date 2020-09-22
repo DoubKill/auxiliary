@@ -327,7 +327,8 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         stage_product_batch_no = attrs['stage_product_batch_no']
         dev_type = attrs.get('dev_type')
         if ProductBatching.objects.exclude(used_type=6).filter(stage_product_batch_no=stage_product_batch_no,
-                                                               dev_type__category_no=dev_type):
+                                                               dev_type__category_no=dev_type,
+                                                               batching_type=2):
             raise serializers.ValidationError('上辅机已存在相同机型配方， 请修改后重试！')
         try:
             dev_type = EquipCategoryAttribute.objects.get(category_no=dev_type)

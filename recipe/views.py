@@ -260,9 +260,12 @@ class RecipeObsoleteAPiView(APIView):
 
     def post(self, request):
         stage_product_batch_no = self.request.data.get('stage_product_batch_no')
-        try:
-            product_batching = ProductBatching.objects.get(stage_product_batch_no=stage_product_batch_no)
-        except ProductBatching.DoesNotExist:
+        dev_type = self.request.data.get('dev_type')
+        product_batching = ProductBatching.objects.exclude(used_type=6).filter(
+            stage_product_batch_no=stage_product_batch_no,
+            dev_type__category_no=dev_type,
+            batching_type=2).first()
+        if not product_batching:
             return Response('暂无该配方数据', status=status.HTTP_200_OK)
         product_batching.used_type = 6
         product_batching.save()
