@@ -238,8 +238,8 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.used_type != 1:
-            raise serializers.ValidationError('只有编辑状态的配方才可修改')
+        if instance.used_type not in (1, 4):
+            raise serializers.ValidationError('操作无效！')
         batching_details = validated_data.pop('batching_details', None)
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
