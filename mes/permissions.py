@@ -23,7 +23,7 @@ class ProductBatchingPermissions(BasePermission):
             return 'submit_prod' in user_permissions
         elif obj.used_type == 2:  # 当前状态是提交
             return 'using_prod' in user_permissions
-        elif obj.used_type == 4:  # 当前状态是应用
+        elif obj.used_type in (4, 5):  # 当前状态是应用或者驳回
             return 'abandon_prod' in user_permissions
         else:
             return False

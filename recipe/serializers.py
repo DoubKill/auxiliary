@@ -6,7 +6,7 @@ from django.db.transaction import atomic
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from basics.models import GlobalCode, EquipCategoryAttribute, Equip
+from basics.models import GlobalCode
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
     MaterialAttribute, ProductProcess, ProductProcessDetail
@@ -238,8 +238,8 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.used_type != 1:
-            raise serializers.ValidationError('只有编辑状态的配方才可修改')
+        if instance.used_type not in (1, 4):
+            raise serializers.ValidationError('操作无效！')
         batching_details = validated_data.pop('batching_details', None)
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
@@ -326,81 +326,3 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
     class Meta:
         model = ProductBatching
         fields = ('id', 'pass_flag')
-
-
-class ProductBatchingDetailSerializer2(serializers.ModelSerializer):
-    material = serializers.CharField()
-
-    def validate(self, attrs):
-        try:
-            material = Material.objects.get(material_no=attrs['material'])
-        except Material.DoesNotExist:
-            raise serializers.ValidationError('原材料{}不存在'.format(attrs['material']))
-        attrs['material'] = material
-        return attrs
-
-    class Meta:
-        model = ProductBatchingDetail
-        fields = ('sn', 'material', 'actual_weight', 'standard_error', 'auto_flag')
-
-
-class RecipeReceiveSerializer(serializers.ModelSerializer):
-    factory = serializers.CharField()
-    site = serializers.CharField()
-    product_info = serializers.CharField()
-    dev_type = serializers.CharField(allow_blank=True, allow_null=True)
-    stage = serializers.CharField()
-    equip = serializers.CharField(allow_blank=True, allow_null=True)
-    batching_details = ProductBatchingDetailSerializer2(many=True)
-
-    def validate(self, attrs):
-        stage_product_batch_no = attrs['stage_product_batch_no']
-        dev_type = attrs.get('dev_type')
-        equip = attrs.get('equip')
-        if ProductBatching.objects.filter(stage_product_batch_no=stage_product_batch_no):
-            raise serializers.ValidationError('该配方已存在， 请重试！')
-        try:
-            if dev_type:
-                dev_type = EquipCategoryAttribute.objects.get(category_no=dev_type)
-            if equip:
-                equip = Equip.objects.get(equip_no=equip)
-            factory = GlobalCode.objects.get(global_no=attrs['factory'])
-            site = GlobalCode.objects.get(global_no=attrs['site'])
-            product_info = ProductInfo.objects.get(product_no=attrs['product_info'])
-            stage = GlobalCode.objects.get(global_no=attrs['stage'])
-        except Equip.DoesNotExist:
-            raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
-        except EquipCategoryAttribute.DoesNotExist:
-            raise serializers.ValidationError('上辅机机型{}不存在'.format(attrs.get('dev_type')))
-        except GlobalCode.DoesNotExist as e:
-            raise serializers.ValidationError('公共代码{}不存在'.format(e))
-        except ProductInfo.DoesNotExist:
-            raise serializers.ValidationError('胶料代码{}不存在'.format(attrs['product_info']))
-        except Exception as e:
-            raise e
-        attrs['dev_type'] = dev_type
-        attrs['factory'] = factory
-        attrs['equip'] = equip
-        attrs['site'] = site
-        attrs['product_info'] = product_info
-        attrs['stage'] = stage
-        attrs['batching_type'] = 2
-        return attrs
-
-    @atomic()
-    def create(self, validated_data):
-        batching_details = validated_data.pop('batching_details')
-        instance = super().create(validated_data)
-        batching_detail_list = [None] * len(batching_details)
-        for i, detail in enumerate(batching_details):
-            detail['product_batching'] = instance
-            batching_detail_list[i] = ProductBatchingDetail(**detail)
-        ProductBatchingDetail.objects.bulk_create(batching_detail_list)
-        return instance
-
-    class Meta:
-        model = ProductBatching
-        fields = ('created_date', 'factory', 'site', 'product_info',
-                  'dev_type', 'stage', 'equip', 'used_time', 'precept', 'stage_product_batch_no',
-                  'versions', 'used_type', 'batching_weight', 'manual_material_weight',
-                  'auto_material_weight', 'production_time_interval', 'batching_details')
