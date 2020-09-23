@@ -1,18 +1,13 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.utils.decorators import method_decorator
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import IsAuthenticated
 
 from basics.models import GlobalCode
 from datain.serializers import GlobalCodeReceiveSerializer, WorkScheduleReceiveSerializer, \
     ClassesDetailReceiveSerializer, EquipCategoryAttributeSerializer, EquipSerializer, PlanScheduleSerializer, \
-    WorkSchedulePlanSerializer, MaterialSerializer, GlobalCodeTypeSerializer, ProductInfoSerializer
+    WorkSchedulePlanSerializer, MaterialSerializer, GlobalCodeTypeSerializer, ProductInfoSerializer, \
+    RecipeReceiveSerializer
 from mes.derorators import api_recorder
-from recipe.models import ProductInfo
+from recipe.models import ProductInfo, ProductBatching
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -73,3 +68,14 @@ class GlobalCodeTypeReceive(CreateAPIView):
 class ProductInfoReceive(CreateAPIView):
     serializer_class = ProductInfoSerializer
     queryset = ProductInfo.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeReceiveAPiView(CreateAPIView):
+    """
+    接受上辅机配方数据接口
+    """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = RecipeReceiveSerializer
+    queryset = ProductBatching.objects.all()

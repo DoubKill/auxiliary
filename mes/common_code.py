@@ -100,13 +100,14 @@ class WebService(object):
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
         rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
+        # print(rep.text)
         if rep.status_code < 300:
-            return True
+            return True, rep.text
         elif rep.status_code == 500:
             logger.error(rep.text)
-            raise ValidationError('收皮机内部错误')
+            return False, rep.text
         else:
-            return False
+            return False, rep.text
 
     # dict数据转soap需求xml
     @staticmethod
