@@ -137,16 +137,30 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
                                                                                         "action":'基本动作id',
                                                                                         "time_unit":'时间单位'}]""")
 
-    def validate(self, attrs):
-        stage_product_batch_no = attrs['stage_product_batch_no']
-        equip = attrs['equip']
+    @atomic()
+    def create(self, validated_data):
+        stage_product_batch_no = validated_data.get('stage_product_batch_no')
+        if stage_product_batch_no:
+            # 传胶料编码则代表是特殊配方
+            validated_data.pop('site', None)
+            validated_data.pop('stage', None)
+            validated_data.pop('versions', None)
+            validated_data.pop('product_info', None)
+        else:
+            site = validated_data.get('site')
+            stage = validated_data.get('stage')
+            product_info = validated_data.get('product_info')
+            versions = validated_data.get('versions')
+            if not all([site, stage, product_info, versions]):
+                raise serializers.ValidationError('参数不足')
+            stage_product_batch_no = '{}-{}-{}-{}'.format(site.global_name, stage.global_name,
+                                                          product_info.product_no, versions)
+        stage_product_batch_no = stage_product_batch_no
+        validated_data['stage_product_batch_no'] = stage_product_batch_no
+        equip = validated_data['equip']
         if ProductBatching.objects.exclude(used_type=6).filter(
                 stage_product_batch_no=stage_product_batch_no, equip=equip).exists():
             raise serializers.ValidationError('已存在相同机台的配方，请修改后重试！')
-        return attrs
-
-    @atomic()
-    def create(self, validated_data):
         batching_details = validated_data.pop('batching_details', None)
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
@@ -205,7 +219,15 @@ class ProductBatchingCreateSerializer(BaseModelSerializer):
         fields = ('factory', 'site', 'product_info', 'precept', 'stage_product_batch_no',
                   'stage', 'versions', 'batching_details', 'equip', 'id', 'dev_type',
                   'production_time_interval', 'processes', 'process_details')
-        extra_kwargs = {'equip': {'required': True}}
+        extra_kwargs = {
+            'equip': {
+                'required': True
+            },
+            'stage_product_batch_no': {
+                'allow_blank': True,
+                'allow_null': True,
+                'required': False}
+        }
 
 
 class ProductBatchingRetrieveSerializer(BaseModelSerializer):
