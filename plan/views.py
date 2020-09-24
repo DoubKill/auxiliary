@@ -1,6 +1,4 @@
 from collections import OrderedDict
-from itertools import groupby
-from operator import itemgetter
 
 from django.db.models import Max
 from django.db.transaction import atomic
@@ -83,67 +81,6 @@ class ProductDayPlanManyCreate(APIView):
         return Response('新建成功')
 
 
-@method_decorator([api_recorder], name="dispatch")
-class ProductClassesPlanManyCreate(APIView):
-    """胶料日班次计划群增接口"""
-
-    permission_classes = (IsAuthenticated,)
-
-    @atomic()
-    def post(self, request, *args, **kwargs):
-        if isinstance(request.data, dict):
-            many = False
-        elif isinstance(request.data, list):
-            many = True
-        else:
-            return Response(data={'detail': '数据有误'}, status=400)
-
-        work_list = []
-        plan_list = []
-        equip_list = []
-
-        request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
-        for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
-            for class_dict in items:
-                work_list.append(class_dict['work_schedule_plan'])
-                plan_list.append(class_dict['plan_classes_uid'])
-                equip_list.append(class_dict['equip'])
-        # 举例说明：本来有四条 前端只传了三条 就会删掉多余的一条
-        pcp_set = ProductClassesPlan.objects.filter(work_schedule_plan_id__in=list(set(work_list)),
-                                                    equip_id__in=list(set(equip_list))).exclude(
-            plan_classes_uid__in=list(set(plan_list)))
-        for pcp_obj in pcp_set:
-
-            # 删除前要先判断该数据的状态是不是非等待，只要等待中的加护才可以删除
-            plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
-                'created_date').last()
-            if plan_status:
-                if plan_status.status != '等待':
-                    raise ValidationError("只要等待中的计划才可以删除")
-            else:
-                pass
-
-            # 删除多余的数据已经以及向关联的计划状态变更表和原材料需求量表需求量表
-            pcp_obj.delete_flag = True
-            pcp_obj.save()
-            PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
-            MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
-
-        s = ProductClassesPlanManyCreateSerializer(data=request.data, many=many, context={'request': request})
-        s.is_valid(raise_exception=True)
-        s.save()
-        return Response('新建成功')
-
-
-@method_decorator([api_recorder], name="dispatch")
-class ProductClassesPlanList(mixins.ListModelMixin, GenericViewSet):
-    """计划新增展示数据"""
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
-    serializer_class = ProductClassesPlanManyCreateSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = PalletFeedbacksFilter
 
 
 @method_decorator([api_recorder], name="dispatch")
