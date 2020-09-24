@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from datain.views import GlobalCodeReceive, WorkScheduleReceive, ClassesDetailReceive, EquipCategoryAttributeReceive, \
     EquipReceive, PlanScheduleReceive, WorkSchedulePlanReceive, MaterialReceive, GlobalCodeTypeReceive, \
-    ProductInfoReceive
+    ProductInfoReceive, RecipeReceiveAPiView
 
 router = DefaultRouter()
 
@@ -19,4 +19,5 @@ urlpatterns = [
     path('material_receive/', MaterialReceive.as_view()),  # 原材料
     path('global_code_type_receive/', GlobalCodeTypeReceive.as_view()),  # 公共代码类型
     path('product_info_receive/', ProductInfoReceive.as_view()),
+    path('recipe-receive/', RecipeReceiveAPiView.as_view()),  # 接收mes下发的配方
 ]

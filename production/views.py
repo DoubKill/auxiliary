@@ -515,7 +515,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
 
 class ProductionRecordViewSet(mixins.ListModelMixin,
                               GenericViewSet):
-    queryset = PalletFeedbacks.objects.filter(delete_flag=False)
+    queryset = PalletFeedbacks.objects.filter()
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ProductionRecordSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]

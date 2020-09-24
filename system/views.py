@@ -2,6 +2,7 @@ import re
 
 import xlrd
 from django.contrib.auth.models import Permission
+from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -18,12 +19,12 @@ from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
-from recipe.models import ProductBatching
+from recipe.models import Material
 from system.filters import UserFilter, GroupExtensionFilter, InterfaceOperationLogFilter
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
-    ChildSystemInfoSerializer, InterfaceOperationLogSerializer
+    ChildSystemInfoSerializer, InterfaceOperationLogSerializer, ProductClassesPlanSyncInterface, MaterialSyncInterface
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -391,50 +392,41 @@ class Synchronization(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        auxliary_dict = {'lost_time': None, }  # 上辅机
+        auxliary_dict = {}  # 上辅机
         # 获取断网时间
         csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
         if csi_obj:
             lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
-            auxliary_dict['plan'] = {}
-            auxliary_dict['recipe'] = {}
-            # 胶料日班次计划表
-            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
-            if pcp_set:
-                auxliary_dict['plan']['ProductClassesPlan'] = {}
-                for pcp_obj in pcp_set:
-                    pcp_dict = pcp_obj.__dict__
-                    pcp_dict.pop('_state')
-                    auxliary_dict['plan']['ProductClassesPlan'][pcp_obj.plan_classes_uid] = pcp_dict
-            # 胶料配料标准表
-            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-            if pb_set:
-                auxliary_dict['recipe']['ProductBatching'] = {}
-                for pb_obj in pb_set:
-                    pb_dict = pb_obj.__dict__
-                    pb_dict.pop('_state')
-                    auxliary_dict['recipe']['ProductBatching'][pb_obj.stage_product_batch_no] = pb_dict
         return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class Manualsync(APIView):
-    permission_classes = (IsAuthenticated,)
+    """同步数据"""
+    permission_classes = ()
+    authentication_classes = ()
 
+    @atomic()
     def post(self, request):
-        from plan import models as pn
-        from recipe import models as rp
-        class_list = request.data
-        for class_dict in class_list:
-            if class_dict.pop('manual') == 'plan':
-                # 一旦给新建了胶料日班次计划，后续就该新建plan_status和原材料需求表 这两张表是自己新建还是通过前端同步任务传过来 个人认为是自己写  因为前端是人过选择 存在失误
-                model_name = getattr(pn, class_dict.pop('table_name'))
-                model_name.objects.create(**class_dict)
-            elif class_dict.pop('manual') == 'recipe':
-                model_name = getattr(rp, class_dict.pop('table_name'))
-                model_name.objects.create(**class_dict)
-
-        return Response('同步成功', status=200)
+        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
+        # 同步配方
+        m_set = Material.objects.filter(last_updated_date__gte=csi_obj.lost_time)
+        for m_obj in m_set:
+            interface = MaterialSyncInterface(instance=m_obj)
+            try:
+                interface.request()
+            except Exception as e:
+                raise ValidationError(e)
+        # 同步计划
+        pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=csi_obj.lost_time)
+        for pcp_obj in pcp_set:
+            interface = ProductClassesPlanSyncInterface(instance=pcp_obj)
+            try:
+                interface.request()
+            except Exception as e:
+                raise ValidationError(e)
+        return Response('同步成功', status=status.HTTP_200_OK)
 
 
 class UpdatePassWord(APIView):

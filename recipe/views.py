@@ -4,7 +4,6 @@ from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +20,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductBatchingPartialUpdateSerializer, RecipeReceiveSerializer
+    ProductBatchingPartialUpdateSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
     ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
 
@@ -254,17 +253,6 @@ class ConditionListView(APIView):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class RecipeReceiveAPiView(CreateAPIView):
-    """
-    接受上辅机配方数据接口
-    """
-    permission_classes = ()
-    authentication_classes = ()
-    serializer_class = RecipeReceiveSerializer
-    queryset = ProductBatching.objects.all()
-
-
-@method_decorator([api_recorder], name="dispatch")
 class RecipeObsoleteAPiView(APIView):
     """
     接收MES弃用配方接口
@@ -272,9 +260,12 @@ class RecipeObsoleteAPiView(APIView):
 
     def post(self, request):
         stage_product_batch_no = self.request.data.get('stage_product_batch_no')
-        try:
-            product_batching = ProductBatching.objects.get(stage_product_batch_no=stage_product_batch_no)
-        except ProductBatching.DoesNotExist:
+        dev_type = self.request.data.get('dev_type')
+        product_batching = ProductBatching.objects.exclude(used_type=6).filter(
+            stage_product_batch_no=stage_product_batch_no,
+            dev_type__category_no=dev_type,
+            batching_type=2).first()
+        if not product_batching:
             return Response('暂无该配方数据', status=status.HTTP_200_OK)
         product_batching.used_type = 6
         product_batching.save()

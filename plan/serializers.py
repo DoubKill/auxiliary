@@ -37,15 +37,7 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
-        print(validated_data)
-        plan_classes_uid = validated_data['plan_classes_uid']
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, delete_flag=False).first()
-        if not pcp_obj:
-            instance = super().create(validated_data)
-        else:
-            instance = super().update(pcp_obj, validated_data)
-            PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(delete_flag=True)
-            MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
+        instance = super().create(validated_data)
         # 创建计划状态
         PlanStatus.objects.create(plan_classes_uid=instance.plan_classes_uid, equip_no=instance.equip.equip_no,
                                   product_no=instance.product_batching.stage_product_batch_no,
@@ -57,6 +49,7 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
                                             material=pbd_obj.material,
                                             material_demanded=pbd_obj.actual_weight * instance.plan_trains,
                                             plan_classes_uid=instance.plan_classes_uid)
+
         return instance
 
 
@@ -122,6 +115,8 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
+            detail['equip'] = instance.equip
+            detail['product_batching'] = instance.product_batching
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
