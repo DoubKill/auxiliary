@@ -1477,7 +1477,13 @@ def add_oil_material():
 
 
 def add_system_config():
-    SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控", )
+    SystemConfig.objects.create(category="gz", config_name="system_name", config_value="上辅机群控")
+    SystemConfig.objects.create(category="gz", config_name="sync_count", config_value="1000")
+    SystemConfig.objects.create(category="gz", config_name="TrainsFeedbacksID", config_value="0")
+    SystemConfig.objects.create(category="gz", config_name="PalletFeedbacksID", config_value="0")
+    SystemConfig.objects.create(category="gz", config_name="EquipStatusID", config_value="0")
+    SystemConfig.objects.create(category="gz", config_name="PlanStatusID", config_value="0")
+    SystemConfig.objects.create(category="gz", config_name="ExpendMaterialID", config_value="0")
     ChildSystemInfo.objects.create(link_address="10.4.10.54", system_type="gz", system_name="MES", status="联网")
     ChildSystemInfo.objects.create(link_address="10.4.10.55", system_type="gz", system_name="上辅机群控", status="联网")
     ChildSystemInfo.objects.create(link_address="10.4.10.56", system_type="gz", system_name="上辅机工作站1", status="联网")
