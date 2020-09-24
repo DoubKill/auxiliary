@@ -622,7 +622,7 @@ class PlanReceive(CreateAPIView):
         """
     # permission_classes = ()
     # authentication_classes = ()
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
     serializer_class = PlanReceiveSerializer
     queryset = ProductDayPlan.objects.all()
 
