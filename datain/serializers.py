@@ -293,6 +293,16 @@ class GlobalCodeTypeSerializer(BaseModelSerializer):
 
 class ProductInfoSerializer(BaseModelSerializer):
 
+    @atomic()
+    def create(self, validated_data):
+        product_no = validated_data['product_no']
+        instance = ProductInfo.objects.filter(product_no=product_no)
+        if instance:
+            instance.update(**validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
     class Meta:
         model = ProductInfo
         fields = '__all__'
@@ -316,11 +326,11 @@ class ProductBatchingDetailSerializer2(serializers.ModelSerializer):
 
 
 class RecipeReceiveSerializer(serializers.ModelSerializer):
-    factory = serializers.CharField()
-    site = serializers.CharField()
-    product_info = serializers.CharField()
+    factory = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    site = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    product_info = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     dev_type = serializers.CharField()
-    stage = serializers.CharField()
+    stage = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     batching_details = ProductBatchingDetailSerializer2(many=True)
 
     def validate(self, attrs):
@@ -332,10 +342,18 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('上辅机已存在相同机型配方， 请修改后重试！')
         try:
             dev_type = EquipCategoryAttribute.objects.get(category_no=dev_type)
-            factory = GlobalCode.objects.get(global_no=attrs['factory'])
-            site = GlobalCode.objects.get(global_no=attrs['site'])
-            product_info = ProductInfo.objects.get(product_no=attrs['product_info'])
-            stage = GlobalCode.objects.get(global_no=attrs['stage'])
+            factory = attrs.get('factory')
+            site = attrs.get('site')
+            product_info = attrs.get('product_info')
+            stage = attrs.get('stage')
+            if factory:
+                factory = GlobalCode.objects.get(global_no=attrs['factory'])
+            if product_info:
+                product_info = ProductInfo.objects.get(product_no=attrs['product_info'])
+            if site:
+                site = GlobalCode.objects.get(global_no=attrs['site'])
+            if stage:
+                stage = GlobalCode.objects.get(global_no=attrs['stage'])
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
         except EquipCategoryAttribute.DoesNotExist:

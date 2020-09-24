@@ -36,11 +36,11 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
         plan_classes_uid = object.plan_classes_uid
         equip_no = object.equip_no
         equip = EquipStatus.objects.filter(plan_classes_uid=plan_classes_uid, equip_no=equip_no).first()
-        if not equip:
-            raise serializers.ValidationError("该车次数据无对应设备，请检查相关设备")
-        equip_status.update(temperature=equip.temperature,
-                            energy=equip.energy,
-                            rpm=equip.rpm)
+        if equip:
+            # raise serializers.ValidationError("该车次数据无对应设备，请检查相关设备")
+            equip_status.update(temperature=equip.temperature,
+                                energy=equip.energy,
+                                rpm=equip.rpm)
         return equip_status
 
     '''
