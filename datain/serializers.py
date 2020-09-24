@@ -293,6 +293,16 @@ class GlobalCodeTypeSerializer(BaseModelSerializer):
 
 class ProductInfoSerializer(BaseModelSerializer):
 
+    @atomic()
+    def create(self, validated_data):
+        product_no = validated_data['product_no']
+        instance = ProductInfo.objects.filter(product_no=product_no)
+        if instance:
+            instance.update(**validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
     class Meta:
         model = ProductInfo
         fields = '__all__'
