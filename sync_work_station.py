@@ -291,7 +291,6 @@ def main():
         else:
             # 该分支正常情况执行，若执行需告警
             logger.error("出现未知同步表，请立即检查")
-        logger.info(f"{m}|上行同步完成")
         temp_model_set.update(recstatus="更新完成")
     # 改部分代码目前未生效
     if temp is IfupReportBasis:
@@ -337,7 +336,6 @@ def main():
 
 @one_instance
 def run():
-    logger.info("同步开始")
     global current_trains
     while True:
         try:
