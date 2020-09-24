@@ -14,7 +14,7 @@ from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
-from plan.models import ProductClassesPlan
+from plan.models import ProductClassesPlan, ProductDayPlan
 from recipe.models import ProductBatching, Material, ProductBatchingDetail
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 
@@ -230,22 +230,31 @@ class ProductBatchingSyncInterface(serializers.ModelSerializer):
             'equip', 'batching_type', 'batching_details')
 
 
+class ProductDayPlanSyncInterface(serializers.ModelSerializer):
+    product_batching = serializers.CharField(source='product_batching.stage_product_batch_no')
+
+    class Meta:
+        model = ProductDayPlan
+        fields = ('equip', 'product_batching', 'plan_schedule')
+
+
 class ProductClassesPlanSyncInterface(serializers.ModelSerializer, BaseInterface):
     """计划同步序列化器"""
 
     equip = serializers.CharField(source='equip.equip_no')
     work_schedule_plan = serializers.CharField(source='work_schedule_plan.work_schedule_plan_no')
     product_batching = ProductBatchingSyncInterface(read_only=True)
+    product_day_plan = ProductDayPlanSyncInterface(read_only=True)
 
     class Backend:
         path = 'api/v1/system/plan-receive/'
 
     class Meta:
         model = ProductClassesPlan
-        fields = (
-            'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan',
-            'plan_classes_uid', 'note', 'equip',
-            'product_batching')
+        fields = ('product_day_plan',
+                  'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan',
+                  'plan_classes_uid', 'note', 'equip',
+                  'product_batching')
 
 
 class MaterialSyncInterface(serializers.ModelSerializer, BaseInterface):

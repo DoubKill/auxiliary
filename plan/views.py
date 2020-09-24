@@ -17,12 +17,10 @@ from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService
 from mes.derorators import api_recorder
-from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
-    ProductClassesPlanManyCreateSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
@@ -81,8 +79,6 @@ class ProductDayPlanManyCreate(APIView):
         return Response('新建成功')
 
 
-
-
 @method_decorator([api_recorder], name="dispatch")
 class PalletFeedbackViewSet(mixins.ListModelMixin,
                             GenericViewSet, CommonDeleteMixin):
@@ -92,7 +88,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     delete:
         计划管理删除
     """
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-status', 'sn')
     serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
@@ -211,6 +207,8 @@ class StopPlan(APIView):
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
         ps_obj.status = '待停止'
         ps_obj.save()
+        pcp_obj.status = '待停止'
+        pcp_obj.save()
 
         # temp_data = {
         #     'id': params.get("id", None),  # id
@@ -513,6 +511,8 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
+        pcp_obj.status = '已下达'
+        pcp_obj.save()
         # try:
         #     self.send_to_yikong(params, pcp_obj)  # 向收皮机发送数据
         # except Exception as e:
