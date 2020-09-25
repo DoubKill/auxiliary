@@ -403,9 +403,9 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                                                               delete_flag=False)
             product_batching = ProductBatching.objects.get(
                 stage_product_batch_no=product_batching, delete_flag=False)
-            if product_batching.used_type == 6:
-                raise serializers.ValidationError(
-                    '上辅机{}该配方已废弃'.format(attrs.get('product_batching')))
+            # if product_batching.used_type == 6:
+            #     raise serializers.ValidationError(
+            #         '上辅机{}该配方已废弃'.format(attrs.get('product_batching')))
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在，请MES下发该数据'.format(attrs.get('equip')))
