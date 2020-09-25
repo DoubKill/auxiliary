@@ -626,6 +626,7 @@ class PlanReceive(CreateAPIView):
     serializer_class = PlanReceiveSerializer
     queryset = ProductDayPlan.objects.all()
 
+    @atomic()
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
