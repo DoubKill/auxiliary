@@ -401,11 +401,8 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             equip = Equip.objects.get(equip_no=equip, delete_flag=False)
             work_schedule_plan = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan,
                                                               delete_flag=False)
-            product_batching = ProductBatching.objects.get(
-                stage_product_batch_no=product_batching, delete_flag=False)
-            # if product_batching.used_type == 6:
-            #     raise serializers.ValidationError(
-            #         '上辅机{}该配方已废弃'.format(attrs.get('product_batching')))
+            product_batching = ProductBatching.objects.exclude(used_type=6).filter(
+                stage_product_batch_no=product_batching, batching_type=2, delete_flag=False).first()
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在，请MES下发该数据'.format(attrs.get('equip')))
@@ -418,7 +415,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                 '上辅机排班管理{}不存在，请MES下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
             logger.error(e)
-            raise serializers.ValidationError("上辅机已经把{}胶料废弃掉了".format(attrs.get('product_batching')))
+            raise serializers.ValidationError("相关表数据错误")
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
