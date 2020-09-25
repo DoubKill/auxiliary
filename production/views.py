@@ -2,7 +2,7 @@ import datetime
 import re
 
 from django.db import connection
-from django.db.models import Sum, Max, F, Value, CharField
+from django.db.models import Sum, Max, F, Value, CharField, Min
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -91,7 +91,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
 
 
 class PalletDetailViewSet(mixins.ListModelMixin,
-                             GenericViewSet):
+                          GenericViewSet):
     """
         list:
             托盘产出反馈列表
@@ -906,11 +906,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
+
         tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
-        #     .values('plan_classes_uid', 'equip_no',
-        #                                                                    'product_no').annotate(
-        #     max_id=Max('id')).values_list('max_id', flat=True)
-        # tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
         for tf_obj in tf_queryset:
@@ -940,7 +937,6 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['status'] = ps_obj.status
             else:
                 tf_obj['status'] = None
-
         return Response({'count': counts, 'results': tf_queryset})
 
 
