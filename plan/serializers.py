@@ -413,7 +413,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 '上辅机排班管理{}不存在'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
-            raise serializers.ValidationError('相关表没有数据')
+            raise serializers.ValidationError('上辅机相关表没有数据')
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
