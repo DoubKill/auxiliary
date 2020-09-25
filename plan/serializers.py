@@ -418,7 +418,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
             stage_product_batch_no=product_batching, batching_type=2, delete_flag=False).first()
         if not product_batching:
-            raise serializers.ValidationError('上辅机胶料配料标准{}不存在，可能已被废弃，请MES下发该数据'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('改胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
