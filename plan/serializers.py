@@ -11,7 +11,8 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, Pr
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
-
+import logging
+logger = logging.getLogger('api')
 
 class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
@@ -402,6 +403,9 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                                                               delete_flag=False)
             product_batching = ProductBatching.objects.get(
                 stage_product_batch_no=product_batching, delete_flag=False)
+            if product_batching.used_type == 6:
+                raise serializers.ValidationError(
+                    '上辅机{}该配方已废弃'.format(attrs.get('product_batching')))
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在，请MES下发该数据'.format(attrs.get('equip')))
@@ -413,7 +417,8 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 '上辅机排班管理{}不存在，请MES下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
-            raise serializers.ValidationError('上辅机相关表没有数据')
+            logger.error(e)
+            raise serializers.ValidationError("上辅机已经把{}胶料废弃掉了".format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
