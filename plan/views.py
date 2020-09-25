@@ -488,8 +488,7 @@ class IssuedPlan(APIView):
 
         # 校验计划与配方完整性
 
-        # uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
-        uid_list = pcp_obj.equip.equip_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
+        uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
         id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id",
                                                                                                               flat=True)
         status_list = PlanStatus.objects.filter(id__in=id_list)
