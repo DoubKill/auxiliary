@@ -12,7 +12,7 @@ from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
 import logging
-logger = logging.getLogger('api')
+logger = logging.getLogger('api_log')
 
 class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
