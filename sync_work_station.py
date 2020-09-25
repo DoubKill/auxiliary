@@ -15,6 +15,8 @@ import logging
 
 import requests
 
+from mes.conf import MES_PORT
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
@@ -70,7 +72,7 @@ class MesUpClient(object):
                         x.pop("stage")
                     datas.append(x)
                 temp.config_value = new_temp_id
-                ret = cls.Client("post", f"http://{cls.mes_ip}:8000{cls.API_DICT[model_name]}", json=datas)
+                ret = cls.Client("post", f"http://{cls.mes_ip}:{MES_PORT}{cls.API_DICT[model_name]}", json=datas)
                 if ret.status_code <300:
                     temp.save()
                 else:
