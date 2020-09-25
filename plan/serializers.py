@@ -435,18 +435,32 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
 
     @atomic()
     def create(self, validated_data):
-        instance = super().create(validated_data)
-        # 创建计划状态
-        PlanStatus.objects.create(plan_classes_uid=instance.plan_classes_uid, equip_no=instance.equip.equip_no,
-                                  product_no=instance.product_batching.stage_product_batch_no,
-                                  status='等待', operation_user=self.context['request'].user.username)
-        # 创建原材料需求量
-        for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
-            MaterialDemanded.objects.create(product_classes_plan=instance,
-                                            work_schedule_plan=instance.work_schedule_plan,
-                                            material=pbd_obj.material,
-                                            material_demanded=pbd_obj.actual_weight * instance.plan_trains,
-                                            plan_classes_uid=instance.plan_classes_uid)
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid']).first()
+        if pcp_obj:
+            instance = super().update(pcp_obj, validated_data)
+            PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
+                equip_no=instance.equip.equip_no,
+                product_no=instance.product_batching.stage_product_batch_no)
+            MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
+            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+                MaterialDemanded.objects.create(product_classes_plan=instance,
+                                                work_schedule_plan=instance.work_schedule_plan,
+                                                material=pbd_obj.material,
+                                                material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+                                                plan_classes_uid=instance.plan_classes_uid)
+        else:
+            instance = super().create(validated_data)
+            # 创建计划状态
+            PlanStatus.objects.create(plan_classes_uid=instance.plan_classes_uid, equip_no=instance.equip.equip_no,
+                                      product_no=instance.product_batching.stage_product_batch_no,
+                                      status='等待', operation_user=self.context['request'].user.username)
+            # 创建原材料需求量
+            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+                MaterialDemanded.objects.create(product_classes_plan=instance,
+                                                work_schedule_plan=instance.work_schedule_plan,
+                                                material=pbd_obj.material,
+                                                material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+                                                plan_classes_uid=instance.plan_classes_uid)
         return instance
 
     class Meta:
