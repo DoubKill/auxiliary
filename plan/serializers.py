@@ -411,7 +411,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('上辅机胶料配料标准{}不存在，请MES下发该数据'.format(attrs.get('product_batching')))
         except PlanSchedule.DoesNotExist:
             raise serializers.ValidationError(
-                '上辅机排班管理{}不存在，请ＭＥＳ下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
+                '上辅机排班管理{}不存在，请MES下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
             raise serializers.ValidationError('上辅机相关表没有数据')
         attrs['product_batching'] = product_batching
