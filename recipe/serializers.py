@@ -240,7 +240,7 @@ class ProductBatchingRetrieveSerializer(BaseModelSerializer):
     equip_no = serializers.CharField(source='equip.equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip.equip_name', default=None, read_only=True)
     product_name = serializers.CharField(source='product_info.product_name', read_only=True)
-    category__category_name = serializers.CharField(source='equip.category.category_name', default=None, read_only=True)
+    category__category_name = serializers.CharField(source='dev_type.category_name', default=None, read_only=True)
 
     class Meta:
         model = ProductBatching
