@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import datetime
 import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.utils.translation import ugettext_lazy
@@ -239,42 +239,18 @@ LOGGING = {
     },
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#         'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
-#         'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
-#         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
-#         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
-#         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
-#     }
-# }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
     }
 }
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'dist/'), ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'dist/static/'),
-]
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
