@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os
 import datetime
+import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.utils.translation import ugettext_lazy
@@ -239,18 +239,42 @@ LOGGING = {
     },
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+#         'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
+#         'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
+#         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
+#         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
+#         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
+#     }
+# }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
-        'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
-        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
-        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
-        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'dist/'), ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'dist/static/'),
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -331,3 +355,6 @@ CORS_ALLOW_CREDENTIALS = True
 # 允许所有主机执行跨站点请求，默认为False
 # 如果没设置该参数，则必须设置白名单，运行部分白名单的主机才能执行跨站点请求
 CORS_ORIGIN_ALLOW_ALL = True
+
+# mes同步端口
+MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')

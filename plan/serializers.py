@@ -404,11 +404,11 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                 stage_product_batch_no=product_batching, delete_flag=False)
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
         except Equip.DoesNotExist:
-            raise serializers.ValidationError('上辅机机台{}不存在，请ＭＥＳ下发该数据'.format(attrs.get('equip')))
+            raise serializers.ValidationError('上辅机机台{}不存在，请MES下发该数据'.format(attrs.get('equip')))
         except WorkSchedulePlan.DoesNotExist:
-            raise serializers.ValidationError('上辅机排班详情{}不存在，请ＭＥＳ下发该数据'.format(attrs.get('work_schedule_plan')))
+            raise serializers.ValidationError('上辅机排班详情{}不存在，请MES下发该数据'.format(attrs.get('work_schedule_plan')))
         except ProductBatching.DoesNotExist:
-            raise serializers.ValidationError('上辅机胶料配料标准{}不存在，请ＭＥＳ下发该数据'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('上辅机胶料配料标准{}不存在，请MES下发该数据'.format(attrs.get('product_batching')))
         except PlanSchedule.DoesNotExist:
             raise serializers.ValidationError(
                 '上辅机排班管理{}不存在，请ＭＥＳ下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
