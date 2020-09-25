@@ -396,7 +396,6 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         product_batching = attrs.get('product_batching')
         equip = attrs.get('equip')
         plan_schedule = attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']
-        print(plan_schedule)
         try:
             equip = Equip.objects.get(equip_no=equip, delete_flag=False)
             work_schedule_plan = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan,
@@ -404,18 +403,17 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             product_batching = ProductBatching.objects.get(
                 stage_product_batch_no=product_batching, delete_flag=False)
             plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
-            print(plan_schedule)
         except Equip.DoesNotExist:
-            raise serializers.ValidationError('MES机台{}不存在'.format(attrs.get('equip')))
+            raise serializers.ValidationError('上辅机机台{}不存在'.format(attrs.get('equip')))
         except WorkSchedulePlan.DoesNotExist:
-            raise serializers.ValidationError('排班详情{}不存在'.format(attrs.get('work_schedule_plan')))
+            raise serializers.ValidationError('上辅机排班详情{}不存在'.format(attrs.get('work_schedule_plan')))
         except ProductBatching.DoesNotExist:
-            raise serializers.ValidationError('胶料配料标准{}不存在'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('上辅机胶料配料标准{}不存在'.format(attrs.get('product_batching')))
         except PlanSchedule.DoesNotExist:
             raise serializers.ValidationError(
-                '排班管理{}不存在'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
+                '上辅机排班管理{}不存在'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
-            raise serializers.ValidationError('相关表没有数据')
+            raise serializers.ValidationError('上辅机相关表没有数据')
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
