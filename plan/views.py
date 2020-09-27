@@ -646,7 +646,7 @@ class IssuedPlan(APIView):
             ext_str = equip_no[1:]
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能重传！"}, status=400)
-        self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
+        self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         # 模型类的名称需根据设备编号来拼接
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
