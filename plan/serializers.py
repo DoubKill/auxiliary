@@ -1,3 +1,4 @@
+import logging
 from collections import OrderedDict
 
 from django.db.transaction import atomic
@@ -11,8 +12,9 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, Pr
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
-import logging
+
 logger = logging.getLogger('api_log')
+
 
 class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
@@ -61,7 +63,7 @@ class ProductClassesPlanCreateSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductClassesPlan
-        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid')
+        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid', 'equip', 'product_batching')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
