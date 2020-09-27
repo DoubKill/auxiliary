@@ -391,10 +391,11 @@ class Synchronization(APIView):
     """获取断腕方法时间"""
     permission_classes = (IsAuthenticated,)
 
+    @atomic()
     def get(self, request, *args, **kwargs):
         auxliary_dict = {}  # 上辅机
         # 获取断网时间
-        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
+        csi_obj = ChildSystemInfo.objects.filter(system_name='MES', status='独立').order_by('created_date').last()
         if csi_obj:
             lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
@@ -406,10 +407,8 @@ class SaveInternetTime(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        csi_obj = ChildSystemInfo.objects.filter(system_name='上辅机群控').order_by('created_date').last()
-        ChildSystemInfo.objects.create(link_address=csi_obj.link_address, system_type=csi_obj.system_type,
-                                       system_name=csi_obj.system_name, status='独立', status_lock=False,
-                                       lost_time=datetime.datetime.now(), created_date=datetime.datetime.now())
+        ChildSystemInfo.objects.filter(system_name='MES').update(status='独立',
+                                                                 lost_time=datetime.datetime.now())
         return Response('独立成功', status=200)
 
 
@@ -438,6 +437,8 @@ class Manualsync(APIView):
                 interface.request()
             except Exception as e:
                 raise ValidationError(e)
+        # 同步之后 状态改为联网
+        ChildSystemInfo.objects.filter(system_name='MES').update(status='联网')
         return Response('同步成功', status=status.HTTP_200_OK)
 
 
