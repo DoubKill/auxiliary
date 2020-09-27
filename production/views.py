@@ -223,8 +223,9 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
-                            material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
+        sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
+                            max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
+                            SUM(expend_material.actual_weight / 100) as actual_weight 
                             from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
                 """
         return sql_str
