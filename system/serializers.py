@@ -192,7 +192,6 @@ class BaseInterface(object):
         if not self.Backend.path:
             raise NotImplementedError("未设置path")
         kwargs = getattr(self, 'data')
-        print(kwargs)
         logger.info(kwargs)
         try:
             headers = {

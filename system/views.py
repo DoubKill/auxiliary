@@ -1,4 +1,5 @@
 import re
+import requests
 
 import xlrd
 from django.contrib.auth.models import Permission
@@ -14,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
+from mes import settings
 from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
@@ -395,17 +397,31 @@ class Synchronization(APIView):
     def get(self, request, *args, **kwargs):
         auxliary_dict = {}  # 上辅机
         # 获取断网时间
+        ChildSystemInfo.objects.filter(system_name='MES').update(lost_time='2020-01-01 12:12:12',status='独立')
         csi_obj = ChildSystemInfo.objects.filter(system_name='MES', status='独立').order_by('created_date').last()
         if csi_obj:
             lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
-        return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
+
+            endpoint = settings.MES_URL
+            path = "api/v1/system/synchronization/"
+            try:
+                headers = {
+                    "Content-Type": "application/json; charset=UTF-8",
+                    # "Authorization": kwargs['context']
+                }
+                res = requests.post(endpoint + path, headers=headers, json=auxliary_dict)
+            except Exception as err:
+                print(err)
+                raise Exception('MES服务错误')
+            if res.status_code != 200:
+                raise Exception(res.text)
+        return Response("MES删除计划数据成功", status=200)
 
 
 class SaveInternetTime(APIView):
     """断网时，点击独立调用接口"""
     permission_classes = (IsAuthenticated,)
-
     def post(self, request):
         ChildSystemInfo.objects.filter(system_name='MES').update(status='独立',
                                                                  lost_time=datetime.datetime.now())
