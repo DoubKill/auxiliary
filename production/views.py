@@ -2,7 +2,7 @@ import datetime
 import re
 
 from django.db import connection
-from django.db.models import Sum, Max, F, Value, CharField
+from django.db.models import Sum, Max, F, Value, CharField, Min
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,6 +16,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from basics.models import PlanSchedule, Equip
 from mes.common_code import CommonDeleteMixin
+from mes.conf import EQUIP_LIST
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
@@ -91,7 +92,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
 
 
 class PalletDetailViewSet(mixins.ListModelMixin,
-                             GenericViewSet):
+                          GenericViewSet):
     """
         list:
             托盘产出反馈列表
@@ -222,8 +223,9 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
-                            material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
+        sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
+                            max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
+                            SUM(expend_material.actual_weight / 100) as actual_weight 
                             from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
                 """
         return sql_str
@@ -299,6 +301,77 @@ class PlanRealityViewSet(mixins.ListModelMixin,
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
+        params = request.query_params
+        search_time_str = params.get("search_time")
+        target_equip_no = params.get('equip_no')
+        if search_time_str:
+            if not re.search(r"[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}", search_time_str):
+                raise ValidationError("查询时间格式异常")
+        if target_equip_no:
+            pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
+                                                        product_day_plan__equip__equip_no=target_equip_no,
+                                                        delete_flag=False).select_related(
+                'product_day_plan__equip__equip_no',
+                'product_day_plan__product_batching__stage_product_batch_no',
+                'product_day_plan_id', 'time', 'product_day_plan__product_batching__stage__global_name')
+        else:
+            pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
+                                                        delete_flag=False).select_related(
+                'product_day_plan__equip__equip_no',
+                'product_day_plan__product_batching__stage_product_batch_no',
+                'product_day_plan_id', 'time', 'product_day_plan__product_batching__stage__global_name')
+        uid_list = pcp_set.values_list("plan_classes_uid", flat=True)
+        day_plan_list = pcp_set.values_list("product_day_plan__id", flat=True)
+        tf_set = TrainsFeedbacks.objects.values('plan_classes_uid').filter(plan_classes_uid__in=uid_list).annotate(
+            actual_trains=Max('actual_trains'), actual_weight=Sum('actual_weight'), begin_time=Max('begin_time'),
+            actual_time=Max('product_time'))
+        tf_dict = {x.get("plan_classes_uid"): [x.get("actual_trains"), x.get("actual_weight"), x.get("begin_time"),
+                                               x.get("actual_time")] for x in tf_set}
+        day_plan_dict = {x: {"plan_weight": 0, "plan_trains": 0, "actual_trains": 0, "actual_weight": 0, "plan_time": 0,
+                             "start_rate": None}
+                         for x in day_plan_list}
+        pcp_data = pcp_set.values("plan_classes_uid", "weight", "plan_trains", 'product_day_plan__equip__equip_no',
+                                  'product_day_plan__product_batching__stage_product_batch_no',
+                                  'product_day_plan_id', 'time', 'product_day_plan__product_batching__stage__global_name')
+        for pcp in pcp_data:
+            day_plan_id = pcp.get('product_day_plan_id')
+            plan_classes_uid = pcp.get('plan_classes_uid')
+            day_plan_dict[day_plan_id].update(
+                equip_no=pcp.get('product_day_plan__equip__equip_no'),
+                product_no=pcp.get('product_day_plan__product_batching__stage_product_batch_no'),
+                stage=pcp.get('product_day_plan__product_batching__stage__global_name'))
+            day_plan_dict[day_plan_id]["plan_weight"] += pcp.get('weight', 0)
+            day_plan_dict[day_plan_id]["plan_trains"] += pcp.get('plan_trains', 0)
+            day_plan_dict[day_plan_id]["plan_time"] += pcp.get('time', 0)
+            if not tf_dict.get(plan_classes_uid):
+                day_plan_dict[day_plan_id]["actual_trains"] += 0
+                day_plan_dict[day_plan_id]["actual_weight"] += 0
+                day_plan_dict[day_plan_id]["begin_time"] = datetime.datetime.now()
+                day_plan_dict[day_plan_id]["actual_time"] = datetime.datetime.now()
+                continue
+            day_plan_dict[day_plan_id]["actual_trains"] += tf_dict[plan_classes_uid][0]
+            day_plan_dict[day_plan_id]["actual_weight"] += round(tf_dict[plan_classes_uid][1] / 100, 2)
+            day_plan_dict[day_plan_id]["begin_time"] = tf_dict[plan_classes_uid][2]
+            day_plan_dict[day_plan_id]["actual_time"] = tf_dict[plan_classes_uid][3]
+        temp_data = {}
+        for equip_no in EQUIP_LIST:
+            temp_data[equip_no] = []
+            for temp in day_plan_dict.values():
+                if temp.get("equip_no") == equip_no:
+                    temp_data[equip_no].append(temp)
+        datas = []
+        for equip_data in temp_data.values():
+            equip_data.sort(key=lambda x: (x.get("equip_no"), x.get("begin_time")))
+            new_equip_data = []
+            for _ in equip_data:
+                _.update(sn=equip_data.index(_) + 1)
+                _.update(ach_rate=round(_.get('actual_trains') / _.get('plan_trains') * 100, 2))
+                new_equip_data.append(_)
+            datas += new_equip_data
+        return Response({"data": datas})
+
+
+    def list_bak(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
         return_data = {
             "data": []
@@ -391,6 +464,93 @@ class ProductActualViewSet(mixins.ListModelMixin,
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def list(self, request, *args, **kwargs):
+        params = request.query_params
+        search_time_str = params.get("search_time")
+        target_equip_no = params.get('equip_no')
+        if search_time_str:
+            if not re.search(r"[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}", search_time_str):
+                raise ValidationError("查询时间格式异常")
+        if target_equip_no:
+            pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
+                                                        product_day_plan__equip__equip_no=target_equip_no,
+                                                        delete_flag=False).select_related(
+                'product_day_plan__equip__equip_no',
+                'product_day_plan__product_batching__stage_product_batch_no',
+                'work_schedule_plan__classes__global_name',
+                'product_day_plan_id')
+        else:
+            pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
+                                                        delete_flag=False).select_related(
+                'product_day_plan__equip__equip_no',
+                'product_day_plan__product_batching__stage_product_batch_no',
+                'work_schedule_plan__classes__global_name',
+                'product_day_plan_id')
+        uid_list = pcp_set.values_list("plan_classes_uid", flat=True)
+        day_plan_list = pcp_set.values_list("product_day_plan__id", flat=True)
+        tf_set = TrainsFeedbacks.objects.values('plan_classes_uid').filter(plan_classes_uid__in=uid_list).annotate(
+            actual_trains=Max('actual_trains'), actual_weight=Sum('actual_weight'), classes=Max('classes'))
+        tf_dict = {x.get("plan_classes_uid"): [x.get("actual_trains"), x.get("actual_weight"), x.get("classes")] for x
+                   in tf_set}
+        day_plan_dict = {x: {"plan_weight": 0, "plan_trains": 0, "actual_trains": 0, "actual_weight": 0,
+                             "class_data": [None, None, None]}
+                         for x in day_plan_list}
+        pcp_data = pcp_set.values("plan_classes_uid", "weight", "plan_trains", 'product_day_plan__equip__equip_no',
+                                  'product_day_plan__product_batching__stage_product_batch_no',
+                                  'product_day_plan_id',
+                                  'work_schedule_plan__classes__global_name')
+        for pcp in pcp_data:
+            class_name = pcp.get("work_schedule_plan__classes__global_name")
+            day_plan_id = pcp.get('product_day_plan_id')
+            plan_classes_uid = pcp.get('plan_classes_uid')
+            day_plan_dict[day_plan_id].update(
+                equip_no=pcp.get('product_day_plan__equip__equip_no'),
+                product_no=pcp.get('product_day_plan__product_batching__stage_product_batch_no'))
+            day_plan_dict[day_plan_id]["plan_weight"] += pcp.get('weight', 0)
+            day_plan_dict[day_plan_id]["plan_trains"] += pcp.get('plan_trains', 0)
+            if not tf_dict.get(plan_classes_uid):
+                if class_name == "早班":
+                    day_plan_dict[day_plan_id]["class_data"][0] = {
+                        "plan_trains": pcp.get('plan_trains'),
+                        "actual_trains": 0,
+                        "classes": "早班"
+                    }
+                if class_name == "中班":
+                    day_plan_dict[day_plan_id]["class_data"][1] = {
+                        "plan_trains": pcp.get('plan_trains'),
+                        "actual_trains": 0,
+                        "classes": "中班"
+                    }
+                if class_name == "晚班":
+                    day_plan_dict[day_plan_id]["class_data"][2] = {
+                        "plan_trains": pcp.get('plan_trains'),
+                        "actual_trains": 0,
+                        "classes": "晚班"
+                    }
+                continue
+            day_plan_dict[day_plan_id]["actual_trains"] += tf_dict[plan_classes_uid][0]
+            day_plan_dict[day_plan_id]["actual_weight"] += round(tf_dict[plan_classes_uid][1] / 100, 2)
+            if tf_dict[plan_classes_uid][2] == "早班":
+                day_plan_dict[day_plan_id]["class_data"][0] = {
+                    "plan_trains": pcp.get('plan_trains'),
+                    "actual_trains": tf_dict[plan_classes_uid][0],
+                    "classes": "早班"
+                }
+            if tf_dict[plan_classes_uid][2] == "中班":
+                day_plan_dict[day_plan_id]["class_data"][1] = {
+                    "plan_trains": pcp.get('plan_trains'),
+                    "actual_trains": tf_dict[pcp.plan_classes_uid][0],
+                    "classes": "中班"
+                }
+            if tf_dict[plan_classes_uid][2] == "晚班":
+                day_plan_dict[day_plan_id]["class_data"][2] = {
+                    "plan_trains": pcp.get('plan_trains'),
+                    "actual_trains": tf_dict[plan_classes_uid][0],
+                    "classes": "晚班"
+                }
+        ret = {"data": [_ for _ in day_plan_dict.values()]}
+        return Response(ret)
+
+    def list_bak_1(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
         return_data = {
             "data": []
@@ -471,46 +631,6 @@ class ProductActualViewSet(mixins.ListModelMixin,
                             plan_trains=plan_trains_all, actual_trains=actual_trains)
             return_data["data"].append(instance)
         return Response(return_data)
-
-    def list_bak(self, request, *args, **kwargs):
-        params = request.query_params
-        day_time = params.get("search_time", str(datetime.date.today() - datetime.timedelta(days=1)))
-        if day_time:
-            if not re.search(r"[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}", day_time):
-                return Response("bad search_time", status=400)
-        equip_no = params.get('equip_no')
-        if equip_no:
-            equip_no_str = f" and e.equip_no={equip_no}"
-        else:
-            equip_no_str = ""
-        sql_str = f"""
-            select pdp.id,
-            pb.stage_product_batch_no as product_no,
-            tf.plan_trains,
-            tf.actual_trains,
-            e.equip_no,
-            gc.global_name,
-            SUM(pcp.plan_trains) as plan_trains_all,
-            sum(tf.actual_trains) as actual_trains_all,
-            sum(pcp.time) as plan_time_all,
-            sum(pcp.weight) as plan_weight_all,
-            SUM(tf.actual_trains) as actual_weight_all,
-            (sum(julianday(tf.end_time)- julianday(tf.begin_time)))*86400 as actual_time_all
-            --        timediff(tf.end_time, tf.begin_time) as ac_time
-
-            from product_day_plan as pdp
-            left join plan_schedule ps on pdp.plan_schedule_id = ps.id
-            left join equip e on pdp.equip_id = e.id
-            left join product_classes_plan pcp on pdp.id = pcp.product_day_plan_id
-            left join trains_feedbacks tf on pcp.plan_classes_uid = tf.plan_classes_uid
-            left join product_batching pb on pb.id = pdp.product_batching_id
-            left join work_schedule_plan wsp on pcp.work_schedule_plan_id = wsp.id
-            left join global_code gc on wsp.classes_id = gc.id
-            where ps.day_time = '{day_time}'{equip_no_str} 
-            group by e.equip_no, gc.global_name order by e.equip_no;
-        """
-        query_set = TrainsFeedbacks.objects.raw(sql_str)
-        return
 
 
 class ProductionRecordViewSet(mixins.ListModelMixin,
