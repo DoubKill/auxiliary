@@ -388,7 +388,7 @@ class SystemStatusSwitch(APIView):
 
 
 class Synchronization(APIView):
-    """mes和上辅机同步接口"""
+    """获取断腕方法时间"""
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
@@ -399,6 +399,18 @@ class Synchronization(APIView):
             lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
         return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
+
+
+class SaveInternetTime(APIView):
+    """断网时，点击独立调用接口"""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        csi_obj = ChildSystemInfo.objects.filter(system_name='上辅机群控').order_by('created_date').last()
+        ChildSystemInfo.objects.create(link_address=csi_obj.link_address, system_type=csi_obj.system_type,
+                                       system_name=csi_obj.system_name, status='独立', status_lock=False,
+                                       lost_time=datetime.datetime.now(), created_date=datetime.datetime.now())
+        return Response('独立成功', status=200)
 
 
 @method_decorator([api_recorder], name="dispatch")
