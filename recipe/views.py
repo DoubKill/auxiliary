@@ -183,6 +183,7 @@ class ProductBatchingViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
     model_name = queryset.model.__name__.lower()
+    permission_classes = (IsAuthenticated, )
 
     def get_queryset(self):
         if self.action == 'list':
@@ -211,15 +212,15 @@ class ProductBatchingViewSet(ModelViewSet):
         else:
             return super().list(request, *args, **kwargs)
 
-    def get_permissions(self):
-        if self.request.query_params.get('all'):
-            return ()
-        elif self.action == 'partial_update':
-            return (IsAuthenticated(),
-                    ProductBatchingPermissions())
-        else:
-            return (IsAuthenticated(),
-                    PermissionClass(return_permission_params(self.model_name))())
+    # def get_permissions(self):
+    #     if self.request.query_params.get('all'):
+    #         return ()
+    #     elif self.action == 'partial_update':
+    #         return (IsAuthenticated(),
+    #                 ProductBatchingPermissions())
+    #     else:
+    #         return (IsAuthenticated(),
+    #                 PermissionClass(return_permission_params(self.model_name))())
 
     def get_serializer_class(self):
         if self.action == 'list':

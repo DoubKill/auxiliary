@@ -15,13 +15,16 @@ import logging
 
 import requests
 
+from mes.conf import MES_PORT
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
-from django.db.transaction import atomic
 from system.models import SystemConfig, ChildSystemInfo
 from work_station import models as md
 from plan.models import ProductClassesPlan
+from production import models as pd
+from production import serializers as sz
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
     IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
 from work_station.models import IfupReportMix, IfupReportBasis
@@ -30,36 +33,50 @@ logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
 
 
-# class MesUpClient(object):
-#
-#     UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus"]
-#     Client = requests.request
-#     mes_ip = ChildSystemInfo.objects.filter(system_name="MES").first().link_address
-#     API_DICT = {
-#         "TrainsFeedbacks" : "/api/v1/trains-feedbacks/",
-#         "PalletFeedbacks" : "/api/v1/pallet-feedbacks/",
-#         "EquipStatus": "/api/v1/equip-status/",
-#         "PlanStatus": "/api/v1/plan-status/"
-#     }
-#
-#     @atomic
-#     @classmethod
-#     def update(cls):
-#         sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
-#         for model_name in cls.UP_TABLE_LIST:
-#             temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
-#             temp_id = temp.config_value
-#             model = getattr(md, model_name)
-#             model_set = model.objects.filter(id__gte=temp_id)[: int(temp_id) + int(sc_count)]
-#             if model_set:
-#                 new_temp_id = model_set.last().id + 1
-#             else:
-#                 new_temp_id = temp_id
-#             temp.config_value = new_temp_id
-#             ret = cls.Client("post", f"http://{cls.mes_ip}:8000/{cls.API_DICT[model_name]}")
-#             if ret.status_code <300:
-#                 temp.save()
+class MesUpClient(object):
 
+    UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial"]
+    Client = requests.request
+    mes = ChildSystemInfo.objects.filter(system_name="MES").first()
+    mes_ip = mes.link_address
+    mes_status = mes.status
+    API_DICT = {
+        "TrainsFeedbacks" : "/api/v1/production/trains-feedbacks-batch/",
+        "PalletFeedbacks" : "/api/v1/production/pallet-feedbacks-batch/",
+        "EquipStatus": "/api/v1/production/equip-status-batch/",
+        "PlanStatus": "/api/v1/production/plan-status-batch/",
+        "ExpendMaterial": "/api/v1/production/expend-material-batch/"
+    }
+
+
+    @classmethod
+    def sync(cls):
+        if not cls.mes_ip or cls.mes_status != "联网":
+            return
+        sc_count = SystemConfig.objects.filter(config_name="sync_count").first().config_value
+        for model_name in cls.UP_TABLE_LIST:
+            temp = SystemConfig.objects.filter(config_name=model_name + "ID").first()
+            temp_id = int(temp.config_value)
+            model = getattr(pd, model_name)
+            model_set = model.objects.filter(id__gte=temp_id)[:int(sc_count)]
+            if model_set:
+                new_temp_id = model_set[model_set.count()-1].id + 1
+                Serializer = getattr(sz, model_name + "Serializer")
+                serializer = Serializer(model_set, many=True)
+                data = serializer.data
+                datas = []
+                for x in data:
+                    if "equip_status" in x:
+                        x.pop("equip_status")
+                    if "stage" in x:
+                        x.pop("stage")
+                    datas.append(x)
+                temp.config_value = new_temp_id
+                ret = cls.Client("post", f"http://{cls.mes_ip}:{MES_PORT}{cls.API_DICT[model_name]}", json=datas)
+                if ret.status_code <300:
+                    temp.save()
+                else:
+                    logger.error(ret.text)
 
 def one_instance(func):
     '''
@@ -331,7 +348,6 @@ def main():
                                        product_time=product_time,
                                        status=status
                                        )
-    # MesUpClient.update()
 
 
 @one_instance
@@ -341,6 +357,7 @@ def run():
         try:
             main()
             plan_status_monitor()
+            MesUpClient.sync()
         except Exception as e:
             logger.error(e)
         time.sleep(5)
