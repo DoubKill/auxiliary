@@ -2,7 +2,7 @@ import datetime
 import re
 
 from django.db import connection
-from django.db.models import Sum, Max, F, Value, CharField, Min
+from django.db.models import Sum, Max, F, Value, CharField
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -791,7 +791,8 @@ class EquipStatusPlanList(APIView):
 
         # 计划数据，根据设备机台号和班次分组，
         plan_data = ProductClassesPlan.objects.filter(
-            work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date()
+            work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
+            product_day_plan__equip__equip_no__in=list(equip_nos)
         ).values('work_schedule_plan__classes__global_name',
                  'equip__equip_no').annotate(plan_num=Sum('plan_trains'))
         plan_data = {item['equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
