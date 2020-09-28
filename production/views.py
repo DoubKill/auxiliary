@@ -32,6 +32,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
 from production.utils import strtoint, gen_material_export_file_response
 
 
+@method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
                              mixins.RetrieveModelMixin,
                              GenericViewSet):
@@ -70,7 +71,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-
+@method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.CreateModelMixin,
                              mixins.ListModelMixin,
                              GenericViewSet):
@@ -91,6 +92,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PalletDetailViewSet(mixins.ListModelMixin,
                           GenericViewSet):
     """
@@ -121,6 +123,7 @@ class PalletDetailViewSet(mixins.ListModelMixin,
         return Response(serializer.data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipStatusViewSet(mixins.CreateModelMixin,
                          mixins.ListModelMixin,
                          GenericViewSet):
@@ -142,6 +145,7 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
     filter_class = EquipStatusFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanStatusViewSet(mixins.CreateModelMixin,
                         mixins.RetrieveModelMixin,
                         mixins.ListModelMixin,
@@ -163,6 +167,7 @@ class PlanStatusViewSet(mixins.CreateModelMixin,
     filter_class = PlanStatusFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ExpendMaterialViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,
                             mixins.ListModelMixin,
@@ -259,6 +264,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         return Response({"count": count, "results": rep_list})
 
 
+@method_decorator([api_recorder], name="dispatch")
 class OperationLogViewSet(mixins.CreateModelMixin,
                           mixins.RetrieveModelMixin,
                           mixins.ListModelMixin,
@@ -276,6 +282,7 @@ class OperationLogViewSet(mixins.CreateModelMixin,
     serializer_class = OperationLogSerializer
 
 
+@method_decorator([api_recorder], name="dispatch")
 class QualityControlViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,
                             mixins.ListModelMixin,
@@ -296,6 +303,7 @@ class QualityControlViewSet(mixins.CreateModelMixin,
     filter_class = QualityControlFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanRealityViewSet(mixins.ListModelMixin,
                          GenericViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -459,6 +467,7 @@ class PlanRealityViewSet(mixins.ListModelMixin,
         return Response(return_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductActualViewSet(mixins.ListModelMixin,
                            GenericViewSet):
     """密炼实绩"""
@@ -637,6 +646,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
         return Response(return_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductionRecordViewSet(mixins.ListModelMixin,
                               GenericViewSet):
     queryset = PalletFeedbacks.objects.filter()
@@ -647,6 +657,7 @@ class ProductionRecordViewSet(mixins.ListModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -707,6 +718,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         # return Response("ok")
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighParameterFuelViewSet(mixins.CreateModelMixin,
                                 mixins.UpdateModelMixin,
                                 mixins.RetrieveModelMixin,
@@ -774,6 +786,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         # return Response("ok")
 
 
+@method_decorator([api_recorder], name="dispatch")
 class MaterialStatisticsViewSet(mixins.ListModelMixin,
                                 GenericViewSet):
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
@@ -784,6 +797,7 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
     filter_class = MaterialStatisticsFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -860,6 +874,7 @@ class EquipStatusPlanList(APIView):
         return Response(ret_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipDetailedList(APIView):
     """主页面详情展示机"""
 
@@ -1065,6 +1080,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
         return Response({'count': counts, 'results': tf_queryset})
 
 
+@method_decorator([api_recorder], name="dispatch")
 class MaterialExport(mixins.CreateModelMixin,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin,
@@ -1116,10 +1132,11 @@ class MaterialExport(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
-                                material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
-                                from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
-                    """
+        sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
+                            max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
+                            SUM(expend_material.actual_weight / 100) as actual_weight 
+                            from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
+                """
         # return gen_material_export_file_response('导出', sql_str)
 
         return sql_str

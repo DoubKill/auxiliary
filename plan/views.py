@@ -114,6 +114,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanStatusList(APIView):
     """计划管理当前机台计划展示"""
 
