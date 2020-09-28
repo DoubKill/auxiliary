@@ -1,6 +1,4 @@
 from collections import OrderedDict
-from itertools import groupby
-from operator import itemgetter
 
 from django.db.models import Max
 from django.db.transaction import atomic
@@ -19,16 +17,14 @@ from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService
 from mes.derorators import api_recorder
-from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
-    ProductClassesPlanManyCreateSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
-from recipe.models import ProductProcess, ProductProcessDetail, ProductBatching
+from recipe.models import ProductProcess, ProductBatching
 from work_station.api import IssueWorkStation
 
 
@@ -547,6 +543,8 @@ class IssuedPlan(APIView):
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
+        pcp_obj.status = '已下达'
+        pcp_obj.save()
         # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
