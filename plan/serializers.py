@@ -63,7 +63,7 @@ class ProductClassesPlanCreateSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductClassesPlan
-        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid', 'equip', 'product_batching')
+        exclude = ('product_day_plan', 'work_schedule_plan', 'plan_classes_uid', 'equip', 'product_batching', 'status')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
