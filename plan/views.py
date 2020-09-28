@@ -114,6 +114,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanStatusList(APIView):
     """计划管理当前机台计划展示"""
 
@@ -269,9 +270,10 @@ class IssuedPlan(APIView):
 
     def _map_PmtRecipe(self, pcp_object, product_process, product_batching, equip_no):
         if product_batching.batching_type == 2:
-            actual_product_batching = ProductBatching.objects.filter(delete_flag=False,
-                                                                     stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                     equip__equip_no=equip_no, batching_type=1).first()
+            actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
+                                                                                          stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                                          equip__equip_no=equip_no,
+                                                                                          batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
             actual_product_process = actual_product_batching.processes
@@ -362,7 +364,7 @@ class IssuedPlan(APIView):
 
     def _map_RecipeMix(self, product_batching, product_process_details, equip_no):
         if product_batching.batching_type == 2:
-            actual_product_batching = ProductBatching.objects.filter(delete_flag=False,
+            actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                      stage_product_batch_no=product_batching.stage_product_batch_no,
                                                                      equip__equip_no=equip_no, batching_type=1).first()
             if not actual_product_batching:
