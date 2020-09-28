@@ -29,7 +29,7 @@ urlpatterns = [
     path('group_add_user/<pk>/', GroupAddUserViewSet.as_view()),
     path('api-token-auth/', obtain_jwt_token),
     path('api-token-refresh/', refresh_jwt_token),
-    path('synchronization/', Synchronization.as_view()),  # 获取断网时间
+    path('synchronization/', Synchronization.as_view()),  # 获取断网时间,去删除mes断网后计划的数据
     path('save-internet-time/', SaveInternetTime.as_view()),  # 断网时，点击独立调用接口
     path('update-password/', UpdatePassWord.as_view()),  # 修改密码接口，
     path('operations/', InterfaceOperationLogView.as_view()),  # 操作日志
