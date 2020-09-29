@@ -148,7 +148,7 @@ def common_validator(**kwargs):
 
 
 class SqlClient(object):
-
+    """默认是连接sqlserver的客户端"""
     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW"):
         pool = PooledDB(pymssql,
                         mincached=5, maxcached=10, maxshared=5, maxconnections=10, blocking=True,
