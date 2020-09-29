@@ -317,7 +317,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         # if validated_data.get('trains') - instance.plan_trains <= 2:
         #     raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
