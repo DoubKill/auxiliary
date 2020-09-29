@@ -601,40 +601,6 @@ class IssuedPlan(APIView):
         return Response({'_': '重传成功'}, status=200)
 
 
-'''
-前端现有的重传计划接口调用的是下达计划的put方法，这个重传计划的接口基本没用了，先注释掉
-@method_decorator([api_recorder], name="dispatch")
-class RetransmissionPlan(APIView):
-    """重传计划"""
-
-    @atomic()
-    def get(self, request):
-        params = request.query_params
-        plan_id = params.get("id")
-        if plan_id is None:
-            return Response({'_': "没有传id"}, status=400)
-        equip_name = params.get("equip_name")
-        pcp_obj = ProductClassesPlan.objects.filter(id=plan_id).first()
-        ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).last()
-        if not ps_obj:
-            return Response({'_': "计划状态变更没有数据"}, status=400)
-        if ps_obj.status != '等待':
-            return Response({'_': "只有等待中的计划才能运行！"}, status=400)
-        ps_obj.status = '运行中'
-        ps_obj.save()
-        temp_data = {
-            'id': params.get("id", None),  # id
-            'setno': params.get("plan_trains", None),  # 设定车次
-            'state': '等待',  # 计划状态：等待，运行中，完成
-            'remark': 'u',
-            'recstatus': '更新完成'
-
-        }
-        temp = IssueWorkStation('IfdownShengchanjihua1', temp_data)
-        temp.issue_to_db()
-
-        return Response({'_': '修改成功'}, status=200)
-'''
 
 
 @method_decorator([api_recorder], name="dispatch")

@@ -53,7 +53,6 @@ class BaseDownloader(object):
         return resp.json()
 
     def download(self):
-        print(self.upload_fields)
         ret = self.model.objects.exclude(id__in=self.loaded, **self.exclude_dict).filter(**self.filter_dict).values(
             *self.upload_fields)
         for data in ret:
