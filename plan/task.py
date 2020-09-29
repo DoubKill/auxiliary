@@ -16,17 +16,6 @@ from plan.models import ProductDayPlan, ProductClassesPlan
 
 logger = logging.getLogger('sync_log')
 
-TYPE_CHOICE = (
-    (1, '公共代码类型'),
-    (2, '公共代码'),
-    (3, '倒班管理'),
-    (4, '倒班条目'),
-    (5, '设备种类属性'),
-    (6, '设备'),
-    (7, '排班管理'),
-    (8, '排班详情'),
-    (9, '原材料')
-)
 
 
 class BaseDownloader(object):
@@ -47,6 +36,9 @@ class BaseDownloader(object):
 
     def request(self, data):
         url = self.endpoint + self.path
+        # data['equip__equip_no'] = data['product_day_plan__equip__equip_no']
+        # data['product_batching__stage_product_batch_no'] = data['product_day_plan__product_batching__stage_product_batch_no']
+        # data["status"] = "完成"
         resp = self.session.post(url, data=data)
         if resp.status_code != 201:
             raise Exception(resp.content)
@@ -110,5 +102,7 @@ class ProductClassesPlanDown(BaseDownloader):
 
 if __name__ == '__main__':
 
-    for downloader in (ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown, ProductClassesPlanDown):
+    for downloader in (
+            #ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
+                       ProductClassesPlanDown,):
         downloader().download()
