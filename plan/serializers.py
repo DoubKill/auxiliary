@@ -206,13 +206,13 @@ class UpRegulationSerializer(BaseModelSerializer):
         update_dict = {'delete_flag': False}
         equip_no = validated_data.get('equip_no', None)
         if equip_no:
-            update_dict['equip__equip_no'] = equip_no
+            update_dict['product_day_plan__equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
-            update_dict['product_batching__stage_product_batch_no'] = product_batching
+            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
         begin_times = validated_data.get('begin_times', None)
         end_times = validated_data.get('end_times', None)
         if begin_times and end_times:
@@ -262,13 +262,13 @@ class DownRegulationSerializer(BaseModelSerializer):
         update_dict = {'delete_flag': False}
         equip_no = validated_data.get('equip_no', None)
         if equip_no:
-            update_dict['equip__equip_no'] = equip_no
+            update_dict['product_day_plan__equip__equip_no'] = equip_no
         classes = validated_data.get('classes', None)
         if classes:
             update_dict['work_schedule_plan__classes__global_name'] = classes
         product_batching = validated_data.get('product_batching', None)
         if product_batching:
-            update_dict['product_batching__stage_product_batch_no'] = product_batching
+            update_dict['product_day_plan__product_batching__stage_product_batch_no'] = product_batching
         begin_times = validated_data.get('begin_times', None)
         end_times = validated_data.get('end_times', None)
         if begin_times and end_times:
