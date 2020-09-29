@@ -14,6 +14,8 @@ from rest_framework.validators import UniqueValidator
 
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
+from plan.models import ProductClassesPlan, ProductDayPlan
+from recipe.models import ProductBatching, Material, ProductBatchingDetail
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 
 
@@ -169,5 +171,100 @@ class InterfaceOperationLogSerializer(BaseModelSerializer):
 
     class Meta:
         model = InterfaceOperationLog
-        exclude = ('reasons', )
+        exclude = ('reasons',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+import logging
+from django.conf import settings
+import requests
+
+logger = logging.getLogger('sync_log')
+
+
+class BaseInterface(object):
+    endpoint = settings.MES_URL
+
+    class Backend:
+        path = ""
+
+    def request(self):
+        if not self.Backend.path:
+            raise NotImplementedError("未设置path")
+        kwargs = getattr(self, 'data')
+        logger.info(kwargs)
+        try:
+            headers = {
+                "Content-Type": "application/json; charset=UTF-8",
+                # "Authorization": kwargs['context']
+
+            }
+            res = requests.post(self.endpoint + self.Backend.path, headers=headers, json=kwargs)
+        except Exception as err:
+            logger.error(err)
+            raise Exception('MES服务错误')
+        logger.info(res.text)
+        if res.status_code != 201:
+            raise Exception(res.text)
+
+
+class ProductBatchingDetailSyncInterface(serializers.ModelSerializer):
+    material = serializers.CharField(source='material.material_no')
+
+    class Meta:
+        model = ProductBatchingDetail
+        fields = ('product_batching', 'sn', 'material', 'actual_weight', 'standard_error', 'auto_flag', 'type')
+
+
+class ProductBatchingSyncInterface(serializers.ModelSerializer):
+    batching_details = ProductBatchingDetailSyncInterface(many=True)
+
+    class Meta:
+        model = ProductBatching
+        fields = (
+            'factory', 'site', 'product_info', 'precept', 'stage_product_batch_no', 'dev_type', 'stage', 'versions',
+            'used_type', 'batching_weight', 'manual_material_weight', 'auto_material_weight', 'volume', 'submit_user',
+            'submit_time', 'reject_user', 'reject_time', 'used_user', 'used_time', 'obsolete_user', 'obsolete_time',
+            'production_time_interval',
+            'equip', 'batching_type', 'batching_details')
+
+
+class ProductDayPlanSyncInterface(serializers.ModelSerializer):
+    product_batching = serializers.CharField(source='product_batching.stage_product_batch_no')
+
+    class Meta:
+        model = ProductDayPlan
+        fields = ('equip', 'product_batching', 'plan_schedule')
+
+
+class ProductClassesPlanSyncInterface(serializers.ModelSerializer, BaseInterface):
+    """计划同步序列化器"""
+
+    equip = serializers.CharField(source='equip.equip_no')
+    work_schedule_plan = serializers.CharField(source='work_schedule_plan.work_schedule_plan_no')
+    product_batching = ProductBatchingSyncInterface(read_only=True)
+    product_day_plan = ProductDayPlanSyncInterface(read_only=True)
+
+    class Backend:
+        path = 'api/v1/system/plan-receive/'
+
+    class Meta:
+        model = ProductClassesPlan
+        fields = ('product_day_plan',
+                  'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan',
+                  'plan_classes_uid', 'note', 'equip',
+                  'product_batching')
+
+
+class MaterialSyncInterface(serializers.ModelSerializer, BaseInterface):
+    """原材料同步序列化器"""
+
+    material_type = serializers.CharField(source='material_type.global_no')
+    package_unit = serializers.CharField(source='package_unit.global_no', read_only=True, default=0)
+
+    class Backend:
+        path = 'api/v1/system/material-receive/'
+
+    class Meta:
+        model = Material
+        fields = ('material_no', 'material_name', 'for_short', 'material_type', 'package_unit', 'use_flag')

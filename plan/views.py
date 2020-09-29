@@ -1,6 +1,4 @@
 from collections import OrderedDict
-from itertools import groupby
-from operator import itemgetter
 
 from django.db.models import Max
 from django.db.transaction import atomic
@@ -19,16 +17,14 @@ from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService
 from mes.derorators import api_recorder
-from mes.paginations import SinglePageNumberPagination
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
-    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer, \
-    ProductClassesPlanManyCreateSerializer
+    PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
 from production.models import PlanStatus, TrainsFeedbacks
 from production.utils import strtoint
 # Create your views here.
-from recipe.models import ProductProcess
+from recipe.models import ProductProcess, ProductBatching
 from work_station.api import IssueWorkStation
 
 
@@ -84,69 +80,6 @@ class ProductDayPlanManyCreate(APIView):
 
 
 @method_decorator([api_recorder], name="dispatch")
-class ProductClassesPlanManyCreate(APIView):
-    """胶料日班次计划群增接口"""
-
-    permission_classes = (IsAuthenticated,)
-
-    @atomic()
-    def post(self, request, *args, **kwargs):
-        if isinstance(request.data, dict):
-            many = False
-        elif isinstance(request.data, list):
-            many = True
-        else:
-            return Response(data={'detail': '数据有误'}, status=400)
-
-        work_list = []
-        plan_list = []
-        equip_list = []
-
-        request.data.sort(key=itemgetter('equip', 'work_schedule_plan'))
-        for equip, items in groupby(request.data, key=itemgetter('equip', 'work_schedule_plan')):
-            for class_dict in items:
-                work_list.append(class_dict['work_schedule_plan'])
-                plan_list.append(class_dict['plan_classes_uid'])
-                equip_list.append(class_dict['equip'])
-        # 举例说明：本来有四条 前端只传了三条 就会删掉多余的一条
-        pcp_set = ProductClassesPlan.objects.filter(work_schedule_plan_id__in=list(set(work_list)),
-                                                    equip_id__in=list(set(equip_list))).exclude(
-            plan_classes_uid__in=list(set(plan_list)))
-        for pcp_obj in pcp_set:
-
-            # 删除前要先判断该数据的状态是不是非等待，只要等待中的加护才可以删除
-            plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
-                'created_date').last()
-            if plan_status:
-                if plan_status.status != '等待':
-                    raise ValidationError("只要等待中的计划才可以删除")
-            else:
-                pass
-
-            # 删除多余的数据已经以及向关联的计划状态变更表和原材料需求量表需求量表
-            pcp_obj.delete_flag = True
-            pcp_obj.save()
-            PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).update(delete_flag=True)
-            MaterialDemanded.objects.filter(product_classes_plan=pcp_obj).update(delete_flag=True)
-
-        s = ProductClassesPlanManyCreateSerializer(data=request.data, many=many, context={'request': request})
-        s.is_valid(raise_exception=True)
-        s.save()
-        return Response('新建成功')
-
-
-@method_decorator([api_recorder], name="dispatch")
-class ProductClassesPlanList(mixins.ListModelMixin, GenericViewSet):
-    """计划新增展示数据"""
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
-    serializer_class = ProductClassesPlanManyCreateSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = SinglePageNumberPagination
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = PalletFeedbacksFilter
-
-
-@method_decorator([api_recorder], name="dispatch")
 class PalletFeedbackViewSet(mixins.ListModelMixin,
                             GenericViewSet, CommonDeleteMixin):
     """
@@ -155,7 +88,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     delete:
         计划管理删除
     """
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('sn')
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-status', 'sn')
     serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
@@ -181,6 +114,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanStatusList(APIView):
     """计划管理当前机台计划展示"""
 
@@ -274,6 +208,8 @@ class StopPlan(APIView):
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
         ps_obj.status = '待停止'
         ps_obj.save()
+        pcp_obj.status = '待停止'
+        pcp_obj.save()
 
         # temp_data = {
         #     'id': params.get("id", None),  # id
@@ -296,6 +232,13 @@ class StopPlan(APIView):
             model_name = getattr(md, model_str + ext_str)
             model_name.objects.all().update(recstatus='待停止')
         # self.send_to_yikong()  # 发送数据给易控
+        # try:
+        #     self.send_to_yikong()  # 发送数据给易控
+        # except Exception as e:
+        #     raise ValidationError('发送数据到收皮机失败，请检查收皮机或者重新停止')
+        # else:
+        #     return Response({'_': '停止成功，数据发送收皮机成功'}, status=200)
+
         return Response({'_': '修改成功'}, status=200)
 
 
@@ -316,36 +259,53 @@ class IssuedPlan(APIView):
         if not product_batching_details:
             raise ValidationError("胶料配料详情为空，该计划不可用")
         product_process = ProductProcess.objects.filter(product_batching=product_batching).first()
-        if not product_process:
-            raise ValidationError("胶料配料步序为空，该计划不可用")
+        # if not product_process:
+        #     raise ValidationError("胶料配料步序为空，该计划不可用")
         # 步序详情，一份通用步序对应多份步序详情
         product_process_details = product_batching.process_details.filter(delete_flag=False)
-        if not product_process_details:
-            raise ValidationError("胶料配料步序详情为空，该计划不可用")
+        # if not product_process_details:
+        #     raise ValidationError("胶料配料步序详情为空，该计划不可用")
 
         return product_batching, product_batching_details, product_process, product_process_details, pcp_obj
 
-    def _map_PmtRecipe(self, pcp_object, product_process, product_batching):
+    def _map_PmtRecipe(self, pcp_object, product_process, product_batching, equip_no):
+        if product_batching.batching_type == 2:
+            actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
+                                                                                          stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                                          equip__equip_no=equip_no,
+                                                                                          batching_type=1).first()
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            actual_product_process = actual_product_batching.processes
+            if not actual_product_process:
+                raise ValidationError("胶料配料步序为空，该计划不可用")
+        else:
+            actual_product_process = product_process
+            actual_product_batching = product_batching
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            if not actual_product_process:
+                raise ValidationError("胶料配料步序为空，该计划不可用")
         data = {
-            "id": product_process.id,
+            "id": actual_product_process.id,
             "lasttime": str(pcp_object.product_day_plan.plan_schedule.day_time),
             "oper": self.request.user.username,
-            "recipe_code": product_batching.stage_product_batch_no,
-            "recipe_name": product_batching.stage_product_batch_no,
-            "equip_code": product_process.equip_code if product_process.equip_code else 0.0,  # 锁定解锁
-            "reuse_time": product_process.reuse_time,
-            "mini_time": product_process.mini_time,
-            "max_time": product_process.over_time,
-            "mini_temp": product_process.mini_temp,
-            "max_temp": product_process.max_temp,
-            "over_temp": product_process.over_temp,
-            "if_not": 0 if product_process.reuse_flag else -1,  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
-            "temp_zz": product_process.zz_temp,
-            "temp_xlm": product_process.xlm_temp,
-            "temp_cb": product_process.cb_temp,
-            "tempuse": 0 if product_process.temp_use_flag else 1,
+            "recipe_code": actual_product_batching.stage_product_batch_no,
+            "recipe_name": actual_product_batching.stage_product_batch_no,
+            "equip_code": actual_product_process.equip_code if actual_product_process.equip_code else 0.0,  # 锁定解锁
+            "reuse_time": actual_product_process.reuse_time,
+            "mini_time": actual_product_process.mini_time,
+            "max_time": actual_product_process.over_time,
+            "mini_temp": actual_product_process.mini_temp,
+            "max_temp": actual_product_process.max_temp,
+            "over_temp": actual_product_process.over_temp,
+            "if_not": 0 if actual_product_process.reuse_flag else -1,  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
+            "temp_zz": actual_product_process.zz_temp,
+            "temp_xlm": actual_product_process.xlm_temp,
+            "temp_cb": actual_product_process.cb_temp,
+            "tempuse": 0 if actual_product_process.temp_use_flag else 1,
             # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
-            "usenot": 0 if product_batching.used_type == 4 else 1,  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
+            "usenot": 0 if actual_product_batching.used_type == 4 else 1,  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
             "recstatus": "等待",
         }
         return data
@@ -402,9 +362,25 @@ class IssuedPlan(APIView):
             datas.append(data)
         return datas
 
-    def _map_RecipeMix(self, product_batching, product_process_details):
+    def _map_RecipeMix(self, product_batching, product_process_details, equip_no):
+        if product_batching.batching_type == 2:
+            actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
+                                                                     stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                     equip__equip_no=equip_no, batching_type=1).first()
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            actual_product_process_details = actual_product_batching.process_details.filter(delete_flag=False)
+            if not actual_product_process_details:
+                raise ValidationError("胶料配料步序详情为空，该计划不可用")
+        else:
+            actual_product_process_details = product_process_details
+            actual_product_batching = product_batching
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            if not actual_product_process_details:
+                raise ValidationError("胶料配料步序详情为空，该计划不可用")
         datas = []
-        for ppd in product_process_details:
+        for ppd in actual_product_process_details:
             data = {
                 "id": ppd.id,
                 "set_condition": ppd.condition.condition if ppd and ppd.condition else None,  # ? 条件名称还是条件代码
@@ -415,7 +391,7 @@ class IssuedPlan(APIView):
                 "act_code": ppd.action.action,
                 "set_pres": int(ppd.rpm) if ppd.rpm else 0,
                 "set_rota": ppd.pressure if ppd.pressure else 0.0,
-                "recipe_name": product_batching.stage_product_batch_no,
+                "recipe_name": actual_product_batching.stage_product_batch_no,
                 "recstatus": "等待",
                 "sn": ppd.sn
             }
@@ -458,9 +434,9 @@ class IssuedPlan(APIView):
 
         return datas
 
-    def _sync(self, args, params=None, ext_str=""):
+    def _sync(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
-        PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
+        PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching, equip_no)
         IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).issue_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
@@ -471,15 +447,15 @@ class IssuedPlan(APIView):
         # IssueWorkStation('IfdownRecipeOil1' + ext_str, RecipeOil1).batch_to_db()
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_to_db()
-        RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
+        RecipeMix = self._map_RecipeMix(product_batching, product_process_details, equip_no)
         IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_to_db()
 
         Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).issue_to_db()
 
-    def _sync_update(self, args, params=None, ext_str=""):
+    def _sync_update(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
-        PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching)
+        PmtRecipe = self._map_PmtRecipe(pcp_obj, product_process, product_batching, equip_no)
         IssueWorkStation('IfdownPmtRecipe' + ext_str, PmtRecipe, ext_str).update_to_db()
 
         RecipeWeigh = self._map_RecipeWeigh(product_batching, product_batching_details)
@@ -490,7 +466,7 @@ class IssuedPlan(APIView):
         # IssueWorkStation('IfdownRecipeOil1' + ext_str, RecipeOil1).batch_update_to_db()
         # RecipePloy = self._map_RecipePloy(product_batching, product_batching_details)
         # IssueWorkStation('IfdownRecipePloy' + ext_str, RecipePloy).batch_update_to_db()
-        RecipeMix = self._map_RecipeMix(product_batching, product_process_details)
+        RecipeMix = self._map_RecipeMix(product_batching, product_process_details, equip_no)
         IssueWorkStation('IfdownRecipeMix' + ext_str, RecipeMix, ext_str).batch_update_to_db()
 
         Shengchanjihua = self._map_Shengchanjihua(params, pcp_obj)
@@ -564,10 +540,12 @@ class IssuedPlan(APIView):
             ext_str = equip_no[1:]
         if ps_obj.status != '等待':
             return Response({'_': "只有等待中的计划才能下达！"}, status=400)
-        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
+        self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
+        pcp_obj.status = '已下达'
+        pcp_obj.save()
         # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
@@ -614,7 +592,7 @@ class IssuedPlan(APIView):
             ext_str = equip_no[1:]
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能重传！"}, status=400)
-        self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str)
+        self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         # 模型类的名称需根据设备编号来拼接
         # 重传默认不修改plan_status
         # ps_obj.status = '运行'
@@ -666,10 +644,11 @@ class PlanReceive(CreateAPIView):
         """
     # permission_classes = ()
     # authentication_classes = ()
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
     serializer_class = PlanReceiveSerializer
     queryset = ProductDayPlan.objects.all()
 
+    @atomic()
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

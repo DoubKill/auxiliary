@@ -1,7 +1,10 @@
+import logging
 import re
 
+import requests
 import xlrd
 from django.contrib.auth.models import Permission
+from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -13,17 +16,20 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework_jwt.views import ObtainJSONWebToken
 
+from mes import settings
 from mes.common_code import CommonDeleteMixin, return_permission_params
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from mes.permissions import PermissionClass
 from plan.models import ProductClassesPlan
-from recipe.models import ProductBatching
+from recipe.models import Material
 from system.filters import UserFilter, GroupExtensionFilter, InterfaceOperationLogFilter
 from system.models import GroupExtension, User, Section, SystemConfig, ChildSystemInfo, InterfaceOperationLog
 from system.serializers import GroupExtensionSerializer, GroupExtensionUpdateSerializer, UserSerializer, \
     UserUpdateSerializer, SectionSerializer, PermissionSerializer, GroupUserUpdateSerializer, SystemConfigSerializer, \
-    ChildSystemInfoSerializer, InterfaceOperationLogSerializer
+    ChildSystemInfoSerializer, InterfaceOperationLogSerializer, ProductClassesPlanSyncInterface, MaterialSyncInterface
+
+logger = logging.getLogger('api_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -387,66 +393,73 @@ class SystemStatusSwitch(APIView):
 
 
 class Synchronization(APIView):
-    """mes和上辅机同步接口"""
+    """获取断腕方法时间"""
+    permission_classes = (IsAuthenticated,)
 
+    @atomic()
     def get(self, request, *args, **kwargs):
-        auxliary_dict = {'lost_time': None, }  # 上辅机
+        auxliary_dict = {}  # 上辅机
         # 获取断网时间
-        csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
+        ChildSystemInfo.objects.filter(system_name='MES').update(lost_time='2020-01-01 12:12:12', status='独立')
+        csi_obj = ChildSystemInfo.objects.filter(system_name='MES', status='独立').order_by('created_date').last()
         if csi_obj:
             lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
             auxliary_dict['lost_time'] = lost_time
-            auxliary_dict['plan'] = {}
-            auxliary_dict['recipe'] = {}
-            # 胶料诶班次计划表
-            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
-            if pcp_set:
-                auxliary_dict['plan']['ProductClassesPlan'] = {}
-                for pcp_obj in pcp_set:
-                    pcp_dict = pcp_obj.__dict__
-                    pcp_dict.pop('_state')
-                    auxliary_dict['plan']['ProductClassesPlan'][pcp_obj.plan_classes_uid] = pcp_dict
-            # 胶料配料标准表
-            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-            if pb_set:
-                auxliary_dict['recipe']['ProductBatching'] = {}
-                for pb_obj in pb_set:
-                    pb_dict = pb_obj.__dict__
-                    pb_dict.pop('_state')
-                    auxliary_dict['recipe']['ProductBatching'][pb_obj.stage_product_batch_no] = pb_dict
-        return Response({'Upper auxiliary machine group control system': auxliary_dict}, status=200)
 
-    """
-    # 同步展示数据的另一种方法，这种前端会好处理一点。暂时先注释，前端要用的时候再换
-    def get(self, request, *args, **kwargs):
-        auxliary_list = []  # 上辅机
-        # 获取断网时间
+            endpoint = settings.MES_URL
+            path = "api/v1/system/synchronization/"
+            try:
+                headers = {
+                    "Content-Type": "application/json; charset=UTF-8",
+                    # "Authorization": kwargs['context']
+                }
+                res = requests.post(endpoint + path, headers=headers, json=auxliary_dict)
+            except Exception as err:
+                logger.error('err{}'.format(err))
+                raise Exception('MES服务错误')
+            if res.status_code != 200:
+                raise Exception(res.text)
+        return Response("MES删除计划数据成功", status=200)
+
+
+class SaveInternetTime(APIView):
+    """断网时，点击独立调用接口"""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        ChildSystemInfo.objects.filter(system_name='MES').update(status='独立',
+                                                                 lost_time=datetime.datetime.now())
+        return Response('独立成功', status=200)
+
+
+@method_decorator([api_recorder], name="dispatch")
+class Manualsync(APIView):
+    """同步数据"""
+    permission_classes = ()
+    authentication_classes = ()
+
+    @atomic()
+    def post(self, request):
         csi_obj = ChildSystemInfo.objects.filter(status='独立').order_by('created_date').last()
-        if csi_obj:
-            lost_time = csi_obj.lost_time.strftime("%Y-%m-%d %H:%M:%S")
-            auxliary_list.append({'lost_time': lost_time})
-            # 胶料诶班次计划表
-            pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=lost_time)
-            if pcp_set:
-                for pcp_obj in pcp_set:
-                    pcp_dict = pcp_obj.__dict__
-                    pcp_dict.pop('_state')
-                    pcp_dict['date_category'] = '计划'
-                    pcp_dict['table_name'] = 'ProductClassesPlan'
-                    pcp_dict['date_number'] = pcp_obj.plan_classes_uid
-                    auxliary_list.append(pcp_dict)
-            # 胶料配料标准表
-            pb_set = ProductBatching.objects.filter(last_updated_date__gte=lost_time)
-            if pb_set:
-                for pb_obj in pb_set:
-                    pb_dict = pb_obj.__dict__
-                    pb_dict.pop('_state')
-                    pb_dict['date_category'] = '配方'
-                    pb_dict['table_name'] = 'ProductBatching'
-                    pb_dict['date_number'] = pb_obj.stage_product_batch_no
-                    auxliary_list.append(pb_dict)
-        return Response({'Upper auxiliary machine group control system': auxliary_list}, status=200)
-"""
+        # 同步配方
+        m_set = Material.objects.filter(last_updated_date__gte=csi_obj.lost_time)
+        for m_obj in m_set:
+            interface = MaterialSyncInterface(instance=m_obj)
+            try:
+                interface.request()
+            except Exception as e:
+                raise ValidationError(e)
+        # 同步计划
+        pcp_set = ProductClassesPlan.objects.filter(last_updated_date__gte=csi_obj.lost_time)
+        for pcp_obj in pcp_set:
+            interface = ProductClassesPlanSyncInterface(instance=pcp_obj)
+            try:
+                interface.request()
+            except Exception as e:
+                raise ValidationError(e)
+        # 同步之后 状态改为联网
+        ChildSystemInfo.objects.filter(system_name='MES').update(status='联网')
+        return Response('同步成功', status=status.HTTP_200_OK)
 
 
 class UpdatePassWord(APIView):

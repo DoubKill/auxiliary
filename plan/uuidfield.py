@@ -1,5 +1,3 @@
-import time
-import uuid
 import datetime
 
 i = 0

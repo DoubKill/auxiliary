@@ -2,7 +2,7 @@ import datetime
 import re
 
 from django.db import connection
-from django.db.models import Sum, Max, F, Value, CharField, Min
+from django.db.models import Sum, Max, F, Value, CharField
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -32,6 +32,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
 from production.utils import strtoint, gen_material_export_file_response
 
 
+@method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
                              mixins.RetrieveModelMixin,
                              GenericViewSet):
@@ -70,7 +71,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-
+@method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.CreateModelMixin,
                              mixins.ListModelMixin,
                              GenericViewSet):
@@ -91,6 +92,7 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PalletDetailViewSet(mixins.ListModelMixin,
                           GenericViewSet):
     """
@@ -121,6 +123,7 @@ class PalletDetailViewSet(mixins.ListModelMixin,
         return Response(serializer.data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipStatusViewSet(mixins.CreateModelMixin,
                          mixins.ListModelMixin,
                          GenericViewSet):
@@ -142,6 +145,7 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
     filter_class = EquipStatusFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanStatusViewSet(mixins.CreateModelMixin,
                         mixins.RetrieveModelMixin,
                         mixins.ListModelMixin,
@@ -163,6 +167,7 @@ class PlanStatusViewSet(mixins.CreateModelMixin,
     filter_class = PlanStatusFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ExpendMaterialViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,
                             mixins.ListModelMixin,
@@ -259,6 +264,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         return Response({"count": count, "results": rep_list})
 
 
+@method_decorator([api_recorder], name="dispatch")
 class OperationLogViewSet(mixins.CreateModelMixin,
                           mixins.RetrieveModelMixin,
                           mixins.ListModelMixin,
@@ -276,6 +282,7 @@ class OperationLogViewSet(mixins.CreateModelMixin,
     serializer_class = OperationLogSerializer
 
 
+@method_decorator([api_recorder], name="dispatch")
 class QualityControlViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,
                             mixins.ListModelMixin,
@@ -296,6 +303,7 @@ class QualityControlViewSet(mixins.CreateModelMixin,
     filter_class = QualityControlFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class PlanRealityViewSet(mixins.ListModelMixin,
                          GenericViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -307,6 +315,8 @@ class PlanRealityViewSet(mixins.ListModelMixin,
         if search_time_str:
             if not re.search(r"[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}", search_time_str):
                 raise ValidationError("查询时间格式异常")
+        else:
+            search_time_str = str(datetime.date.today())
         if target_equip_no:
             pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
                                                         product_day_plan__equip__equip_no=target_equip_no,
@@ -457,6 +467,7 @@ class PlanRealityViewSet(mixins.ListModelMixin,
         return Response(return_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductActualViewSet(mixins.ListModelMixin,
                            GenericViewSet):
     """密炼实绩"""
@@ -470,6 +481,8 @@ class ProductActualViewSet(mixins.ListModelMixin,
         if search_time_str:
             if not re.search(r"[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}", search_time_str):
                 raise ValidationError("查询时间格式异常")
+        else:
+            search_time_str = str(datetime.date.today())
         if target_equip_no:
             pcp_set = ProductClassesPlan.objects.filter(product_day_plan__plan_schedule__day_time=search_time_str,
                                                         product_day_plan__equip__equip_no=target_equip_no,
@@ -633,6 +646,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
         return Response(return_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class ProductionRecordViewSet(mixins.ListModelMixin,
                               GenericViewSet):
     queryset = PalletFeedbacks.objects.filter()
@@ -643,6 +657,7 @@ class ProductionRecordViewSet(mixins.ListModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -703,6 +718,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         # return Response("ok")
 
 
+@method_decorator([api_recorder], name="dispatch")
 class WeighParameterFuelViewSet(mixins.CreateModelMixin,
                                 mixins.UpdateModelMixin,
                                 mixins.RetrieveModelMixin,
@@ -770,6 +786,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         # return Response("ok")
 
 
+@method_decorator([api_recorder], name="dispatch")
 class MaterialStatisticsViewSet(mixins.ListModelMixin,
                                 GenericViewSet):
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
@@ -780,6 +797,7 @@ class MaterialStatisticsViewSet(mixins.ListModelMixin,
     filter_class = MaterialStatisticsFilter
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -791,10 +809,11 @@ class EquipStatusPlanList(APIView):
 
         # 计划数据，根据设备机台号和班次分组，
         plan_data = ProductClassesPlan.objects.filter(
-            product_day_plan__plan_schedule__day_time=datetime.datetime.now().date()
+            work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
+            product_day_plan__equip__equip_no__in=list(equip_nos)
         ).values('work_schedule_plan__classes__global_name',
-                 'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
-        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
+                 'equip__equip_no').annotate(plan_num=Sum('plan_trains'))
+        plan_data = {item['equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
                      for item in plan_data}
 
         # 先按照计划uid分组，取出最大的一条实际数据
@@ -826,7 +845,7 @@ class EquipStatusPlanList(APIView):
         class_dict = {'早班': 1, '中班': 2, '晚班': 3}
         for key, value in plan_data.items():
             class_name = value['work_schedule_plan__classes__global_name']
-            equip_no = value['product_day_plan__equip__equip_no']
+            equip_no = value['equip__equip_no']
             classes_id = class_dict[class_name]
             plan_num = value['plan_num']
             if key in actual_data:
@@ -855,6 +874,7 @@ class EquipStatusPlanList(APIView):
         return Response(ret_data)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class EquipDetailedList(APIView):
     """主页面详情展示机"""
 
@@ -878,14 +898,14 @@ class EquipDetailedList(APIView):
             ret_data['status_list'] = []
 
         # 当前机台当前班次计划车次
-        pcp_plan = ProductClassesPlan.objects.filter(delete_flag=False, product_day_plan__equip__equip_no=equip_no,
-                                                     product_day_plan__plan_schedule__day_time=datetime.datetime.now().date(),
+        pcp_plan = ProductClassesPlan.objects.filter(delete_flag=False, equip__equip_no=equip_no,
+                                                     work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
-            'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
+            'product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
         for pcp_dict in pcp_plan:
             product_dict = {}
-            product_dict['product_no'] = pcp_dict['product_day_plan__product_batching__stage_product_batch_no']
+            product_dict['product_no'] = pcp_dict['product_batching__stage_product_batch_no']
             product_dict['sum_plan_trains'] = pcp_dict['sum_plan_trains']
             ret_data['product_list'].append(product_dict)
 
@@ -1026,11 +1046,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             filter_dict['product_no'] = product_no
         if operation_user:
             filter_dict['operation_user'] = operation_user
+
         tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
-        #     .values('plan_classes_uid', 'equip_no',
-        #                                                                    'product_no').annotate(
-        #     max_id=Max('id')).values_list('max_id', flat=True)
-        # tf_queryset = TrainsFeedbacks.objects.filter(id__in=tf_queryset).values()
         counts = tf_queryset.count()
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
         for tf_obj in tf_queryset:
@@ -1060,10 +1077,10 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 tf_obj['status'] = ps_obj.status
             else:
                 tf_obj['status'] = None
-
         return Response({'count': counts, 'results': tf_queryset})
 
 
+@method_decorator([api_recorder], name="dispatch")
 class MaterialExport(mixins.CreateModelMixin,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin,
@@ -1115,10 +1132,11 @@ class MaterialExport(mixins.CreateModelMixin,
                     condition_str += f" and product_time <= '{et}'"
         else:
             condition_str = ''
-        sql_str = f"""select id, equip_no, product_no, material_no, material_type, 
-                                material_name, plan_classes_uid, SUM(expend_material.actual_weight) as actual_weight 
-                                from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
-                    """
+        sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
+                            max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
+                            SUM(expend_material.actual_weight / 100) as actual_weight 
+                            from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
+                """
         # return gen_material_export_file_response('导出', sql_str)
 
         return sql_str
