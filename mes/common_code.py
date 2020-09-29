@@ -1,10 +1,10 @@
 import logging
 import re
 
-import pymssql  # 引入pymssql模块
+# import pymssql  # 引入pymssql模块
 import requests
 
-from DBUtils.PooledDB import PooledDB
+# from DBUtils.PooledDB import PooledDB
 from rest_framework import status, mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -146,31 +146,31 @@ def common_validator(**kwargs):
             raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")
 
 
-
-class SqlClient(object):
-    """默认是连接sqlserver的客户端"""
-    def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW"):
-        pool = PooledDB(pymssql,
-                        mincached=5, maxcached=10, maxshared=5, maxconnections=10, blocking=True,
-                        maxusage=100, setsession=None, reset=True, host=host,
-                        user=user, password=password
-                        )
-        conn = pool.connection()
-        cursor = conn.cursor()
-        cursor.execute(sql)
-        self.conn = conn
-        self.cursor = cursor
-
-    def all(self):
-        self.data = self.cursor.fetchall()
-        return self.data
-
-    def one(self):
-        if self.data:
-            return self.data[0]
-        else:
-            return tuple()
-
-    def close(self):
-        self.conn.close()
-        self.cursor.close()
+#
+# class SqlClient(object):
+#     """默认是连接sqlserver的客户端"""
+#     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW"):
+#         pool = PooledDB(pymssql,
+#                         mincached=5, maxcached=10, maxshared=5, maxconnections=10, blocking=True,
+#                         maxusage=100, setsession=None, reset=True, host=host,
+#                         user=user, password=password
+#                         )
+#         conn = pool.connection()
+#         cursor = conn.cursor()
+#         cursor.execute(sql)
+#         self.conn = conn
+#         self.cursor = cursor
+#
+#     def all(self):
+#         self.data = self.cursor.fetchall()
+#         return self.data
+#
+#     def one(self):
+#         if self.data:
+#             return self.data[0]
+#         else:
+#             return tuple()
+#
+#     def close(self):
+#         self.conn.close()
+#         self.cursor.close()
