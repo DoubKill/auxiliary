@@ -34,7 +34,7 @@ logger = logging.getLogger('sync_log')
 
 
 class MesUpClient(object):
-
+    # 生产数据上报mes
     UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial"]
     Client = requests.request
     mes = ChildSystemInfo.objects.filter(system_name="MES").first()
@@ -356,10 +356,16 @@ def run():
     while True:
         try:
             main()
+        except Exception as e:
+            logger.error(f"工作站至群控上行异常:{e}")
+        try:
             plan_status_monitor()
+        except Exception as e:
+            logger.error(f"计划状态同步异常:{e}")
+        try:
             MesUpClient.sync()
         except Exception as e:
-            logger.error(e)
+            logger.error(f"群控至MES上行异常:{e}")
         time.sleep(5)
 
 if __name__ == "__main__":
