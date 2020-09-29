@@ -20,11 +20,11 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
 
     classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
-    product_no = serializers.CharField(source='product_batching.stage_product_batch_no', read_only=True)
+    product_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no', read_only=True)
     status = serializers.SerializerMethodField(read_only=True, help_text='计划状态')
     start_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True)
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True)
-    equip_no = serializers.CharField(source='equip.equip_no', read_only=True)
+    equip_no = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True)
 
     def get_status(self, obj):
         plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
@@ -145,8 +145,8 @@ class ProductBatchingClassesPlanSerializer(BaseModelSerializer):
 
 
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
-    equip_name = serializers.CharField(source='equip.equip_no', read_only=True, help_text='机台名')
-    stage_product_batch_no = serializers.CharField(source='product_batching.stage_product_batch_no',
+    equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
+    stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
     classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
@@ -317,7 +317,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 
     @atomic()
     def update(self, instance, validated_data):
-        if instance.product_batching.used_type != 4:  # 4对应配方的启用状态
+        if instance.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise serializers.ValidationError("该计划对应配方未启用,无法下达")
         # if validated_data.get('trains') - instance.plan_trains <= 2:
         #     raise serializers.ValidationError({'trains': "修改车次至少要比原车次大2次"})
@@ -339,7 +339,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
 
-        equip_no = instance.equip.equip_no
+        equip_no = instance.product_day_plan.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
@@ -420,7 +420,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
             stage_product_batch_no=product_batching, batching_type=2, delete_flag=False).first()
         if not product_batching:
-            raise serializers.ValidationError('改胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('该胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
