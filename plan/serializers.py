@@ -339,7 +339,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.plan_trains = trains
         instance.save()
 
-        equip_no = instance.equip.equip_no
+        equip_no = instance.product_day_plan.equip.equip_no
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
