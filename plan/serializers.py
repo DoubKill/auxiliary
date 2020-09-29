@@ -20,11 +20,11 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
 
     classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
-    product_no = serializers.CharField(source='product_batching.stage_product_batch_no', read_only=True)
+    product_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no', read_only=True)
     status = serializers.SerializerMethodField(read_only=True, help_text='计划状态')
     start_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True)
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True)
-    equip_no = serializers.CharField(source='equip.equip_no', read_only=True)
+    equip_no = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True)
 
     def get_status(self, obj):
         plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
@@ -420,7 +420,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
             stage_product_batch_no=product_batching, batching_type=2, delete_flag=False).first()
         if not product_batching:
-            raise serializers.ValidationError('改胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('该胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
