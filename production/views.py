@@ -812,8 +812,8 @@ class EquipStatusPlanList(APIView):
             work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
             product_day_plan__equip__equip_no__in=list(equip_nos)
         ).values('work_schedule_plan__classes__global_name',
-                 'equip__equip_no').annotate(plan_num=Sum('plan_trains'))
-        plan_data = {item['equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
+                 'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
+        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
                      for item in plan_data}
 
         # 先按照计划uid分组，取出最大的一条实际数据
@@ -845,7 +845,7 @@ class EquipStatusPlanList(APIView):
         class_dict = {'早班': 1, '中班': 2, '晚班': 3}
         for key, value in plan_data.items():
             class_name = value['work_schedule_plan__classes__global_name']
-            equip_no = value['equip__equip_no']
+            equip_no = value['product_day_plan__equip__equip_no']
             classes_id = class_dict[class_name]
             plan_num = value['plan_num']
             if key in actual_data:
@@ -898,14 +898,14 @@ class EquipDetailedList(APIView):
             ret_data['status_list'] = []
 
         # 当前机台当前班次计划车次
-        pcp_plan = ProductClassesPlan.objects.filter(delete_flag=False, equip__equip_no=equip_no,
+        pcp_plan = ProductClassesPlan.objects.filter(delete_flag=False, product_day_plan__equip__equip_no=equip_no,
                                                      work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
-            'product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
+            'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
         for pcp_dict in pcp_plan:
             product_dict = {}
-            product_dict['product_no'] = pcp_dict['product_batching__stage_product_batch_no']
+            product_dict['product_no'] = pcp_dict['product_day_plan__product_batching__stage_product_batch_no']
             product_dict['sum_plan_trains'] = pcp_dict['sum_plan_trains']
             ret_data['product_list'].append(product_dict)
 
