@@ -40,14 +40,14 @@ class ProductBatchingDayPlanFilter(django_filters.rest_framework.FilterSet):
 class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
     """计划管理"""
     classes = django_filters.CharFilter(field_name='work_schedule_plan__classes__global_name', help_text='班次')
-    product_no = django_filters.CharFilter(field_name='product_batching__stage_product_batch_no',
+    product_no = django_filters.CharFilter(field_name='product_day_plan__product_batching__stage_product_batch_no',
                                            help_text='胶料编码')
     begin_time = django_filters.DateTimeFilter(field_name='work_schedule_plan__start_time', lookup_expr="gte",
                                                help_text='开始时间')
     end_time = django_filters.DateTimeFilter(field_name='work_schedule_plan__start_time', lookup_expr="lte",
                                              help_text='结束时间')
+    # equip_no = django_filters.CharFilter(field_name='product_day_plan__equip__equip_no', help_text='机台编号')
     equip_no = django_filters.CharFilter(field_name='product_day_plan__equip__equip_no', help_text='机台编号')
-    # equip_no = django_filters.CharFilter(field_name='equip__equip_no', help_text='机台编号')
     schedule_name = django_filters.CharFilter(
         field_name='work_schedule_plan__plan_schedule__id', help_text='排班规则')
     day_time = django_filters.DateFilter(field_name='work_schedule_plan__plan_schedule__day_time', help_text='当前日期')
