@@ -1,3 +1,4 @@
+import datetime
 from collections import OrderedDict
 
 from django.db.models import Max
@@ -254,6 +255,9 @@ class IssuedPlan(APIView):
             product_batching = pcp_obj.product_day_plan.product_batching
         except:
             raise ValidationError("无对应日计划胶料配料标准")
+        today = datetime.date.today()
+        if pcp_obj.work_schedule_plan.plan_schedule.day_time < today:
+            raise ValidationError(f"{today}之前的计划不允许今日下达")
         # 胶料配料详情，一份胶料对应多个配料
         product_batching_details = product_batching.batching_details.filter(delete_flag=False)
         if not product_batching_details:
