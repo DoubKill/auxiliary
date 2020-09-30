@@ -1,4 +1,3 @@
-import datetime
 from collections import OrderedDict
 
 from django.db.models import Max
@@ -89,7 +88,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     delete:
         计划管理删除
     """
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-id', 'sn')
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-status', '-id', 'sn')
     serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
@@ -372,8 +371,9 @@ class IssuedPlan(APIView):
     def _map_RecipeMix(self, product_batching, product_process_details, equip_no):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
-                                                                     stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                     equip__equip_no=equip_no, batching_type=1).first()
+                                                                                          stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                                          equip__equip_no=equip_no,
+                                                                                          batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
             actual_product_process_details = actual_product_batching.process_details.filter(delete_flag=False)
@@ -606,8 +606,6 @@ class IssuedPlan(APIView):
         # ps_obj.save()
         # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
-
-
 
 
 @method_decorator([api_recorder], name="dispatch")
