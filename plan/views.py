@@ -88,7 +88,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     delete:
         计划管理删除
     """
-    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-status', 'sn')
+    queryset = ProductClassesPlan.objects.filter(delete_flag=False).order_by('-id', 'sn')
     serializer_class = PalletFeedbacksPlanSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
