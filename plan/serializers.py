@@ -87,13 +87,12 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
 
-    day_time = serializers.CharField(source='plan_schedule.day_time', required=False)
 
     class Meta:
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
                   'product_no', 'batching_weight', 'production_time_interval', 'product_batching',
-                  'pdp_product_classes_plan', 'dev_type_name', 'day_time')
+                  'pdp_product_classes_plan', 'dev_type_name')
         read_only_fields = COMMON_READ_ONLY_FIELDS
         # validators = [
         #     UniqueTogetherValidator(
@@ -103,14 +102,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         #     )
         # ]
 
-    def validate_day_time(self, value):
-        if value:
-            today = datetime.date.today()
-            if value < today:
-                raise serializers.ValidationError(f"请勿创建{today}之前的计划")
-            return value
-        else:
-            raise serializers.ValidationError(f"未查到排班计划，请检查")
 
     def create(self, validated_data):
         details = validated_data.pop('pdp_product_classes_plan', None)
