@@ -106,7 +106,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
     def validate_day_time(self, value):
         if value:
             today = datetime.date.today()
-            if value <= today:
+            if value < today:
                 raise serializers.ValidationError(f"请勿创建{today}之前的计划")
             return value
         else:
