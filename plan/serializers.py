@@ -103,7 +103,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         #     )
         # ]
 
-
+    @atomic()
     def create(self, validated_data):
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
