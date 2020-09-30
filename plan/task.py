@@ -17,7 +17,6 @@ from plan.models import ProductDayPlan, ProductClassesPlan
 logger = logging.getLogger('sync_log')
 
 
-
 class BaseDownloader(object):
     path = ""
     type = ""
@@ -102,6 +101,6 @@ class ProductClassesPlanDown(BaseDownloader):
 if __name__ == '__main__':
 
     for downloader in (
-            #ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
-                       ProductClassesPlanDown,):
+            ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
+            ProductClassesPlanDown,):
         downloader().download()

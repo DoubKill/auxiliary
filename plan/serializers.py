@@ -1,3 +1,4 @@
+import datetime
 import logging
 from collections import OrderedDict
 
@@ -20,7 +21,8 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
     """胶料日班次计划序列化"""
 
     classes_name = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True)
-    product_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no', read_only=True)
+    product_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
+                                       read_only=True)
     status = serializers.SerializerMethodField(read_only=True, help_text='计划状态')
     start_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True)
     end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True)
@@ -86,6 +88,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
 
+
     class Meta:
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
@@ -113,6 +116,13 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             classes = detail.pop('classes')
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
+            # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
+            # end_time = work_schedule_plan.end_time#取班次的结束时间
+            # now_time = datetime.datetime.now()
+            # if now_time > end_time:
+            #     raise serializers.ValidationError(
+            #         f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
+
             if not work_schedule_plan:
                 raise serializers.ValidationError('暂无该班次排班数据')
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
@@ -121,6 +131,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['equip'] = instance.equip
             detail['product_batching'] = instance.product_batching
             detail['status'] = '等待'
+
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
             PlanStatus.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, equip_no=instance.equip.equip_no,
