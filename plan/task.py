@@ -17,7 +17,6 @@ from plan.models import ProductDayPlan, ProductClassesPlan
 logger = logging.getLogger('sync_log')
 
 
-
 class BaseDownloader(object):
     path = ""
     type = ""
@@ -49,10 +48,17 @@ class BaseDownloader(object):
             *self.upload_fields)
         for data in ret:
             try:
+                if self.model == ProductClassesPlan:
+                    if data['equip__equip_no'] == None:
+                        data['equip__equip_no'] = '0'
+                    if data['product_batching__stage_product_batch_no'] == None:
+                        data['product_batching__stage_product_batch_no'] = '0'
                 res = self.request(data)
+                print(res)
                 logger.info(res)
                 DataSynchronization.objects.get_or_create(type=self.type, obj_id=data['id'])
             except Exception as e:
+                print(e)
                 logger.error('同步{}失败,  id:{},  data:{}, message:{}'.format(self.__doc__, data['id'], data, e))
                 continue
 
@@ -102,6 +108,6 @@ class ProductClassesPlanDown(BaseDownloader):
 if __name__ == '__main__':
 
     for downloader in (
-            #ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
-                       ProductClassesPlanDown,):
+            ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
+            ProductClassesPlanDown,):
         downloader().download()
