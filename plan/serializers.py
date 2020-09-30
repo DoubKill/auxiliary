@@ -93,7 +93,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
                   'product_no', 'batching_weight', 'production_time_interval', 'product_batching',
-                  'pdp_product_classes_plan', 'dev_type_name')
+                  'pdp_product_classes_plan', 'dev_type_name', 'day_time')
         read_only_fields = COMMON_READ_ONLY_FIELDS
         # validators = [
         #     UniqueTogetherValidator(
