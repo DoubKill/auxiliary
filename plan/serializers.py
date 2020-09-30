@@ -87,7 +87,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
 
-    day_time = serializers.CharField(source='plan_schedule.day_time', read_only=True)
+    day_time = serializers.CharField(source='plan_schedule.day_time', required=False)
 
     class Meta:
         model = ProductDayPlan
