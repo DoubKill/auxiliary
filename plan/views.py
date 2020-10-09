@@ -438,7 +438,8 @@ class IssuedPlan(APIView):
         # 胶料，油料，炭黑的合表
         datas = self._map_RecipePloy(product_batching, product_batching_details) + self._map_RecipeOil1(
             product_batching, product_batching_details) + self._map_RecipeCb(product_batching, product_batching_details)
-
+        if not datas:
+            raise ValidationError("胶料配料详情为空，该计划不可用")
         return datas
 
     def _sync(self, args, params=None, ext_str="", equip_no=""):
