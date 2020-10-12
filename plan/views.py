@@ -256,11 +256,11 @@ class IssuedPlan(APIView):
         except:
             raise ValidationError("无对应日计划胶料配料标准")
         # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-        # end_time = pcp_obj.work_schedule_plan.end_time#取班次的结束时间
-        # now_time = datetime.datetime.now()
-        # if now_time > end_time:
-        #     raise ValidationError(
-        #         f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的当前无法下达')
+        end_time = pcp_obj.work_schedule_plan.end_time #取班次的结束时间
+        now_time = datetime.datetime.now()
+        if now_time > end_time:
+            raise ValidationError(
+                f'{end_time.strftime("%Y-%m-%d")}的{pcp_obj.work_schedule_plan.classes.global_name}的计划不允许现在创建')
         # 胶料配料详情，一份胶料对应多个配料
         product_batching_details = product_batching.batching_details.filter(delete_flag=False)
         if not product_batching_details:
