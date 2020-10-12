@@ -117,11 +117,11 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
             # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-            # end_time = work_schedule_plan.end_time#取班次的结束时间
-            # now_time = datetime.datetime.now()
-            # if now_time > end_time:
-            #     raise serializers.ValidationError(
-            #         f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
+            end_time = work_schedule_plan.end_time#取班次的结束时间
+            now_time = datetime.datetime.now()
+            if now_time > end_time:
+                raise serializers.ValidationError(
+                    f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
 
             if not work_schedule_plan:
                 raise serializers.ValidationError('暂无该班次排班数据')

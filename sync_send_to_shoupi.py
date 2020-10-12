@@ -99,7 +99,7 @@ def send_to_yikong_stop():
         model_name = getattr(md, model_list + str(ext_str))
         plan_obj = model_name.objects.filter().first()
         if plan_obj:
-            if plan_obj.recstatus in ["待停止", "停止", "完成"]:
+            if plan_obj.recstatus in ["停止", "完成"]:
                 test_dict = OrderedDict()
                 test_dict['stopstate'] = '停止'
                 test_dict['planid'] = plan_obj.planid
