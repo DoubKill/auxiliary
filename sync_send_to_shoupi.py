@@ -97,17 +97,16 @@ def send_to_yikong_stop():
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
-        plan_obj = model_name.objects.filter().first()
+        plan_obj = model_name.objects.filter(recstatus__in=["停止", "完成"]).first()
         if plan_obj:
-            if plan_obj.recstatus in ["停止", "完成"]:
-                test_dict = OrderedDict()
-                test_dict['stopstate'] = '停止'
-                test_dict['planid'] = plan_obj.planid
-                test_dict['no'] = ext_str
-                try:
-                    WebService.issue(test_dict, 'stop')
-                except Exception as e:
-                    raise ValidationError(f"收皮机连接超时|{e}")
+            test_dict = OrderedDict()
+            test_dict['stopstate'] = '停止'
+            test_dict['planid'] = plan_obj.planid
+            test_dict['no'] = ext_str
+            try:
+                WebService.issue(test_dict, 'stop')
+            except Exception as e:
+                raise ValidationError(f"收皮机连接超时|{e}")
 
 
 def send_to_yikong_update():
