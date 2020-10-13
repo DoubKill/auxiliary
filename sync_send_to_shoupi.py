@@ -6,8 +6,6 @@ import time
 
 import django
 
-from work_station.models import IfupReportBasis
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 from collections import OrderedDict
@@ -16,6 +14,7 @@ from rest_framework.exceptions import ValidationError
 
 from mes.common_code import WebService
 from plan.models import ProductClassesPlan
+from work_station.models import IfupReportBasis
 from production.models import PlanStatus, TrainsFeedbacks
 from work_station import models as md
 
