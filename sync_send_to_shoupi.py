@@ -6,6 +6,8 @@ import time
 
 import django
 
+from work_station.models import IfupReportBasis
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 from collections import OrderedDict
@@ -99,14 +101,19 @@ def send_to_yikong_stop():
         model_name = getattr(md, model_list + str(ext_str))
         plan_obj = model_name.objects.filter(recstatus__in=["停止", "完成"]).first()
         if plan_obj:
-            test_dict = OrderedDict()
-            test_dict['stopstate'] = '停止'
-            test_dict['planid'] = plan_obj.planid
-            test_dict['no'] = ext_str
-            try:
-                WebService.issue(test_dict, 'stop')
-            except Exception as e:
-                raise ValidationError(f"收皮机连接超时|{e}")
+            plan_id = plan_obj.planid
+            actual = IfupReportBasis.objects.filter(计划号=plan_id).last()  # 获取当前计划的最新车次
+            target = TrainsFeedbacks.objects.filter(plan_classes_uid=plan_id).last()  # 获取群控系统的最新车次
+            if actual and target:
+                if target.actual_trains == actual.车次号:
+                    test_dict = OrderedDict()
+                    test_dict['stopstate'] = '停止'
+                    test_dict['planid'] = plan_obj.planid
+                    test_dict['no'] = ext_str
+                    try:
+                        WebService.issue(test_dict, 'stop')
+                    except Exception as e:
+                        raise ValidationError(f"收皮机连接超时|{e}")
 
 
 def send_to_yikong_update():

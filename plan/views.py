@@ -529,15 +529,6 @@ class IssuedPlan(APIView):
             raise ValidationError("该计划对应配方未启用,无法下达")
 
         # 校验计划与配方完整性
-
-        uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
-        id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id",
-                                                                                                              flat=True)
-        status_list = PlanStatus.objects.filter(id__in=id_list)
-        if "运行中" in status_list:
-            raise ValidationError("该机台当前已有运行中计划,无法下达新计划")
-        elif "已下达" in status_list:
-            raise ValidationError("该机台当前已有已下达计划,无法下达新计划")
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)

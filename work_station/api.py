@@ -35,7 +35,7 @@ class IssueWorkStation(object):
         将数据存入到中间表
         """
         if self.plan_model.objects.filter(recstatus__in=["等待", "运行中", "车次需更新", "配方车次需更新", "配方需重传", "待停止"]).exists():
-            raise ValidationError("该机台中存在已下达/运行中的计划，请停止计划或等待计划完成后再下达")
+            raise ValidationError("该机台中存在已下达/运行中/待停止的计划，请停止计划或等待计划完成后再下达")
         if self.plan_model.objects.filter(recstatus__in=["完成", "停止"]).exists():
             self.model.objects.filter().delete()
         serializer = self.model_serializer(data=self.data)
