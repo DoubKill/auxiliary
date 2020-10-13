@@ -126,6 +126,7 @@ class ExpendMaterial(AbstractEntity):
     material_type = models.CharField(max_length=64, help_text='原材料类型', verbose_name='原材料类型')
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    state_balance = models.CharField(max_length=64, help_text='秤状态', verbose_name='秤状态',null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"

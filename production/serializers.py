@@ -9,7 +9,7 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
 from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
-from recipe.models import ProductBatching, Material
+from recipe.models import ProductBatching, Material, ProductProcessDetail
 from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     IfupReportCurveBackups
 from django.db.models import Sum, Max
@@ -108,7 +108,6 @@ class PalletSerializer(BaseModelSerializer):
         exclude = ("created_date", "last_updated_date", "delete_date", "delete_flag",
                    "created_user", "last_updated_user", "delete_user")
         read_only_fields = COMMON_READ_ONLY_FIELDS
-
 
 
 class PlanStatusSerializer(BaseModelSerializer):
@@ -277,17 +276,20 @@ class WeighInformationSerializer(serializers.ModelSerializer):
     """称量信息"""
 
     class Meta:
-        model = IfupReportWeightBackups
+        model = ExpendMaterial
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
 class MixerInformationSerializer(serializers.ModelSerializer):
     """密炼信息"""
+    condition_name = serializers.CharField(source='condition.condition', read_only=True)
+    action_name = serializers.CharField(source='action.action', read_only=True)
 
     class Meta:
-        model = IfupReportMixBackups
-        fields = '__all__'
+        model = ProductProcessDetail
+        fields = (
+            'id', 'sn', 'temperature', 'rpm', 'energy', 'power', 'pressure', 'condition_name', 'time', 'action_name')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 

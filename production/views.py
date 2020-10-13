@@ -30,6 +30,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer, \
     PalletSerializer
 from production.utils import strtoint, gen_material_export_file_response
+from recipe.models import ProductProcessDetail
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -70,6 +71,7 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
 
 @method_decorator([api_recorder], name="dispatch")
 class PalletFeedbacksViewSet(mixins.CreateModelMixin,
@@ -342,7 +344,8 @@ class PlanRealityViewSet(mixins.ListModelMixin,
                          for x in day_plan_list}
         pcp_data = pcp_set.values("plan_classes_uid", "weight", "plan_trains", 'product_day_plan__equip__equip_no',
                                   'product_day_plan__product_batching__stage_product_batch_no',
-                                  'product_day_plan_id', 'time', 'product_day_plan__product_batching__stage__global_name')
+                                  'product_day_plan_id', 'time',
+                                  'product_day_plan__product_batching__stage__global_name')
         for pcp in pcp_data:
             day_plan_id = pcp.get('product_day_plan_id')
             plan_classes_uid = pcp.get('plan_classes_uid')
@@ -379,7 +382,6 @@ class PlanRealityViewSet(mixins.ListModelMixin,
                 new_equip_data.append(_)
             datas += new_equip_data
         return Response({"data": datas})
-
 
     def list_bak(self, request, *args, **kwargs):
         # 获取url参数 search_time equip_no
@@ -948,7 +950,7 @@ group by equip_status.status;
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """称量信息"""
-    queryset = IfupReportWeightBackups.objects.filter()
+    queryset = ExpendMaterial.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     # pagination_class = SinglePageNumberPagination
     serializer_class = WeighInformationSerializer
@@ -958,10 +960,10 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         feed_back_id = self.request.query_params.get('feed_back_id')
         try:
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
-                                                                  计划号=tfb_obk.plan_classes_uid,
-                                                                  配方号=tfb_obk.product_no,
-                                                                  车次号=tfb_obk.actual_trains)
+            irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
+                                                         plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                         product_no=tfb_obk.product_no,
+                                                         trains=tfb_obk.actual_trains)
         except:
             raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
 
@@ -972,7 +974,7 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """密炼信息"""
-    queryset = IfupReportMixBackups.objects.filter()
+    queryset = ProductProcessDetail.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     # pagination_class = SinglePageNumberPagination
     serializer_class = MixerInformationSerializer
@@ -982,12 +984,11 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         feed_back_id = self.request.query_params.get('feed_back_id')
         try:
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
-                                                               计划号=tfb_obk.plan_classes_uid,
-                                                               配方号=tfb_obk.product_no,
-                                                               密炼车次=tfb_obk.actual_trains)
+            pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid).first()
+            irm_queryset = pcp_obj.product_day_plan.product_batching.process_details.all()
+
         except:
-            raise ValidationError('车次产出反馈或车次报表步序表没有数据')
+            raise ValidationError('车次产出反馈或胶料配料标准步序详情没有数据')
 
         return irm_queryset
 
@@ -1052,6 +1053,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
         tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
         for tf_obj in tf_queryset:
             production_details = {}
+            # TODO 中间表
             irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
                                                             计划号=tf_obj['plan_classes_uid'],
                                                             配方号=tf_obj['product_no'],
