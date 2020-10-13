@@ -88,7 +88,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
 
-
     class Meta:
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
@@ -117,11 +116,11 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
             # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-            # end_time = work_schedule_plan.end_time#取班次的结束时间
-            # now_time = datetime.datetime.now()
-            # if now_time > end_time:
-            #     raise serializers.ValidationError(
-            #         f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
+            end_time = work_schedule_plan.end_time#取班次的结束时间
+            now_time = datetime.datetime.now()
+            if now_time > end_time:
+                raise serializers.ValidationError(
+                    f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
 
             if not work_schedule_plan:
                 raise serializers.ValidationError('暂无该班次排班数据')
@@ -429,14 +428,22 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("相关表数据错误")
 
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
-            stage_product_batch_no=product_batching, batching_type=2, delete_flag=False).first()
+            stage_product_batch_no=product_batching, delete_flag=False).last()
+        # 暂时将batching_type=2去掉 把first改为last
+        # 原因：mes配方下达batching_type=2 计划是和这个关联
+        # 但是如果在下发计划之前复制了配方batching_type是1，这个时候下发计划应该是和复制之后的配方关联 下面也是
         if not product_batching:
             raise serializers.ValidationError('该胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
-        pb_obj = ProductBatching.objects.filter(
-            stage_product_batch_no=pdp_dict['product_batching']['stage_product_batch_no']).first()
+        pb_obj = ProductBatching.objects.exclude(used_type=6).filter(
+            stage_product_batch_no=pdp_dict['product_batching']['stage_product_batch_no'],
+            delete_flag=False).last()
+        if not pb_obj:
+            raise serializers.ValidationError(
+                '该胶料配料标准{}在MES或上辅机没有'.format(pdp_dict['product_batching']['stage_product_batch_no']))
+
         pdp_obj = ProductDayPlan.objects.filter(equip=pdp_dict['equip'], product_batching=pb_obj,
                                                 plan_schedule=plan_schedule).first()
         if pdp_obj:

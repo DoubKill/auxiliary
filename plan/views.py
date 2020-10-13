@@ -1,4 +1,3 @@
-import datetime
 from collections import OrderedDict
 
 from django.db.models import Max
@@ -256,11 +255,11 @@ class IssuedPlan(APIView):
         except:
             raise ValidationError("无对应日计划胶料配料标准")
         # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-        # end_time = pcp_obj.work_schedule_plan.end_time#取班次的结束时间
-        # now_time = datetime.datetime.now()
-        # if now_time > end_time:
-        #     raise ValidationError(
-        #         f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的当前无法下达')
+        end_time = pcp_obj.work_schedule_plan.end_time #取班次的结束时间
+        now_time = datetime.datetime.now()
+        if now_time > end_time:
+            raise ValidationError(
+                f'{end_time.strftime("%Y-%m-%d")}的{pcp_obj.work_schedule_plan.classes.global_name}的计划不允许现在创建')
         # 胶料配料详情，一份胶料对应多个配料
         product_batching_details = product_batching.batching_details.filter(delete_flag=False)
         if not product_batching_details:
@@ -372,8 +371,9 @@ class IssuedPlan(APIView):
     def _map_RecipeMix(self, product_batching, product_process_details, equip_no):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
-                                                                     stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                     equip__equip_no=equip_no, batching_type=1).first()
+                                                                                          stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                                          equip__equip_no=equip_no,
+                                                                                          batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
             actual_product_process_details = actual_product_batching.process_details.filter(delete_flag=False)
@@ -438,7 +438,8 @@ class IssuedPlan(APIView):
         # 胶料，油料，炭黑的合表
         datas = self._map_RecipePloy(product_batching, product_batching_details) + self._map_RecipeOil1(
             product_batching, product_batching_details) + self._map_RecipeCb(product_batching, product_batching_details)
-
+        if not datas:
+            raise ValidationError("胶料配料详情为空，该计划不可用")
         return datas
 
     def _sync(self, args, params=None, ext_str="", equip_no=""):
@@ -528,15 +529,6 @@ class IssuedPlan(APIView):
             raise ValidationError("该计划对应配方未启用,无法下达")
 
         # 校验计划与配方完整性
-
-        uid_list = pcp_obj.product_day_plan.pdp_product_classes_plan.all().values_list("plan_classes_uid", flat=True)
-        id_list = PlanStatus.objects.annotate(m_id=Max(id)).filter(plan_classes_uid__in=uid_list).values_list("id",
-                                                                                                              flat=True)
-        status_list = PlanStatus.objects.filter(id__in=id_list)
-        if "运行中" in status_list:
-            raise ValidationError("该机台当前已有运行中计划,无法下达新计划")
-        elif "已下达" in status_list:
-            raise ValidationError("该机台当前已有已下达计划,无法下达新计划")
         ps_obj = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by('created_date').last()
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
@@ -606,8 +598,6 @@ class IssuedPlan(APIView):
         # ps_obj.save()
         # self.send_again_yikong(params, pcp_obj)
         return Response({'_': '重传成功'}, status=200)
-
-
 
 
 @method_decorator([api_recorder], name="dispatch")
