@@ -253,7 +253,7 @@ class IfupReportBasisBackups(models.Model):
     加胶时间 = models.IntegerField(blank=True, null=True)
     加炭黑时间 = models.IntegerField(blank=True, null=True)
     加油1时间 = models.IntegerField(blank=True, null=True)
-    加油1时间 = models.IntegerField(blank=True, null=True)
+    加油2时间 = models.IntegerField(blank=True, null=True)
     存盘时间 = models.CharField(max_length=20, blank=True, null=True)
     机台号 = models.IntegerField()
     recstatus = models.CharField(db_column='RecStatus', max_length=20)
