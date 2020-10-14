@@ -9,10 +9,12 @@ class TrainsFeedbacksFilter(django_filters.rest_framework.FilterSet):
     equip_no = django_filters.CharFilter(field_name='equip_no', help_text='机号')
     product_no = django_filters.CharFilter(field_name='product_no', help_text='产出胶料编号')
     operation_user = django_filters.CharFilter(field_name="operation_user", help_text="操作员")
+    begin_time = django_filters.DateTimeFilter(field_name='begin_time', lookup_expr="gte", help_text='开始时间')
+    end_time = django_filters.DateTimeFilter(field_name='end_time', lookup_expr="lte", help_text='结束时间')
 
     class Meta:
         model = TrainsFeedbacks
-        fields = ('plan_classes_uid', 'equip_no', 'product_no', 'operation_user')
+        fields = ('plan_classes_uid', 'equip_no', 'product_no', 'operation_user', 'begin_time', 'end_time')
 
 
 class PalletFeedbacksFilter(django_filters.rest_framework.FilterSet):
@@ -51,7 +53,7 @@ class PlanStatusFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = PlanStatus
-        fields = ('plan_classes_uid', )
+        fields = ('plan_classes_uid',)
 
 
 class ExpendMaterialFilter(django_filters.rest_framework.FilterSet):

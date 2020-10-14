@@ -101,6 +101,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),  # 过滤
     'DEFAULT_PAGINATION_CLASS': 'mes.paginations.DefaultPageNumberPagination',  # 分页
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
 }
 
 JWT_AUTH = {
@@ -250,7 +251,6 @@ DATABASES = {
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

@@ -271,8 +271,16 @@ class MaterialStatisticsSerializer(BaseModelSerializer):
 #         fields = (
 #             'id', 'equip_no', 'status_current_trains', 'product_no_classes', 'group_product', 'statusinfo')
 
+class WeighInformationSerializer1(serializers.ModelSerializer):
+    """称量信息"""
 
-class WeighInformationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IfupReportWeightBackups
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class WeighInformationSerializer2(serializers.ModelSerializer):
     """称量信息"""
 
     class Meta:
@@ -281,7 +289,16 @@ class WeighInformationSerializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class MixerInformationSerializer(serializers.ModelSerializer):
+class MixerInformationSerializer1(serializers.ModelSerializer):
+    """密炼信息"""
+
+    class Meta:
+        model = IfupReportMixBackups
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class MixerInformationSerializer2(serializers.ModelSerializer):
     """密炼信息"""
     condition_name = serializers.CharField(source='condition.condition', read_only=True)
     action_name = serializers.CharField(source='action.action', read_only=True)
@@ -299,4 +316,26 @@ class CurveInformationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EquipStatus
         fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class TrainsFeedbacksSerializer2(BaseModelSerializer):
+    """车次产出反馈"""
+    status = serializers.SerializerMethodField(read_only=True)
+
+    def get_status(self, object):
+        ps_obj = PlanStatus.objects.filter(equip_no=object.equip_no,
+                                           plan_classes_uid=object.plan_classes_uid,
+                                           product_no=object.product_no,
+                                           actual_trains=object.actual_trains).order_by(
+            'product_time').last()
+        if ps_obj:
+            status = ps_obj.status
+        else:
+            status = None
+        return status
+
+    class Meta:
+        model = TrainsFeedbacks
+        fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
