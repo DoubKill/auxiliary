@@ -458,7 +458,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
 
     @atomic()
     def create(self, validated_data):
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid']).first()
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid'],delete_flag=False).first()
         if pcp_obj:
             instance = super().update(pcp_obj, validated_data)
             PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
