@@ -460,6 +460,10 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid'],delete_flag=False).first()
         if pcp_obj:
+            plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if plan_status.status != "等待":
+                raise serializers.ValidationError('该计划{}在上辅机处于非等待状态，不可再下达'.format(pcp_obj.plan_classes_uid))
             instance = super().update(pcp_obj, validated_data)
             PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
                 equip_no=instance.equip.equip_no,
