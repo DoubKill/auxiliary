@@ -177,25 +177,26 @@ def common_validator(**kwargs):
 #         self.cursor.close()
 
 
-class SqlClient(object):
-    """默认是连接sqlserver的客户端"""
-    def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW", db='dbo'):
-        conn = pymssql.connect(host, user, password, db)
-        cursor = conn.cursor()
-        cursor.execute(sql)
-        self.conn = conn
-        self.cursor = cursor
-
-    def all(self):
-        self.data = self.cursor.fetchall()
-        return self.data
-
-    def one(self):
-        if self.data:
-            return self.data[0]
-        else:
-            return tuple()
-
-    def close(self):
-        self.conn.close()
-        self.cursor.close()
+# class SqlClient(object):
+#     """默认是连接sqlserver的客户端"""
+#     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW", db='dbo'):
+#         conn = pymssql.connect(host=host, user=user, password=password,
+#                                database=db, charset='utf8', port='1433', as_dict=False)
+#         cursor = conn.cursor()
+#         cursor.execute(sql)
+#         self.conn = conn
+#         self.cursor = cursor
+#
+#     def all(self):
+#         self.data = self.cursor.fetchall()
+#         return self.data
+#
+#     def one(self):
+#         if self.data:
+#             return self.data[0]
+#         else:
+#             return tuple()
+#
+#     def close(self):
+#         self.conn.close()
+#         self.cursor.close()

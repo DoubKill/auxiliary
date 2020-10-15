@@ -482,39 +482,6 @@ class IssuedPlan(APIView):
         Shengchanjihua.update(recstatus='配方需重传')
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
-    def send_to_yikong(self, params, pcp_obj):
-        # 计划下达到易控组态
-        test_dict = OrderedDict()  # 传给易控组态的数据
-        test_dict['recipe_name'] = params.get("stage_product_batch_no", "")
-        test_dict['recipe_code'] = params.get("stage_product_batch_no", "")
-        test_dict['latesttime'] = params.get("day_time", "")
-        test_dict['planid'] = params.get("plan_classes_uid", "")
-        test_dict['starttime'] = params.get("begin_time", "")
-        test_dict['stoptime'] = params.get("end_time", "")
-        test_dict['grouptime'] = params.get("classes", "")
-        test_dict['groupoper'] = params.get("group", "")
-        test_dict['setno'] = params.get("plan_trains", 0)
-        test_dict['oper'] = params.get("operation_user", "") if params.get("operation_user", "") else ""
-        test_dict['runstate'] = "运行中"  # '运行中'
-        test_dict['machineno'] = strtoint(params.get("equip_name", 0)) if strtoint(
-            params.get("equip_name", 0)) else 0  # 易控组态那边的机台euqip_no是int类型
-        test_dict['finishno'] = params.get("actual_trains", 0) if params.get("actual_trains", 0) else 0
-        weight = pcp_obj.product_day_plan.product_batching.batching_weight
-        if weight:
-            test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
-        else:
-            test_dict['weight'] = 0
-        sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
-        if sp_number:
-            test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
-        else:
-            test_dict['sp_number'] = 0
-        try:
-            success_flag = WebService.issue(test_dict, 'plan')
-            if not success_flag:
-                raise ValidationError("收皮机错误")
-        except Exception as e:
-            raise ValidationError("收皮机连接超时")
 
     @atomic()
     def post(self, request):
@@ -549,29 +516,6 @@ class IssuedPlan(APIView):
         # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
-    def send_again_yikong(self, params, pcp_obj):
-        # 计划下达到易控组态
-        test_dict = OrderedDict()  # 传给易控组态的数据
-        test_dict['planid'] = params.get("plan_classes_uid", "")
-        weight = pcp_obj.product_day_plan.product_batching.batching_weight
-        if weight:
-            test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
-        else:
-            test_dict['weight'] = 0
-        sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
-        if sp_number:
-            test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
-        else:
-            test_dict['sp_number'] = 0
-        test_dict['runstate'] = "运行中"  # '运行中'
-        try:
-            success_flag = WebService.issue(test_dict, 'planAgain')
-            if success_flag:
-                return True
-            else:
-                raise ValidationError("未知错误")
-        except Exception as e:
-            raise ValidationError("超时链接")
 
     @atomic()
     def put(self, request):
