@@ -116,7 +116,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
             # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-            end_time = work_schedule_plan.end_time#取班次的结束时间
+            end_time = work_schedule_plan.end_time  # 取班次的结束时间
             now_time = datetime.datetime.now()
             if now_time > end_time:
                 raise serializers.ValidationError(
@@ -454,12 +454,20 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         attrs['work_schedule_plan'] = work_schedule_plan
         attrs['equip'] = equip
         attrs['status'] = '等待'
+        # 因为计划里的时间重量都是通过配方a算出来的  下发给上辅机 上辅机复制配方a为配方b 这个时候计划是需要跟配方b关联的 计划的时间重量就要重新计算
+        attrs['time'] = attrs['plan_trains'] * product_batching.production_time_interval
+        attrs['weight'] = attrs['plan_trains'] * product_batching.batching_weight
         return attrs
 
     @atomic()
     def create(self, validated_data):
-        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid']).first()
+        pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=validated_data['plan_classes_uid'],
+                                                    delete_flag=False).first()
         if pcp_obj:
+            plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
+                'created_date').last()
+            if plan_status.status != "等待":
+                raise serializers.ValidationError('该计划{}在上辅机处于非等待状态，不可再下达'.format(pcp_obj.plan_classes_uid))
             instance = super().update(pcp_obj, validated_data)
             PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
                 equip_no=instance.equip.equip_no,
