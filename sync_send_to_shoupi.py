@@ -87,7 +87,7 @@ def send_to_yikong_run():
 
                     test_dict['sp_number'] = pcp_obj[0].get("product_day_plan__product_batching__processes__sp_num", "")
                     try:
-                        WebService.issue(test_dict, 'plan')
+                        WebService.issue(test_dict, 'plan', equip_no=ext_str)
                     except Exception as e:
                         raise ValidationError(f"收皮机连接超时|{e}")
 
@@ -105,7 +105,7 @@ def send_to_yikong_stop():
             test_dict['planid'] = plan_obj.planid
             test_dict['no'] = ext_str
             try:
-                WebService.issue(test_dict, 'stop')
+                WebService.issue(test_dict, 'stop', equip_no=ext_str)
             except Exception as e:
                 raise ValidationError(f"收皮机连接超时|{e}")
 
@@ -126,7 +126,7 @@ def send_to_yikong_update():
                 test_dict['planid'] = scjh_obj.planid
                 test_dict['no'] = ext_str
                 try:
-                    WebService.issue(test_dict, 'updatetrains')
+                    WebService.issue(test_dict, 'updatetrains', equip_no=ext_str)
                 except Exception as e:
                     raise ValidationError(f"收皮机连接超时|{e}")
 
@@ -158,7 +158,7 @@ def send_again_yikong_again():
                 # test_dict['runstate'] = "运行中"  # '运行中'
                 test_dict['no'] = ext_str
                 try:
-                    WebService.issue(test_dict, 'planAgain')
+                    WebService.issue(test_dict, 'planAgain', equip_no=ext_str)
                 except Exception as e:
                     raise ValidationError(f"超时链接|{e}")
 
