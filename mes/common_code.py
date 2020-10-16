@@ -1,3 +1,5 @@
+import decimal
+import json
 import logging
 import re
 
@@ -104,9 +106,12 @@ class WebService(object):
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
-        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
+        body = cls.trans_dict_to_xml(data, category)
+        rep = cls.client(method, url, headers=headers, data=body, timeout=3)
         # print(rep.text)
         if rep.status_code < 300:
+            if "配方已存在" in rep.text:
+                raise ValidationError("该配方已存在于上辅机，请勿重复下达")
             return True, rep.text
         elif rep.status_code == 500:
             logger.error(rep.text)
@@ -200,3 +205,12 @@ def common_validator(**kwargs):
 #     def close(self):
 #         self.conn.close()
 #         self.cursor.close()
+
+class DecimalEncoder(json.JSONEncoder):
+
+    def default(self, o):
+
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+
+        super(DecimalEncoder, self).default(o)
