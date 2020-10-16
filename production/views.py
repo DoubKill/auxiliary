@@ -973,7 +973,7 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                 irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
                                                              plan_classes_uid=tfb_obk.plan_classes_uid,
                                                              product_no=tfb_obk.product_no,
-                                                             trains=tfb_obk.actual_trains)
+                                                             trains=tfb_obk.actual_trains, delete_flag=False)
             except:
                 raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
         elif version == "v1":
@@ -1012,7 +1012,8 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         if version == "v2":
             try:
                 tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-                pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid).first()
+                pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                            delete_flag=False).first()
                 irm_queryset = pcp_obj.product_day_plan.product_batching.process_details.all()
 
             except:
