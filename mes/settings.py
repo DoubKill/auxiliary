@@ -252,6 +252,7 @@ DATABASES = {
 }
 
 
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -334,3 +335,4 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # mes同步端口
 MES_URL = os.environ.get('MES_URL', 'http://10.4.10.54:80/')
+# MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')
