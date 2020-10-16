@@ -641,18 +641,23 @@ class IssuedPlan(APIView):
     def _sync_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
-        WebService.issue(recipe, 'plan', equip_no=ext_str, equip_name="上辅机")
-
+        status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+        if not status:
+            raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh})} # 这是易控那边为获取批量数据约定的数据格式
-        WebService.issue(weigh_data, 'plan', equip_no=ext_str, equip_name="上辅机")
-
+        status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
+        if not status:
+            raise ValidationError(f"配方称量下达失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
         mix_data = {"json": json.dumps({"datas": mix})}
-        WebService.issue(mix_data, 'plan', equip_no=ext_str, equip_name="上辅机")
-
+        status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
+        if not status:
+            raise ValidationError(f"配方步序下达失败:{text}")
         plan = self._map_plan(params, pcp_obj, ext_str)
-        WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+        status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+        if not status:
+            raise ValidationError(f"计划下达失败:{text}")
 
     def _sync_update_interface(self, args, params=None, ext_str="", equip_no=""):
         pass
