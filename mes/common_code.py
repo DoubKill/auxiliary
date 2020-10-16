@@ -94,13 +94,13 @@ class WebService(object):
     url = "http://{}:9000/planService"
 
     @classmethod
-    def issue(cls, data, category, method="post"):
+    def issue(cls, data, category, method="post", equip_no=6, equip_name="收皮终端"):
         headers = {
             'Content-Type': 'text/xml; charset=utf-8',
             'SOAPAction': 'http://tempuri.org/INXWebService/{}'
         }
 
-        child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
+        child_system = ChildSystemInfo.objects.filter(system_name=f"{equip_name}{equip_no}").first()
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
