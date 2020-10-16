@@ -27,8 +27,8 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
-    WeighInformationSerializer, MixerInformationSerializer, CurveInformationSerializer, MaterialStatisticsSerializer, \
-    PalletSerializer
+    WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, MaterialStatisticsSerializer, \
+    PalletSerializer, WeighInformationSerializer2, MixerInformationSerializer2, TrainsFeedbacksSerializer2
 from production.utils import strtoint, gen_material_export_file_response
 from recipe.models import ProductProcessDetail
 
@@ -950,23 +950,41 @@ group by equip_status.status;
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """称量信息"""
-    queryset = ExpendMaterial.objects.filter(delete_flag=False)
+    # queryset = ExpendMaterial.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     # pagination_class = SinglePageNumberPagination
-    serializer_class = WeighInformationSerializer
+    # serializer_class = WeighInformationSerializer1
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
-    def get_queryset(self):
-        feed_back_id = self.request.query_params.get('feed_back_id')
-        try:
-            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
-                                                         plan_classes_uid=tfb_obk.plan_classes_uid,
-                                                         product_no=tfb_obk.product_no,
-                                                         trains=tfb_obk.actual_trains)
-        except:
-            raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
+    # 根据不同版本。返回不同数据
+    def get_serializer_class(self):
+        version = self.request.version
+        if version == "v1":
+            return WeighInformationSerializer1
+        elif version == "v2":
+            return WeighInformationSerializer2
 
+    def get_queryset(self):
+        version = self.request.version
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        if version == "v2":
+            try:
+                tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+                irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
+                                                             plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                             product_no=tfb_obk.product_no,
+                                                             trains=tfb_obk.actual_trains)
+            except:
+                raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
+        elif version == "v1":
+            try:
+                tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+                irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                                      计划号=tfb_obk.plan_classes_uid,
+                                                                      配方号=tfb_obk.product_no,
+                                                                      车次号=tfb_obk.actual_trains)
+            except:
+                raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
         return irw_queryset
 
 
@@ -974,22 +992,40 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """密炼信息"""
-    queryset = ProductProcessDetail.objects.filter(delete_flag=False)
+    # queryset = ProductProcessDetail.objects.filter(delete_flagflag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     # pagination_class = SinglePageNumberPagination
-    serializer_class = MixerInformationSerializer
+    # serializer_class = MixerInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
+    # 根据不同版本。返回不同数据
+    def get_serializer_class(self):
+        version = self.request.version
+        if version == "v1":
+            return MixerInformationSerializer1
+        elif version == "v2":
+            return MixerInformationSerializer2
+
     def get_queryset(self):
+        version = self.request.version
         feed_back_id = self.request.query_params.get('feed_back_id')
-        try:
-            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid).first()
-            irm_queryset = pcp_obj.product_day_plan.product_batching.process_details.all()
+        if version == "v2":
+            try:
+                tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+                pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid).first()
+                irm_queryset = pcp_obj.product_day_plan.product_batching.process_details.all()
 
-        except:
-            raise ValidationError('车次产出反馈或胶料配料标准步序详情没有数据')
-
+            except:
+                raise ValidationError('车次产出反馈或胶料配料标准步序详情没有数据')
+        elif version == "v1":
+            try:
+                tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+                irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
+                                                                   计划号=tfb_obk.plan_classes_uid,
+                                                                   配方号=tfb_obk.product_no,
+                                                                   密炼车次=tfb_obk.actual_trains)
+            except:
+                raise ValidationError('车次产出反馈或车次报表步序表没有数据')
         return irm_queryset
 
 
@@ -1023,63 +1059,79 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
     """车次报表展示接口"""
     queryset = TrainsFeedbacks.objects.all()
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = TrainsFeedbacksSerializer2
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filter_class = TrainsFeedbacksFilter
 
     def list(self, request, *args, **kwargs):
-        params = request.query_params
-        begin_time = params.get("begin_time", None)
-        end_time = params.get("end_time", None)
-        equip_no = params.get("equip_no", None)
-        product_no = params.get("product_no", None)
-        try:
-            page = int(params.get("page", 1))
-            page_size = int(params.get("page_size", 10))
-        except Exception as e:
-            return Response("page和page_size必须是int", status=400)
-        operation_user = params.get("operation_user", None)
-        filter_dict = {}
-        if begin_time:
-            filter_dict['begin_time__gte'] = begin_time
-        if end_time:
-            filter_dict['end_time__lte'] = end_time
-        if equip_no:
-            filter_dict['equip_no'] = equip_no
-        if product_no:
-            filter_dict['product_no'] = product_no
-        if operation_user:
-            filter_dict['operation_user'] = operation_user
+        version = self.request.version
+        if version == "v1":
+            params = request.query_params
+            begin_time = params.get("begin_time", None)
+            end_time = params.get("end_time", None)
+            equip_no = params.get("equip_no", None)
+            product_no = params.get("product_no", None)
+            try:
+                page = int(params.get("page", 1))
+                page_size = int(params.get("page_size", 10))
+            except Exception as e:
+                return Response("page和page_size必须是int", status=400)
+            operation_user = params.get("operation_user", None)
+            filter_dict = {}
+            if begin_time:
+                filter_dict['begin_time__gte'] = begin_time
+            if end_time:
+                filter_dict['end_time__lte'] = end_time
+            if equip_no:
+                filter_dict['equip_no'] = equip_no
+            if product_no:
+                filter_dict['product_no'] = product_no
+            if operation_user:
+                filter_dict['operation_user'] = operation_user
 
-        tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
-        counts = tf_queryset.count()
-        tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
-        for tf_obj in tf_queryset:
-            production_details = {}
-            # TODO 中间表
-            irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
-                                                            计划号=tf_obj['plan_classes_uid'],
-                                                            配方号=tf_obj['product_no'],
-                                                            车次号=tf_obj['actual_trains']).order_by('存盘时间').last()
-            if irb_obj:
-                production_details['控制方式'] = irb_obj.控制方式  # 本远控
-                production_details['作业方式'] = irb_obj.作业方式  # 手自动
-                production_details['总重量'] = irb_obj.总重量
-                production_details['排胶时间'] = irb_obj.排胶时间
-                production_details['排胶温度'] = irb_obj.排胶温度
-                production_details['排胶能量'] = irb_obj.排胶能量
-                production_details['员工代号'] = irb_obj.员工代号
-                production_details['存盘时间'] = irb_obj.存盘时间
-                production_details['间隔时间'] = irb_obj.间隔时间
-                production_details['密炼时间'] = irb_obj.存盘时间  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
-                tf_obj['production_details'] = production_details
-            else:
-                tf_obj['production_details'] = None
-            ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'], plan_classes_uid=tf_obj['plan_classes_uid'],
-                                               product_no=tf_obj['product_no'],
-                                               actual_trains=tf_obj['actual_trains']).order_by('product_time').last()
-            if ps_obj:
-                tf_obj['status'] = ps_obj.status
-            else:
-                tf_obj['status'] = None
-        return Response({'count': counts, 'results': tf_queryset})
+            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
+            counts = tf_queryset.count()
+            tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
+            for tf_obj in tf_queryset:
+                production_details = {}
+                # TODO 中间表
+                irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
+                                                                计划号=tf_obj['plan_classes_uid'],
+                                                                配方号=tf_obj['product_no'],
+                                                                车次号=tf_obj['actual_trains']).order_by('存盘时间').last()
+                if irb_obj:
+                    production_details['控制方式'] = irb_obj.控制方式  # 本远控
+                    production_details['作业方式'] = irb_obj.作业方式  # 手自动
+                    production_details['总重量'] = irb_obj.总重量
+                    production_details['排胶时间'] = irb_obj.排胶时间
+                    production_details['排胶温度'] = irb_obj.排胶温度
+                    production_details['排胶能量'] = irb_obj.排胶能量
+                    production_details['员工代号'] = irb_obj.员工代号
+                    production_details['存盘时间'] = irb_obj.存盘时间
+                    production_details['间隔时间'] = irb_obj.间隔时间
+                    production_details['密炼时间'] = irb_obj.存盘时间  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
+                    tf_obj['production_details'] = production_details
+                else:
+                    tf_obj['production_details'] = None
+                ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'],
+                                                   plan_classes_uid=tf_obj['plan_classes_uid'],
+                                                   product_no=tf_obj['product_no'],
+                                                   actual_trains=tf_obj['actual_trains']).order_by(
+                    'product_time').last()
+                if ps_obj:
+                    tf_obj['status'] = ps_obj.status
+                else:
+                    tf_obj['status'] = None
+            return Response({'count': counts, 'results': tf_queryset})
+        elif version == "v2":
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
 
 
 @method_decorator([api_recorder], name="dispatch")

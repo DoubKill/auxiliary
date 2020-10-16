@@ -20,6 +20,7 @@ class TrainsFeedbacks(AbstractEntity):
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 
+    '''中间表字段补充'''
     control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
     operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
     evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
@@ -28,6 +29,21 @@ class TrainsFeedbacks(AbstractEntity):
     save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
     interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
     mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
+
+    evacuation_power = models.CharField(max_length=64, blank=True, null=True, help_text='排胶功率', verbose_name='排胶功率')
+    consum_time = models.IntegerField(blank=True, null=True, help_text='消耗时间', verbose_name='消耗时间')
+    gum_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='胶料重量', verbose_name='胶料重量', null=True,
+                                     blank=True)
+    cb_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='炭黑重量', verbose_name='炭黑重量', null=True,
+                                    blank=True)
+    oil1_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='油1重量', verbose_name='油1重量', null=True,
+                                      blank=True)
+    oil2_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='油2重量', verbose_name='油2重量', null=True,
+                                      blank=True)
+    add_gum_time = models.IntegerField(blank=True, null=True, help_text='加胶时间', verbose_name='加胶时间')
+    add_cb_time = models.IntegerField(blank=True, null=True, help_text='加炭黑时间', verbose_name='加炭黑时间')
+    add_oil1_time = models.IntegerField(blank=True, null=True, help_text='加油1时间', verbose_name='加油1时间')
+    add_oil2_time = models.IntegerField(blank=True, null=True, help_text='加油1时间', verbose_name='加油1时间')
 
     @property
     def time(self):
@@ -124,7 +140,7 @@ class ExpendMaterial(AbstractEntity):
     material_type = models.CharField(max_length=64, help_text='原材料类型', verbose_name='原材料类型')
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
-    state_balance = models.CharField(max_length=64, help_text='秤状态', verbose_name='秤状态',null=True)
+    state_balance = models.CharField(max_length=64, help_text='秤状态', verbose_name='秤状态', null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"
