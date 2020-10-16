@@ -689,7 +689,10 @@ class IssuedPlan(APIView):
         if version == "v1":
             self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         else:
-            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
+            try:
+                self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
+            except:
+                raise ValidationError(f"{equip_no} 连接失败请检查网络")
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
