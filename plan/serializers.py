@@ -354,37 +354,37 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
-
-        from work_station import models as md
-        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownRecipePloy', 'IfdownRecipeOil1',
-                      'IfdownRecipeCb', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-        model_name = getattr(md, model_list[0] + ext_str)
-        mid_plan_instance = model_name.objects.filter().first()
-        if not mid_plan_instance:
-            raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-        if mid_plan_instance.recstatus == "车次需更新":
-            recstatus = "车次需更新"
-        elif mid_plan_instance.recstatus == "运行中":
-            recstatus = "车次需更新"
-        elif mid_plan_instance.recstatus == "配方车次需更新":
-            recstatus = "配方车次需更新"
-        elif mid_plan_instance.recstatus == '配方需重传':
-            recstatus = "配方车次需更新"
+        if self.context.get("request").version == "v1":
+            from work_station import models as md
+            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+            model_name = getattr(md, model_list[0] + ext_str)
+            mid_plan_instance = model_name.objects.filter().first()
+            if not mid_plan_instance:
+                raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
+            if mid_plan_instance.recstatus == "车次需更新":
+                recstatus = "车次需更新"
+            elif mid_plan_instance.recstatus == "运行中":
+                recstatus = "车次需更新"
+            elif mid_plan_instance.recstatus == "配方车次需更新":
+                recstatus = "配方车次需更新"
+            elif mid_plan_instance.recstatus == '配方需重传':
+                recstatus = "配方车次需更新"
+            else:
+                raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
+            mid_plan_instance.setno = trains
+            mid_plan_instance.save()
+            for model_str in model_list:
+                model_name = getattr(md, model_str + ext_str)
+                model_name.objects.all().update(recstatus=recstatus)
         else:
-            raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
-        mid_plan_instance.setno = trains
-        mid_plan_instance.save()
-        for model_str in model_list:
-            model_name = getattr(md, model_str + ext_str)
-            model_name.objects.all().update(recstatus=recstatus)
-        # self.send_to_yikong(validated_data)
-        # try:
-        #     self.send_to_yikong(validated_data)  # 向收皮机发送数据
-        # except Exception as e:
-        #     raise serializers.ValidationError({'trains': '发送数据到收皮机失败，请检查收皮机或者重新修改车次'})
-        # else:
-        #     return instance
-
+            data = OrderedDict()
+            data['updatestate'] = instance.plan_trains
+            data['planid'] = instance.plan_classes_uid
+            data['no'] = ext_str
+            try:
+                WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
+            except Exception as e:
+                raise serializers.ValidationError(f"收皮机连接超时|{e}")
         return instance
 
 
