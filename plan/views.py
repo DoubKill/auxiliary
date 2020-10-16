@@ -498,7 +498,7 @@ class IssuedPlan(APIView):
         data["oper"] = self.request.user.username,
         data["recipe_name"] = actual_product_batching.stage_product_batch_no,
         data["recipe_code"] = actual_product_batching.stage_product_batch_no,
-        data["equip_code"] = actual_product_process.equip_code if actual_product_process.equip_code else 0.00,  # 锁定解锁
+        data["equip_code"] = actual_product_process.equip_code if actual_product_process.equip_code else 0,  # 锁定解锁
         data["mini_time"] = actual_product_process.mini_time,
         data["max_time"] = actual_product_process.over_time,
         data["mini_temp"] = actual_product_process.mini_temp,
@@ -641,21 +641,33 @@ class IssuedPlan(APIView):
     def _sync_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
-        status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+        try:
+            status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
             raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh})} # 这是易控那边为获取批量数据约定的数据格式
-        status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
+        try:
+            status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
             raise ValidationError(f"配方称量下达失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
         mix_data = {"json": json.dumps({"datas": mix})}
-        status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
+        try:
+            status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
             raise ValidationError(f"配方步序下达失败:{text}")
         plan = self._map_plan(params, pcp_obj, ext_str)
-        status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+        try:
+            status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
             raise ValidationError(f"计划下达失败:{text}")
 
@@ -689,10 +701,7 @@ class IssuedPlan(APIView):
         if version == "v1":
             self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         else:
-            try:
-                self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
-            except:
-                raise ValidationError(f"{equip_no} 连接失败请检查网络")
+            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         # 模型类的名称需根据设备编号来拼接
         ps_obj.status = '已下达'
         ps_obj.save()
