@@ -498,7 +498,7 @@ class IssuedPlan(APIView):
         data["oper"] = self.request.user.username,
         data["recipe_name"] = actual_product_batching.stage_product_batch_no,
         data["recipe_code"] = actual_product_batching.stage_product_batch_no,
-        data["equip_code"] = actual_product_process.equip_code if actual_product_process.equip_code else 0.0,  # 锁定解锁
+        data["equip_code"] = actual_product_process.equip_code if actual_product_process.equip_code else 0.00,  # 锁定解锁
         data["mini_time"] = actual_product_process.mini_time,
         data["max_time"] = actual_product_process.over_time,
         data["mini_temp"] = actual_product_process.mini_temp,
