@@ -243,7 +243,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
             raise ValidationError(f"页码:{page}错误")
         if not 10 <= page_size <= 1000:
             raise ValidationError(f"页长:{page_size}错误")
-        self._validate_params(params)
+        # self._validate_params(params)
         sql_str = self._get_sql(params)
         em_set = ExpendMaterial.objects.raw(sql_str)
         count = len(em_set)
