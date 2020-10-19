@@ -623,7 +623,7 @@ class IssuedPlan(APIView):
         data['setno'] = params.get("plan_trains", 1)  # 设定车次
         data['actno'] = 0,  # 当前车次
         data['oper'] = self.request.user.username  # 操作员角色
-        data['runstate'] = '等待'  # 计划状态：等待，运行中，完成
+        data['runstate'] = '运行中'  # 计划状态：等待，运行中，完成
         data['runmark'] = '0'  # 计划单条下发默认值为1   计划表里用于标注批量计划的顺序, 按时弃用为0
         data["machineno"] = int(equip_no)
         return data
