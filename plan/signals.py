@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from plan.models import ProductDayPlan, ProductClassesPlan
-from recipe.models import ProductBatching, ProductBatchingDetail
+from recipe.models import ProductBatching, ProductBatchingDetail, Material
 from system.models import DataSynchronization
 
 
@@ -38,3 +38,10 @@ def classes_plan_post_save(sender, instance=None, created=False, update_fields=N
     if not created:
         """更新了数据则需要从同步表中删除此记录"""
         DataSynchronization.objects.filter(type=14, obj_id=instance.id).delete()
+
+
+@receiver(post_save, sender=Material)
+def material_post_save(sender, instance=None, created=False, update_fields=None, **kwargs):
+    if not created:
+        """更新了数据则需要从同步表中删除此记录"""
+        DataSynchronization.objects.filter(type=9, obj_id=instance.id).delete()
