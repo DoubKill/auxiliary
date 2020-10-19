@@ -84,6 +84,7 @@ class ProductBatchingDetailDown(BaseDownloader):
         'id', 'product_batching__stage_product_batch_no', 'sn', 'material__material_no', 'actual_weight',
         'standard_error',
         'auto_flag', 'type')
+    filter_dict = {"product_batching__batching_type": 1, "product_batching__used_type": 4}
     model = ProductBatchingDetail
 
 
