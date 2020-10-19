@@ -467,7 +467,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             plan_status = PlanStatus.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).order_by(
                 'created_date').last()
             if plan_status.status != "等待" or plan_status.status != "完成":
-                raise serializers.ValidationError('该计划{}在上辅机处于非等待活完成状态，不可再下达'.format(pcp_obj.plan_classes_uid))
+                raise serializers.ValidationError('该计划{}在上辅机处于非等待或完成状态，不可再下达'.format(pcp_obj.plan_classes_uid))
             instance = super().update(pcp_obj, validated_data)
             PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
                 equip_no=instance.equip.equip_no,
