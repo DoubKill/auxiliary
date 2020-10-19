@@ -112,6 +112,8 @@ class WebService(object):
         if rep.status_code < 300:
             if "已存在" in rep.text:
                 raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+            elif "不存在" in rep.text:
+                raise ValidationError("该配方不存在于上辅机，无法重传，请检查")
             return True, rep.text
         elif rep.status_code == 500:
             logger.error(rep.text)
