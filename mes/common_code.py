@@ -110,7 +110,7 @@ class WebService(object):
         rep = cls.client(method, url, headers=headers, data=body, timeout=3)
         # print(rep.text)
         if rep.status_code < 300:
-            if "配方已存在" in rep.text:
+            if "已存在" in rep.text:
                 raise ValidationError("该配方已存在于上辅机，请勿重复下达")
             return True, rep.text
         elif rep.status_code == 500:
