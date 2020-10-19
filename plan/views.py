@@ -614,9 +614,9 @@ class IssuedPlan(APIView):
         data['id'] = pcp_obj.id  # id
         data['recipe_name'] = params.get("stage_product_batch_no", None)  # 配方名
         data['recipe_code'] = params.get("stage_product_batch_no", None)  # 配方编号
-        data['latestime'] = params.get("created_date", None)  # 计划创建时间
+        data['latesttime'] = params.get("created_date", None)  # 计划创建时间
         data['planid'] = params.get("plan_classes_uid", None)  # 计划编号  plan_no
-        data['startime'] = params.get("begin_time", None)  # 开始时间
+        data['starttime'] = params.get("begin_time", None)  # 开始时间
         data['stoptime'] = params.get("end_time", None)  # 结束时间
         data['grouptime'] = params.get("classes", None)  # 班次
         data['groupoper'] = params.get("group", None)  # 班组????
