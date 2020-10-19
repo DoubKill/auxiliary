@@ -273,11 +273,11 @@ def main():
             """车次报表材料重量表"""
             sync_data_list = []
             for temp in temp_model_set:
-                equip_no = str(temp.机台号)
-                if len(equip_no) == 1:
-                    equip_no = "Z0" + equip_no
+                equip_str = str(temp.机台号)
+                if len(equip_str) == 1:
+                    equip_no = "Z0" + equip_str
                 else:
-                    equip_no = "Z" + equip_no
+                    equip_no = "Z" + equip_str
                 uid = temp.计划号
                 product_no = temp.配方号
                 trains = temp.车次号

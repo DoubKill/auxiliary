@@ -271,9 +271,10 @@ class IssuedPlan(APIView):
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
                                                                                           equip__equip_no=equip_no,
-                                                                                          batching_type=1).first()
+                                                                                          batching_type=1,
+                                                                                          used_type=4).first()
             if not actual_product_batching:
-                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+                raise ValidationError("当前计划未关联机台配方或者未启用，请关联后重试")
             actual_product_process = actual_product_batching.processes
             if not actual_product_process:
                 raise ValidationError("胶料配料步序为空，该计划不可用")
@@ -672,7 +673,38 @@ class IssuedPlan(APIView):
             raise ValidationError(f"计划下达失败:{text}")
 
     def _sync_update_interface(self, args, params=None, ext_str="", equip_no=""):
-        pass
+        product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
+        recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
+        try:
+            status, text = WebService.issue(recipe, 'recipe_con_again', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
+
+        if not status:
+            raise ValidationError(f"主配方重传失败:{text}")
+        weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
+        weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
+        try:
+            status, text = WebService.issue(weigh_data, 'recipe_weight_again', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该配方称量已存在于上辅机，请勿重复下达")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
+        if not status:
+            raise ValidationError(f"配方称量重传失败:{text}")
+        mix = self._map_mix(product_batching, product_process_details, ext_str)
+        mix_data = {"json": json.dumps({"datas": mix}, cls=DecimalEncoder)}
+        try:
+            status, text = WebService.issue(mix_data, 'recipe_step_again', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该配方步序已存在于上辅机，请勿重复下达")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
+        if not status:
+            raise ValidationError(f"配方步序重传失败:{text}")
+
 
     @atomic()
     def post(self, request):
@@ -740,7 +772,7 @@ class IssuedPlan(APIView):
         if version == "v1":
             self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         else:
-            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
+            self._sync_update_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
                                  equip_no=equip_no)
 
         return Response({'_': '重传成功'}, status=200)

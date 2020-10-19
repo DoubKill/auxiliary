@@ -97,6 +97,19 @@ class ValidateProductVersionsView(APIView):
         versions = self.request.query_params.get('versions')
         equip = self.request.query_params.get('equip')
         stage = self.request.query_params.get('stage')
+        stage_product_batch_no = self.request.query_params.get('stage_product_batch_no')
+        if stage_product_batch_no:
+            # 验证特殊配方
+            try:
+                equip_id = int(equip)
+            except Exception:
+                raise ValidationError('参数错误')
+            if ProductBatching.objects.exclude(used_type=6).filter(
+                    equip_id=equip_id,
+                    stage_product_batch_no=stage_product_batch_no,
+                    factory__isnull=True).exists():
+                raise ValidationError('已存在相同机台的配方，请修改后重试！')
+            return Response('ok')
         if not all([versions, site, product_info, equip, stage]):
             raise ValidationError('参数不足')
         try:

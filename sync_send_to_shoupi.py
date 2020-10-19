@@ -98,7 +98,7 @@ def send_to_yikong_stop():
     ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
-        plan_obj = model_name.objects.filter(recstatus__in=["停止", "完成"]).first()
+        plan_obj = model_name.objects.filter(recstatus="停止").first()
         if plan_obj:
             test_dict = OrderedDict()
             test_dict['stopstate'] = '停止'
