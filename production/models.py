@@ -73,7 +73,6 @@ class PalletFeedbacks(AbstractEntity):
     begin_trains = models.IntegerField(help_text='开始车次', verbose_name='开始车次')
     end_trains = models.IntegerField(help_text='结束车次', verbose_name='结束车次')
     pallet_no = models.CharField(max_length=64, help_text='托盘', verbose_name='托盘')
-    # barcode = models.CharField(max_length=64, help_text='收皮条码', verbose_name='收皮条码')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
     lot_no = models.CharField(max_length=64, help_text='追踪号/收皮条码', verbose_name='追踪号/收皮条码')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
