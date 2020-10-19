@@ -678,7 +678,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(recipe, 'recipe_con_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+            raise ValidationError("该配方不存在于上辅机，请检查上辅机")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
 
@@ -689,7 +689,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(weigh_data, 'recipe_weight_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该配方称量已存在于上辅机，请勿重复下达")
+            raise ValidationError("该配方称量不存在于上辅机，请检查上辅机")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
@@ -699,7 +699,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(mix_data, 'recipe_step_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该配方步序已存在于上辅机，请勿重复下达")
+            raise ValidationError("该配方步序不存在于上辅机，请检查上辅机")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
