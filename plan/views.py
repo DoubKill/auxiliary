@@ -251,7 +251,7 @@ class IssuedPlan(APIView):
         now_time = datetime.datetime.now()
         if now_time > end_time:
             raise ValidationError(
-                f'{end_time.strftime("%Y-%m-%d")}的{pcp_obj.work_schedule_plan.classes.global_name}的计划不允许现在创建')
+                f'{end_time.strftime("%Y-%m-%d")}的{pcp_obj.work_schedule_plan.classes.global_name}的计划不允许现在下达')
         # 胶料配料详情，一份胶料对应多个配料
         product_batching_details = product_batching.batching_details.filter(delete_flag=False)
         if not product_batching_details:
@@ -614,7 +614,7 @@ class IssuedPlan(APIView):
         data['id'] = pcp_obj.id  # id
         data['recipe_name'] = params.get("stage_product_batch_no", None)  # 配方名
         data['recipe_code'] = params.get("stage_product_batch_no", None)  # 配方编号
-        data['latestime'] = params.get("day_time", None)  # 班日期
+        data['latestime'] = params.get("created_date", None)  # 计划创建时间
         data['planid'] = params.get("plan_classes_uid", None)  # 计划编号  plan_no
         data['startime'] = params.get("begin_time", None)  # 开始时间
         data['stoptime'] = params.get("end_time", None)  # 结束时间
@@ -645,6 +645,8 @@ class IssuedPlan(APIView):
         weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)} # 这是易控那边为获取批量数据约定的数据格式
         try:
             status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该配方称量已存在于上辅机，请勿重复下达")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
@@ -653,6 +655,8 @@ class IssuedPlan(APIView):
         mix_data = {"json": json.dumps({"datas": mix}, cls=DecimalEncoder)}
         try:
             status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该配方步序已存在于上辅机，请勿重复下达")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
@@ -660,6 +664,8 @@ class IssuedPlan(APIView):
         plan = self._map_plan(params, pcp_obj, ext_str)
         try:
             status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("该计划已存在于上辅机，请勿重复下达")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
