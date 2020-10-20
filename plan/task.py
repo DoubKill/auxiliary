@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
-from recipe.models import ProductBatching, ProductBatchingDetail
+from recipe.models import ProductBatching, ProductBatchingDetail, Material
 from system.models import DataSynchronization
 from plan.models import ProductDayPlan, ProductClassesPlan
 
@@ -68,6 +68,15 @@ class ProductBatchingDown(BaseDownloader):
     filter_dict = {"batching_type": 1, "used_type": 4}
 
 
+class MaterialDown(BaseDownloader):
+    path = "api/v1/plan/material-receive/"
+    type = 9
+    upload_fields = (
+        'id', 'material_no', 'material_name', 'for_short', 'material_type__global_no', 'package_unit__global_no',
+        'use_flag')
+    model = Material
+
+
 class ProductBatchingDetailDown(BaseDownloader):
     path = "api/v1/plan/product-batching-detail-receive/"
     type = 12
@@ -75,6 +84,7 @@ class ProductBatchingDetailDown(BaseDownloader):
         'id', 'product_batching__stage_product_batch_no', 'sn', 'material__material_no', 'actual_weight',
         'standard_error',
         'auto_flag', 'type')
+    filter_dict = {"product_batching__batching_type": 1, "product_batching__used_type": 4}
     model = ProductBatchingDetail
 
 
@@ -95,12 +105,12 @@ class ProductClassesPlanDown(BaseDownloader):
         'product_day_plan__equip__equip_no', 'product_day_plan__product_batching__stage_product_batch_no',
         'product_day_plan__plan_schedule__plan_schedule_no')
     model = ProductClassesPlan
-    exclude_dict = {'status': '等待'}
+    # exclude_dict = {'status': '等待'}
 
 
 if __name__ == '__main__':
 
     for downloader in (
-            ProductBatchingDown, ProductBatchingDetailDown, ProductDayPlanDown,
-            ProductClassesPlanDown,):
+            ProductBatchingDown, MaterialDown, ProductBatchingDetailDown, ProductDayPlanDown, ProductClassesPlanDown,
+    ):
         downloader().download()
