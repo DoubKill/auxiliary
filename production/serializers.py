@@ -5,7 +5,7 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, QualityControl, \
-    OperationLog, MaterialTankStatus
+    OperationLog, MaterialTankStatus, ProcessFeedback
 from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
@@ -300,14 +300,10 @@ class MixerInformationSerializer1(serializers.ModelSerializer):
 
 class MixerInformationSerializer2(serializers.ModelSerializer):
     """密炼信息"""
-    condition_name = serializers.CharField(source='condition.condition', read_only=True)
-    action_name = serializers.CharField(source='action.action', read_only=True)
 
     class Meta:
-        model = ProductProcessDetail
-        fields = (
-            'id', 'sn', 'temperature', 'rpm', 'energy', 'power', 'pressure', 'condition_name', 'time', 'action_name')
-        read_only_fields = COMMON_READ_ONLY_FIELDS
+        model = ProcessFeedback
+        fields = "__all__"
 
 
 class CurveInformationSerializer(serializers.ModelSerializer):

@@ -148,6 +148,31 @@ class ExpendMaterial(AbstractEntity):
         verbose_name_plural = verbose_name = '原材料消耗'
 
 
+class ProcessFeedback(models.Model):
+    """步序反馈表"""
+    sn = models.PositiveIntegerField(help_text='序号/步骤号')
+    condition = models.CharField(max_length=20, help_text='条件', blank=True, null=True)
+    time = models.PositiveIntegerField(help_text='时间(分钟)', default=0)
+    temperature = models.PositiveIntegerField(help_text='温度', default=0)
+    power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=5)
+    energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=5)
+    action = models.CharField(max_length=20, help_text='基本动作', blank=True, null=True)
+    rpm = models.PositiveIntegerField(help_text='转速', default=0)
+    pressure = models.DecimalField(help_text='压力', default=0, decimal_places=1, max_digits=5)
+    plan_classes_uid = models.CharField(help_text='班次计划唯一码', verbose_name='班次计划唯一码', max_length=64)
+    product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
+    current_trains = models.PositiveIntegerField(help_text='当前车次')
+
+    def __str__(self):
+        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}"
+
+    class Meta:
+        db_table = 'process_feedback'
+        verbose_name_plural = verbose_name = '步序反馈报表'
+
+
 class OperationLog(AbstractEntity):
     """操作日志"""
     equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')

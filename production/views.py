@@ -23,7 +23,8 @@ from plan.models import ProductClassesPlan
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
-    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups
+    QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
+    ProcessFeedback
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1012,8 +1013,11 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         if version == "v2":
             try:
                 tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-                pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid).first()
-                irm_queryset = pcp_obj.product_day_plan.product_batching.process_details.all()
+                irm_queryset = ProcessFeedback.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                    equip_no=tfb_obk.equip_no,
+                                                    product_no=tfb_obk.product_no,
+                                                    current_trains=tfb_obk.actual_trains
+                                                    )
 
             except:
                 raise ValidationError('车次产出反馈或胶料配料标准步序详情没有数据')
