@@ -974,7 +974,7 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                 irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
                                                              plan_classes_uid=tfb_obk.plan_classes_uid,
                                                              product_no=tfb_obk.product_no,
-                                                             trains=tfb_obk.actual_trains)
+                                                             trains=tfb_obk.actual_trains, delete_flag=False)
             except:
                 raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
         elif version == "v1":
