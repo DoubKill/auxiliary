@@ -218,7 +218,7 @@ class StopPlan(APIView):
             ps_obj.save()
             pcp_obj.status = '待停止'
             pcp_obj.save()
-        else:
+        elif version == "v2":
             data = OrderedDict()
             data['stopstate'] = '停止'
             data['planid'] = pcp_obj.plan_classes_uid
@@ -231,7 +231,19 @@ class StopPlan(APIView):
             ps_obj.save()
             pcp_obj.status = '停止'
             pcp_obj.save()
+
+        else:
+            from work_station import models as md
+            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
+            for model_str in model_list:
+                model_name = getattr(md, model_str + ext_str)
+                model_name.objects.all().update(recstatus='待停止')
+            ps_obj.status = '待停止'
+            ps_obj.save()
+            pcp_obj.status = '待停止'
+            pcp_obj.save()
         return Response({'_': '修改成功'}, status=200)
+
 
 
 # @method_decorator([api_recorder], name="dispatch")
@@ -737,16 +749,21 @@ class IssuedPlan(APIView):
             pcp_obj.status = '已下达'
             pcp_obj.save()
             # self.send_to_yikong(params, pcp_obj)
-            return Response({'_': '下达成功'}, status=200)
-        else:
+        elif version == "v2":
             self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
         # 模型类的名称需根据设备编号来拼接
             ps_obj.status = '运行中'
             ps_obj.save()
             pcp_obj.status = '运行中'
             pcp_obj.save()
+        else:
+            self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
+            ps_obj.status = '已下达'
+            ps_obj.save()
+            pcp_obj.status = '已下达'
+            pcp_obj.save()
             # self.send_to_yikong(params, pcp_obj)
-            return Response({'_': '下达成功'}, status=200)
+        return Response({'_': '下达成功'}, status=200)
 
 
     @atomic()
@@ -771,10 +788,12 @@ class IssuedPlan(APIView):
             return Response({'_': "只有运行中的计划才能重传！"}, status=400)
         if version == "v1":
             self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
-        else:
+        elif version == "v2":
             self._sync_update_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
                                  equip_no=equip_no)
-
+        else:
+            self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
+                              equip_no=equip_no)
         return Response({'_': '重传成功'}, status=200)
 
 
