@@ -1129,14 +1129,15 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 if irb_obj:
                     production_details['控制方式'] = irb_obj.控制方式  # 本远控
                     production_details['作业方式'] = irb_obj.作业方式  # 手自动
-                    production_details['总重量'] = irb_obj.总重量
+                    production_details['总重量'] = irb_obj.总重量 / 100
                     production_details['排胶时间'] = irb_obj.排胶时间
                     production_details['排胶温度'] = irb_obj.排胶温度
                     production_details['排胶能量'] = irb_obj.排胶能量
                     production_details['员工代号'] = irb_obj.员工代号
                     production_details['存盘时间'] = irb_obj.存盘时间
                     production_details['间隔时间'] = irb_obj.间隔时间
-                    production_details['密炼时间'] = irb_obj.存盘时间  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
+                    production_details['密炼时间'] = datetime.datetime.strptime(irb_obj.存盘时间, "%Y-%m-%d %X") - tf_obj[
+                        'begin_time']  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
                     tf_obj['production_details'] = production_details
                 else:
                     tf_obj['production_details'] = None
@@ -1196,14 +1197,15 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                 if irb_obj:
                     production_details['控制方式'] = irb_obj.控制方式  # 本远控
                     production_details['作业方式'] = irb_obj.作业方式  # 手自动
-                    production_details['总重量'] = irb_obj.总重量
+                    production_details['总重量'] = irb_obj.总重量 / 100
                     production_details['排胶时间'] = irb_obj.排胶时间
                     production_details['排胶温度'] = irb_obj.排胶温度
                     production_details['排胶能量'] = irb_obj.排胶能量
                     production_details['员工代号'] = irb_obj.员工代号
                     production_details['存盘时间'] = irb_obj.存盘时间
                     production_details['间隔时间'] = irb_obj.间隔时间
-                    production_details['密炼时间'] = irb_obj.存盘时间  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
+                    production_details['密炼时间'] = datetime.datetime.strptime(irb_obj.存盘时间, "%Y-%m-%d %X") - tf_obj[
+                        'begin_time']  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
                     tf_obj['production_details'] = production_details
                 else:
                     tf_obj['production_details'] = None
