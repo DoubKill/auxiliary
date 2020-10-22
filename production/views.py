@@ -808,19 +808,21 @@ class EquipStatusPlanList(APIView):
             'equip_no').values_list('equip_no', flat=True)
 
         # 计划数据，根据设备机台号和班次分组，
-        plan_data = ProductClassesPlan.objects.filter(
+        plan_set = ProductClassesPlan.objects.filter(
             work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
             product_day_plan__equip__equip_no__in=list(equip_nos)
-        ).values('work_schedule_plan__classes__global_name',
-                 'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
+        )
+        plan_data = plan_set.values('work_schedule_plan__classes__global_name',
+                                    'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
+        plan_uid = plan_set.values_list("plan_classes_uid", flat=True)
         plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
                      for item in plan_data}
 
         # 先按照计划uid分组，取出最大的一条实际数据
         max_ids = TrainsFeedbacks.objects.filter(
-            created_date__date=datetime.datetime.now().date()
+            # created_date__date=datetime.datetime.now().date(),
+            plan_classes_uid__in=plan_uid
         ).values('plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
-
         # 实际数据，根据设备机台号和班次分组，
         actual_data = TrainsFeedbacks.objects.filter(
             id__in=max_ids).values('equip_no', 'classes').annotate(
