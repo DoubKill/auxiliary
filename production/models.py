@@ -55,6 +55,8 @@ class TrainsFeedbacks(AbstractEntity):
     class Meta:
         db_table = 'trains_feedbacks'
         verbose_name_plural = verbose_name = '胶料车次产出反馈'
+        indexes = [models.Index(
+            fields=['plan_classes_uid', 'equip_no', 'product_no', 'operation_user', 'begin_time', 'end_time']), ]
 
 
 class PalletFeedbacks(AbstractEntity):
@@ -82,6 +84,8 @@ class PalletFeedbacks(AbstractEntity):
     class Meta:
         db_table = 'pallet_feedbacks'
         verbose_name_plural = verbose_name = '胶料托盘产出反馈'
+        indexes = [models.Index(
+            fields=['plan_classes_uid', 'equip_no', 'product_no', "classes", "pallet_no", "end_time"]), ]
 
 
 class EquipStatus(AbstractEntity):
@@ -104,6 +108,7 @@ class EquipStatus(AbstractEntity):
     class Meta:
         db_table = 'equip_status'
         verbose_name_plural = verbose_name = '机台状况反馈'
+        indexes = [models.Index(fields=['equip_no', 'plan_classes_uid', 'product_time', 'current_trains']), ]
 
 
 class PlanStatus(AbstractEntity):
@@ -124,6 +129,7 @@ class PlanStatus(AbstractEntity):
     class Meta:
         db_table = 'plan_status'
         verbose_name_plural = verbose_name = '计划状态变更'
+        indexes = [models.Index(fields=['equip_no', 'plan_classes_uid', 'product_no']), ]
 
 
 class ExpendMaterial(AbstractEntity):
@@ -146,6 +152,7 @@ class ExpendMaterial(AbstractEntity):
     class Meta:
         db_table = 'expend_material'
         verbose_name_plural = verbose_name = '原材料消耗'
+        indexes = [models.Index(fields=['equip_no', 'product_no', 'material_type', 'product_time']), ]
 
 
 class ProcessFeedback(models.Model):
@@ -198,7 +205,6 @@ class QualityControl(AbstractEntity):
         db_table = 'quality-control'
         verbose_name_plural = verbose_name = '质检结果'
 
-
 class MaterialTankStatus(AbstractEntity):
     """储料罐状态"""
     TYPE_CHOICE = (
@@ -227,7 +233,7 @@ class MaterialTankStatus(AbstractEntity):
     class Meta:
         db_table = 'material_tank_status'
         verbose_name_plural = verbose_name = '储料罐状态'
-
+        indexes = [models.Index(fields=['equip_no']), ]
 
 '''为了车次报表 将中间表的部分表复制过来 相当于备份表 因为中间表的数据会定期删除'''
 
