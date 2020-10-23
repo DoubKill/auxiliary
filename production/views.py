@@ -13,9 +13,9 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-
+from django.db.transaction import atomic
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin
+from mes.common_code import CommonDeleteMixin, SqlClient
 from mes.conf import EQUIP_LIST
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
@@ -660,6 +660,26 @@ class ProductionRecordViewSet(mixins.ListModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
+def send_cd_cil(equip_no, tank_type, model_name):
+    # 发送油料炭黑数据给易控组态
+    equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
+    mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
+    sql = f"delete from {model_name} where machineno={equip_no_int} and matname!='卸料'"
+    sc = SqlClient(sql=sql, equip_no=equip_no)
+    sc.save()
+    sc.close()
+    sql1 = f'''insert into {model_name} (matname,matno,code,machineno,flag) values '''
+    mts_list = []
+    for mts_obj in mts_set:
+        mts = f"('{mts_obj.material_name}', {int(mts_obj.tank_no)}, 2, {equip_no_int}, 1)"
+        mts_list.append(mts)
+        mts_values = ','.join(mts_list)
+        sql2 = sql1 + mts_values
+    sc1 = SqlClient(sql=sql2, equip_no=equip_no)
+    sc1.save()
+    sc1.close()
+
+
 @method_decorator([api_recorder], name="dispatch")
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
@@ -670,21 +690,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
-    # def create(self, request, *args, **kwargs):
-    #     params = request.data
-    #     temp_data = {
-    #         # "id": 1,
-    #         "mname": params.get("material_name"),
-    #         "set_weight": None,
-    #         "error_allow": None,
-    #         "recipe_name": "配方1",
-    #         "type": params.get("tank_type"),
-    #         "recstatus": "None",
-    #     }
-    #     temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
-    #     temp.issue_to_db()
-    #     return super().create(request, *args, **kwargs)
-
+    @atomic()
     def put(self, request, *args, **kwargs):
         data = request.data
         for i in data:
@@ -701,24 +707,9 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-            # temp_data = {
-            #     "id": id if id else None,
-            #     "mname": i.get("material_name", ""),
-            #     "set_weight": None,
-            #     "error_allow": None,
-            #     "recipe_name": "配方1",
-            #     "type": i.get("tank_type"),
-            #     "recstatus": "None",
-            # }
-            # temp = IssueWorkStation("IfdownRecipeCb1", temp_data)
-            # temp.issue_to_db()
-            # serializer = self.get_serializer(data=i)
-            # serializer.is_valid(raise_exception=True)
-            # # self.perform_create(serializer)
-            #  headers = self.get_success_headers(serializer.data)
+            # 发送炭黑数据给易控组态
+            send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
         return Response("ok", status=status.HTTP_201_CREATED)
-
-        # return Response("ok")
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -735,6 +726,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     ordering_fields = ('id',)
     filter_class = WeighParameterCarbonFilter
 
+    @atomic()
     def put(self, request, *args, **kwargs):
         data = request.data
         for i in data:
@@ -750,43 +742,9 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-            # mname = i.get("material_name")
-            # temp_data = {
-            #     "id": id if id else None,
-            #     "mname": mname if mname else "",
-            #     "set_weight": None,
-            #     "error_allow": None,
-            #     "recipe_name": "配方1",
-            #     "type": i.get("tank_type"),
-            #     "recstatus": "None",
-            # }
-            # temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
-            # temp.issue_to_db()
-            # serializer = self.get_serializer(data=i)
-            # serializer.is_valid(raise_exception=True)
-            # # self.perform_create(serializer)
-            # headers = self.get_success_headers(serializer.data)
+            # 发送油料数据给易控组态
+            send_cd_cil(equip_no=obj.equip_no, tank_type=2, model_name='chbt_no_oil1')
         return Response("ok", status=status.HTTP_201_CREATED)
-        # ?data[]={}&data[]={}
-
-        #     temp_data = {
-        #         # "id": 1,
-        #         "mname": i.get("material_name"),
-        #         "set_weight": None,
-        #         "error_allow": None,
-        #         "recipe_name": "配方1",
-        #         "type": i.get("tank_type"),
-        #         "recstatus": None,
-        #     }
-        #     temp = IssueWorkStation("IfdownRecipeOil11", temp_data)
-        #     temp.issue_to_db()
-        #     serializer = self.get_serializer(data=request.data)
-        #     serializer.is_valid(raise_exception=True)
-        #     self.perform_create(serializer)
-        # headers = self.get_success_headers(serializer.data)
-
-        # return Response("ok", status=status.HTTP_201_CREATED, headers=headers)
-        # return Response("ok")
 
 
 @method_decorator([api_recorder], name="dispatch")

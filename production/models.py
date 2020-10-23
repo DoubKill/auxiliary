@@ -144,9 +144,9 @@ class PlanStatus(AbstractEntity):
         db_table = 'plan_status'
         verbose_name_plural = verbose_name = '计划状态变更'
         indexes = [
-                    models.Index(fields=['equip_no']),
-                    models.Index(fields=['plan_classes_uid']),
-                    models.Index(fields=['product_no']), ]
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['product_no']), ]
 
 
 class ExpendMaterial(AbstractEntity):
@@ -226,6 +226,7 @@ class QualityControl(AbstractEntity):
         db_table = 'quality-control'
         verbose_name_plural = verbose_name = '质检结果'
 
+
 class MaterialTankStatus(AbstractEntity):
     """储料罐状态"""
     TYPE_CHOICE = (
@@ -255,6 +256,7 @@ class MaterialTankStatus(AbstractEntity):
         db_table = 'material_tank_status'
         verbose_name_plural = verbose_name = '储料罐状态'
         indexes = [models.Index(fields=['equip_no']), ]
+
 
 '''为了车次报表 将中间表的部分表复制过来 相当于备份表 因为中间表的数据会定期删除'''
 
