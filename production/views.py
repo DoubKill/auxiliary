@@ -32,7 +32,9 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     PalletSerializer, WeighInformationSerializer2, MixerInformationSerializer2, TrainsFeedbacksSerializer2
 from production.utils import strtoint, gen_material_export_file_response
 from recipe.models import ProductProcessDetail
+import logging
 
+logger = logging.getLogger('sync_log')
 
 @method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
@@ -711,6 +713,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             try:
                 send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
             except Exception as e:
+                logger.error(e)
                 raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
@@ -749,6 +752,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             try:
                 send_cd_cil(equip_no=obj.equip_no, tank_type=2, model_name='chbt_no_oil1')
             except Exception as e:
+                logger.error(e)
                 raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
