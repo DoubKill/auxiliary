@@ -214,9 +214,9 @@ class StopPlan(APIView):
             for model_str in model_list:
                 model_name = getattr(md, model_str + ext_str)
                 model_name.objects.all().update(recstatus='待停止')
-            ps_obj.status = '待停止'
+            ps_obj.status = '停止'
             ps_obj.save()
-            pcp_obj.status = '待停止'
+            pcp_obj.status = '停止'
             pcp_obj.save()
         elif version == "v2":
             data = OrderedDict()
@@ -238,9 +238,9 @@ class StopPlan(APIView):
             for model_str in model_list:
                 model_name = getattr(md, model_str + ext_str)
                 model_name.objects.all().update(recstatus='待停止')
-            ps_obj.status = '待停止'
+            ps_obj.status = '停止'
             ps_obj.save()
-            pcp_obj.status = '待停止'
+            pcp_obj.status = '停止'
             pcp_obj.save()
         return Response({'_': '修改成功'}, status=200)
 
