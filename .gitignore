@@ -6,4 +6,5 @@ logs
 .idea
 .svn
 *.DS_Store
+mes/settings.py
 __pycache__

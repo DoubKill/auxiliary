@@ -21,15 +21,28 @@ class TrainsFeedbacks(AbstractEntity):
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 
     '''中间表字段补充'''
+    control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
+    operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
+    evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
+    evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
+    evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
+    interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
+    mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
 
-    # control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
-    # operating_type = models.CharField(max_length=8, blank=True, null=True, help_text='作业方式', verbose_name='作业方式')
-    # evacuation_time = models.IntegerField(blank=True, null=True, help_text='排胶时间', verbose_name='排胶时间')
-    # evacuation_temperature = models.IntegerField(blank=True, null=True, help_text='排胶温度', verbose_name='排胶温度')
-    # evacuation_energy = models.IntegerField(blank=True, null=True, help_text='排胶能量', verbose_name='排胶能量')
-    # save_ime = models.CharField(max_length=20, blank=True, null=True, help_text='存盘时间', verbose_name='存盘时间')
-    # interval_time = models.IntegerField(blank=True, null=True, help_text='间隔时间', verbose_name='间隔时间')
-    # mixer_time = models.IntegerField(blank=True, null=True, help_text='密炼时间', verbose_name='密炼时间')
+    evacuation_power = models.CharField(max_length=64, blank=True, null=True, help_text='排胶功率', verbose_name='排胶功率')
+    consum_time = models.IntegerField(blank=True, null=True, help_text='消耗总时间', verbose_name='消耗总时间')
+    gum_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='胶料重量', verbose_name='胶料重量', null=True,
+                                     blank=True)
+    cb_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='炭黑重量', verbose_name='炭黑重量', null=True,
+                                    blank=True)
+    oil1_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='油1重量', verbose_name='油1重量', null=True,
+                                      blank=True)
+    oil2_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='油2重量', verbose_name='油2重量', null=True,
+                                      blank=True)
+    add_gum_time = models.IntegerField(blank=True, null=True, help_text='加胶时间', verbose_name='加胶时间')
+    add_cb_time = models.IntegerField(blank=True, null=True, help_text='加炭黑时间', verbose_name='加炭黑时间')
+    add_oil1_time = models.IntegerField(blank=True, null=True, help_text='加油1时间', verbose_name='加油1时间')
+    add_oil2_time = models.IntegerField(blank=True, null=True, help_text='加油1时间', verbose_name='加油1时间')
 
     @property
     def time(self):
@@ -42,6 +55,13 @@ class TrainsFeedbacks(AbstractEntity):
     class Meta:
         db_table = 'trains_feedbacks'
         verbose_name_plural = verbose_name = '胶料车次产出反馈'
+        indexes = [
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['product_no']),
+            models.Index(fields=['operation_user']),
+            models.Index(fields=['begin_time']),
+            models.Index(fields=['end_time']), ]
 
 
 class PalletFeedbacks(AbstractEntity):
@@ -69,6 +89,13 @@ class PalletFeedbacks(AbstractEntity):
     class Meta:
         db_table = 'pallet_feedbacks'
         verbose_name_plural = verbose_name = '胶料托盘产出反馈'
+        indexes = [
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['product_no']),
+            models.Index(fields=["classes"]),
+            models.Index(fields=["pallet_no"]),
+            models.Index(fields=["end_time"]), ]
 
 
 class EquipStatus(AbstractEntity):
@@ -91,6 +118,11 @@ class EquipStatus(AbstractEntity):
     class Meta:
         db_table = 'equip_status'
         verbose_name_plural = verbose_name = '机台状况反馈'
+        indexes = [
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['product_time']),
+            models.Index(fields=['current_trains']), ]
 
 
 class PlanStatus(AbstractEntity):
@@ -111,6 +143,10 @@ class PlanStatus(AbstractEntity):
     class Meta:
         db_table = 'plan_status'
         verbose_name_plural = verbose_name = '计划状态变更'
+        indexes = [
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['product_no']), ]
 
 
 class ExpendMaterial(AbstractEntity):
@@ -125,6 +161,7 @@ class ExpendMaterial(AbstractEntity):
     material_type = models.CharField(max_length=64, help_text='原材料类型', verbose_name='原材料类型')
     material_name = models.CharField(max_length=64, help_text='原材料名称', verbose_name='原材料名称')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    state_balance = models.CharField(max_length=64, help_text='秤状态', verbose_name='秤状态', null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}|{self.material_no}"
@@ -132,6 +169,36 @@ class ExpendMaterial(AbstractEntity):
     class Meta:
         db_table = 'expend_material'
         verbose_name_plural = verbose_name = '原材料消耗'
+        indexes = [
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['product_no']),
+            models.Index(fields=['material_type']),
+            models.Index(fields=['product_time']), ]
+
+
+class ProcessFeedback(models.Model):
+    """步序反馈表"""
+    sn = models.PositiveIntegerField(help_text='序号/步骤号')
+    condition = models.CharField(max_length=20, help_text='条件', blank=True, null=True)
+    time = models.PositiveIntegerField(help_text='时间(分钟)', default=0)
+    temperature = models.PositiveIntegerField(help_text='温度', default=0)
+    power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=5)
+    energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=5)
+    action = models.CharField(max_length=20, help_text='基本动作', blank=True, null=True)
+    rpm = models.PositiveIntegerField(help_text='转速', default=0)
+    pressure = models.DecimalField(help_text='压力', default=0, decimal_places=1, max_digits=5)
+    plan_classes_uid = models.CharField(help_text='班次计划唯一码', verbose_name='班次计划唯一码', max_length=64)
+    product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
+    current_trains = models.PositiveIntegerField(help_text='当前车次')
+
+    def __str__(self):
+        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}"
+
+    class Meta:
+        db_table = 'process_feedback'
+        verbose_name_plural = verbose_name = '步序反馈报表'
 
 
 class OperationLog(AbstractEntity):
@@ -188,6 +255,7 @@ class MaterialTankStatus(AbstractEntity):
     class Meta:
         db_table = 'material_tank_status'
         verbose_name_plural = verbose_name = '储料罐状态'
+        indexes = [models.Index(fields=['equip_no']), ]
 
 
 '''为了车次报表 将中间表的部分表复制过来 相当于备份表 因为中间表的数据会定期删除'''

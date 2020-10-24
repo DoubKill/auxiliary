@@ -5,11 +5,11 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, QualityControl, \
-    OperationLog, MaterialTankStatus
+    OperationLog, MaterialTankStatus, ProcessFeedback
 from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
-from recipe.models import ProductBatching, Material
+from recipe.models import ProductBatching, Material, ProductProcessDetail
 from production.models import IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     IfupReportCurveBackups
 from django.db.models import Sum, Max
@@ -108,7 +108,6 @@ class PalletSerializer(BaseModelSerializer):
         exclude = ("created_date", "last_updated_date", "delete_date", "delete_flag",
                    "created_user", "last_updated_user", "delete_user")
         read_only_fields = COMMON_READ_ONLY_FIELDS
-
 
 
 class PlanStatusSerializer(BaseModelSerializer):
@@ -272,8 +271,7 @@ class MaterialStatisticsSerializer(BaseModelSerializer):
 #         fields = (
 #             'id', 'equip_no', 'status_current_trains', 'product_no_classes', 'group_product', 'statusinfo')
 
-
-class WeighInformationSerializer(serializers.ModelSerializer):
+class WeighInformationSerializer1(serializers.ModelSerializer):
     """称量信息"""
 
     class Meta:
@@ -282,7 +280,16 @@ class WeighInformationSerializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class MixerInformationSerializer(serializers.ModelSerializer):
+class WeighInformationSerializer2(serializers.ModelSerializer):
+    """称量信息"""
+
+    class Meta:
+        model = ExpendMaterial
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class MixerInformationSerializer1(serializers.ModelSerializer):
     """密炼信息"""
 
     class Meta:
@@ -291,10 +298,40 @@ class MixerInformationSerializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
+class MixerInformationSerializer2(serializers.ModelSerializer):
+    """密炼信息"""
+
+    class Meta:
+        model = ProcessFeedback
+        fields = "__all__"
+
+
 class CurveInformationSerializer(serializers.ModelSerializer):
     """工艺曲线信息"""
 
     class Meta:
         model = EquipStatus
         fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class TrainsFeedbacksSerializer2(BaseModelSerializer):
+    """车次产出反馈"""
+    status = serializers.SerializerMethodField(read_only=True)
+
+    def get_status(self, object):
+        ps_obj = PlanStatus.objects.filter(equip_no=object.equip_no,
+                                           plan_classes_uid=object.plan_classes_uid,
+                                           product_no=object.product_no,
+                                           actual_trains=object.actual_trains).order_by(
+            'product_time').last()
+        if ps_obj:
+            status = ps_obj.status
+        else:
+            status = None
+        return status
+
+    class Meta:
+        model = TrainsFeedbacks
+        fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
