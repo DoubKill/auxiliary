@@ -710,11 +710,11 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.low_speed = i.get("low_speed")
             obj.save()
             # 发送炭黑数据给易控组态
-            try:
-                send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
-            except Exception as e:
-                logger.error(e)
-                raise ValidationError(f'{obj.equip_no}机台网络连接异常')
+            # try:
+            #     send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
+            # except Exception as e:
+            #     logger.error(e)
+            #     raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
@@ -749,11 +749,11 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.low_speed = i.get("low_speed")
             obj.save()
             # 发送油料数据给易控组态
-            try:
-                send_cd_cil(equip_no=obj.equip_no, tank_type=2, model_name='chbt_no_oil1')
-            except Exception as e:
-                logger.error(e)
-                raise ValidationError(f'{obj.equip_no}机台网络连接异常')
+            # try:
+            #     send_cd_cil(equip_no=obj.equip_no, tank_type=2, model_name='chbt_no_oil1')
+            # except Exception as e:
+            #     logger.error(e)
+            #     raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
