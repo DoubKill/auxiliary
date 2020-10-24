@@ -4,6 +4,7 @@ auther:
 datetime: 2020/8/19
 name: 
 """
+import requests
 from rest_framework.exceptions import ValidationError
 
 from work_station import serializers as sz
@@ -124,7 +125,3 @@ class IssueWorkStation(object):
         serializer = self.model_serializer(data=self.data, many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
-    def issue_to_interface(self):
-        """对接api"""
-        pass

@@ -17,7 +17,6 @@ PROJECT_API_TREE = {
     "production": ('trains-feedbacks', 'pallet-feedbacks'),
 }
 
-
 SYSTEM_NAME = "上辅机群控"
 
 SYNC_SYSTEM_NAME = "MES"
@@ -32,3 +31,6 @@ BZ_PASSWORD = "mes@_123"
 
 BZ_HOST = "10.4.23.101"
 
+# BZ_USR = "sa"
+# BZ_PASSWORD = "123"
+# BZ_HOST = "10.4.14.101"

@@ -101,6 +101,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),  # 过滤
     'DEFAULT_PAGINATION_CLASS': 'mes.paginations.DefaultPageNumberPagination',  # 分页
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
 }
 
 JWT_AUTH = {
@@ -251,6 +252,16 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+#         'NAME': os.getenv('SFJ_DATABASE_NAME', 'AJLJ'),  # 数据库名称
+#         'USER': os.getenv('SFJ_DATABASE_USERNAME', 'mes'),  # 用户名
+#         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes@2020'),  # 密码
+#         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.10.54'),  # HOST
+#         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
+#     }
+# }
 
 
 # Password validation

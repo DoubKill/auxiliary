@@ -1,6 +1,8 @@
+import decimal
+import json
 import logging
 import re
-
+from DBUtils.PooledDB import PooledDB
 # import pymssql  # 引入pymssql模块
 import pymssql
 import requests
@@ -94,19 +96,24 @@ class WebService(object):
     url = "http://{}:9000/planService"
 
     @classmethod
-    def issue(cls, data, category, method="post"):
+    def issue(cls, data, category, method="post", equip_no=6, equip_name="收皮终端"):
         headers = {
             'Content-Type': 'text/xml; charset=utf-8',
             'SOAPAction': 'http://tempuri.org/INXWebService/{}'
         }
 
-        child_system = ChildSystemInfo.objects.filter(system_name="收皮终端").first()
+        child_system = ChildSystemInfo.objects.filter(system_name=f"{equip_name}{equip_no}").first()
         recv_ip = child_system.link_address
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
-        rep = cls.client(method, url, headers=headers, data=cls.trans_dict_to_xml(data, category), timeout=3)
+        body = cls.trans_dict_to_xml(data, category)
+        rep = cls.client(method, url, headers=headers, data=body, timeout=3)
         # print(rep.text)
         if rep.status_code < 300:
+            if "已存在" in rep.text:
+                raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+            elif "不存在" in rep.text:
+                raise ValidationError("该配方不存在于上辅机，无法重传，请检查")
             return True, rep.text
         elif rep.status_code == 500:
             logger.error(rep.text)
@@ -142,19 +149,19 @@ class WebService(object):
 
 def common_validator(**kwargs):
     # 通用校验器，用于校验外部入参
-    for k,v in kwargs.items():
+    for k, v in kwargs.items():
         if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]{2,19}$", v):
             raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")
 
 
-#
 # class SqlClient(object):
 #     """默认是连接sqlserver的客户端"""
-#     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW"):
+#
+#     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW", port=1433):
 #         pool = PooledDB(pymssql,
-#                         mincached=5, maxcached=10, maxshared=5, maxconnections=10, blocking=True,
+#                         mincached=50, maxcached=100, maxshared=5, maxconnections=10, blocking=True,
 #                         maxusage=100, setsession=None, reset=True, host=host,
-#                         user=user, password=password
+#                         user=user, password=password, database="GZSFJ", charset="utf-8", port=port
 #                         )
 #         conn = pool.connection()
 #         cursor = conn.cursor()
@@ -179,8 +186,24 @@ def common_validator(**kwargs):
 
 class SqlClient(object):
     """默认是连接sqlserver的客户端"""
-    def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW", db='dbo'):
-        conn = pymssql.connect(host, user, password, db)
+
+    def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW",
+                 db='GZSFJ', equip_no=None, equip_name=None):
+        if equip_no or equip_name:
+            if equip_no:
+                csi_obj = ChildSystemInfo.objects.filter(system_name=equip_no).first()
+            if equip_name:
+                csi_obj = ChildSystemInfo.objects.filter(system_name=equip_name).first()
+            host_actual = csi_obj.link_address
+            user = "sa"
+            password = "123"
+            db = 'GZSFJ'
+            """这里的代码应该是调用方法是传入equip_no或者equip_name，通过equip_no去数据库里查 
+                因为每个机台都有单独的数据库 所以听过equip_no去查数据库的地址，但是复制给host"""
+        else:
+            host_actual = host
+        conn = pymssql.connect(host=host_actual, user=user, password=password,
+                               database=db, charset='utf8', port='1433', as_dict=False)
         cursor = conn.cursor()
         cursor.execute(sql)
         self.conn = conn
@@ -196,6 +219,18 @@ class SqlClient(object):
         else:
             return tuple()
 
+    def save(self):
+        self.conn.commit()
+
     def close(self):
         self.conn.close()
         self.cursor.close()
+
+
+class DecimalEncoder(json.JSONEncoder):
+
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+
+        super(DecimalEncoder, self).default(o)
