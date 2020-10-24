@@ -27,6 +27,7 @@ class EquipStatusSerializer(BaseModelSerializer):
 class TrainsFeedbacksSerializer(BaseModelSerializer):
     """车次产出反馈"""
     equip_status = serializers.SerializerMethodField(read_only=True)
+    actual_weight = serializers.SerializerMethodField(read_only=True)
 
     # production_details = serializers.SerializerMethodField(read_only=True)
     # status = serializers.SerializerMethodField(read_only=True)
@@ -35,7 +36,9 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
         equip_status = {}
         plan_classes_uid = object.plan_classes_uid
         equip_no = object.equip_no
-        equip = EquipStatus.objects.filter(plan_classes_uid=plan_classes_uid, equip_no=equip_no).first()
+        current_trains = object.actual_trains
+        equip = EquipStatus.objects.filter(plan_classes_uid=plan_classes_uid, equip_no=equip_no,
+                                           current_trains=current_trains).last()
         if equip:
             # raise serializers.ValidationError("该车次数据无对应设备，请检查相关设备")
             equip_status.update(temperature=equip.temperature,
@@ -43,6 +46,12 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
                                 rpm=equip.rpm)
         return equip_status
 
+    def get_actual_weight(self, object):
+        actual = object.actual_weight
+        if actual:
+            if len(str(actual)) >= 5:
+                return actual / 100
+        return actual
     '''
     # zqf 这些是在原有的基础上加的 随后我重新写了接口 这些就没用了 暂时注释掉
     def get_production_details(self, object):
