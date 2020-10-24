@@ -203,7 +203,7 @@ class SqlClient(object):
         else:
             host_actual = host
         conn = pymssql.connect(host=host_actual, user=user, password=password,
-                               database=db, charset='utf8', port='1433', as_dict=False)
+                               database=db, charset='utf8', port='1433', as_dict=False, timeout=3, login_timeout=3)
         cursor = conn.cursor()
         cursor.execute(sql)
         self.conn = conn
