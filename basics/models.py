@@ -16,6 +16,10 @@ class GlobalCodeType(AbstractEntity):
     class Meta:
         db_table = 'global_code_type'
         verbose_name_plural = verbose_name = '公共代码类型'
+        indexes = [
+            models.Index(fields=['type_name']),
+            models.Index(fields=['use_flag']),
+        ]
 
 
 class GlobalCode(AbstractEntity):
@@ -34,6 +38,8 @@ class GlobalCode(AbstractEntity):
     class Meta:
         db_table = 'global_code'
         verbose_name_plural = verbose_name = '公共代码'
+        indexes = [
+            models.Index(fields=['use_flag']), ]
 
 
 class WorkSchedule(AbstractEntity):
@@ -148,6 +154,8 @@ class PlanSchedule(AbstractEntity):
     class Meta:
         db_table = 'plan_schedule'
         verbose_name_plural = verbose_name = '排班管理'
+        indexes = [
+            models.Index(fields=['day_time']), ]
 
 
 class WorkSchedulePlan(AbstractEntity):
