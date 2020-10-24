@@ -167,21 +167,19 @@ class DownRegulation(GenericViewSet, mixins.UpdateModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
-# @method_decorator([api_recorder], name="dispatch")
+@method_decorator([api_recorder], name="dispatch")
 class UpdateTrains(GenericViewSet, mixins.UpdateModelMixin):
     """修改车次"""
     queryset = ProductClassesPlan.objects.filter(delete_flag=False)
     serializer_class = UpdateTrainsSerializer
-    authentication_classes = tuple()
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
 
-# @method_decorator([api_recorder], name="dispatch")
+@method_decorator([api_recorder], name="dispatch")
 class StopPlan(APIView):
     """计划停止"""
-    authentication_classes = tuple()
-
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @atomic()
     def get(self, request):
@@ -249,7 +247,8 @@ class StopPlan(APIView):
 # @method_decorator([api_recorder], name="dispatch")
 class IssuedPlan(APIView):
     """下达计划"""
-    authentication_classes = tuple()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
     def plan_recipe_integrity_check(self, pcp_obj):
         # 检验计计划配方是否可用
         if not pcp_obj:
