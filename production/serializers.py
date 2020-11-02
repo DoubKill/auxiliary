@@ -50,8 +50,8 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
         actual = object.actual_weight
         if actual:
             if len(str(actual)) >= 5:
-                return actual / 100
-        return actual
+                return str(actual / 100)
+        return str(actual)
     '''
     # zqf 这些是在原有的基础上加的 随后我重新写了接口 这些就没用了 暂时注释掉
     def get_production_details(self, object):
