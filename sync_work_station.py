@@ -223,7 +223,8 @@ def main():
                     "end_time": end_time,
                     "operation_user": temp.员工代号,
                     "classes": pcp.work_schedule_plan.classes.global_name if pcp else "",
-                    "product_time": end_time
+                    "product_time": end_time,
+                    "factory_data": pcp.work_schedule_plan.plan_schedule.day_time,
                 }
                 sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
             TrainsFeedbacks.objects.bulk_create(sync_data_list)
