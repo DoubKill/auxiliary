@@ -61,7 +61,10 @@ class MesUpClient(object):
             model_set = model.objects.filter(id__gte=temp_id)[:int(sc_count)]
             if model_set:
                 new_temp_id = model_set[model_set.count()-1].id + 1
-                Serializer = getattr(sz, model_name + "Serializer")
+                if model_name == "TrainsFeedbacks":
+                    Serializer = getattr(sz, model_name + "UpSerializer")
+                else:
+                    Serializer = getattr(sz, model_name + "Serializer")
                 serializer = Serializer(model_set, many=True)
                 data = serializer.data
                 datas = []
@@ -359,14 +362,14 @@ def main():
 def run():
     global current_trains
     while True:
-        try:
-            main()
-        except Exception as e:
-            logger.error(f"工作站至群控上行异常:{e}")
-        try:
-            plan_status_monitor()
-        except Exception as e:
-            logger.error(f"计划状态同步异常:{e}")
+        # try:
+        #     main()
+        # except Exception as e:
+        #     logger.error(f"工作站至群控上行异常:{e}")
+        # try:
+        #     plan_status_monitor()
+        # except Exception as e:
+        #     logger.error(f"计划状态同步异常:{e}")
         try:
             MesUpClient.sync()
         except Exception as e:

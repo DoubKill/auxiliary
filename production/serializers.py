@@ -86,6 +86,14 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
+class TrainsFeedbacksUpSerializer(BaseModelSerializer):
+    """车次产出反馈上传"""
+    class Meta:
+        model = TrainsFeedbacks
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
 class PalletFeedbacksSerializer(BaseModelSerializer):
     """托盘产出反馈"""
     stage = serializers.SerializerMethodField(read_only=True)
