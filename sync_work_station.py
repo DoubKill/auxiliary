@@ -362,14 +362,14 @@ def main():
 def run():
     global current_trains
     while True:
-        # try:
-        #     main()
-        # except Exception as e:
-        #     logger.error(f"工作站至群控上行异常:{e}")
-        # try:
-        #     plan_status_monitor()
-        # except Exception as e:
-        #     logger.error(f"计划状态同步异常:{e}")
+        try:
+            main()
+        except Exception as e:
+            logger.error(f"工作站至群控上行异常:{e}")
+        try:
+            plan_status_monitor()
+        except Exception as e:
+            logger.error(f"计划状态同步异常:{e}")
         try:
             MesUpClient.sync()
         except Exception as e:
