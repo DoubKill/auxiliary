@@ -19,6 +19,7 @@ class TrainsFeedbacks(AbstractEntity):
     operation_user = models.CharField(max_length=64, help_text='操作员', verbose_name='操作员')
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    factory_data = models.DateField(help_text='工厂日期', verbose_name='工厂日期', blank=True, null=True)
 
     '''中间表字段补充'''
     control_mode = models.CharField(max_length=8, blank=True, null=True, help_text='控制方式', verbose_name='控制方式')
@@ -82,6 +83,7 @@ class PalletFeedbacks(AbstractEntity):
     classes = models.CharField(max_length=64, help_text='班次', verbose_name='班次')
     lot_no = models.CharField(max_length=64, help_text='追踪号/收皮条码', verbose_name='追踪号/收皮条码')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+    factory_data = models.DateField(help_text='工厂日期', verbose_name='工厂日期', blank=True, null=True)
 
     def __str__(self):
         return f"{self.plan_classes_uid}|{self.lot_no}|{self.equip_no}"
