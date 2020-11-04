@@ -521,14 +521,16 @@ class IssuedPlan(APIView):
     def _map_cb(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(material__material_type__global_name="炭黑")
+        sn = 0
         for pbd in product_batching_details:
+            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = 1 if pbd.auto_flag else 0  # ?
+            data["act_code"] = sn
             data["mattype"] = "C"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
@@ -538,14 +540,16 @@ class IssuedPlan(APIView):
     def _map_oil(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(material__material_type__global_name="油料")
+        sn = 0
         for pbd in product_batching_details:
+            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = 1 if pbd.auto_flag else 0  # ?
+            data["act_code"] = sn
             data["mattype"] = "O" # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
@@ -556,14 +560,16 @@ class IssuedPlan(APIView):
         datas = []
         gum_list = GlobalCode.objects.filter(global_type__type_name="胶料").values_list("global_name", flat=True)
         product_batching_details = product_batching_details.filter(material__material_type__global_name__in=gum_list)
+        sn = 0
         for pbd in product_batching_details:
+            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = 1 if pbd.auto_flag else 0  # ?
+            data["act_code"] = sn
             data["mattype"] = "P"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
