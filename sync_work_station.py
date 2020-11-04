@@ -61,7 +61,10 @@ class MesUpClient(object):
             model_set = model.objects.filter(id__gte=temp_id)[:int(sc_count)]
             if model_set:
                 new_temp_id = model_set[model_set.count()-1].id + 1
-                Serializer = getattr(sz, model_name + "Serializer")
+                if model_name == "TrainsFeedbacks":
+                    Serializer = getattr(sz, model_name + "UpSerializer")
+                else:
+                    Serializer = getattr(sz, model_name + "Serializer")
                 serializer = Serializer(model_set, many=True)
                 data = serializer.data
                 datas = []
@@ -223,7 +226,8 @@ def main():
                     "end_time": end_time,
                     "operation_user": temp.员工代号,
                     "classes": pcp.work_schedule_plan.classes.global_name if pcp else "",
-                    "product_time": end_time
+                    "product_time": end_time,
+                    "factory_date": pcp.work_schedule_plan.plan_schedule.day_time,
                 }
                 sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
             TrainsFeedbacks.objects.bulk_create(sync_data_list)
