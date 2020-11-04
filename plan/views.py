@@ -614,8 +614,8 @@ class IssuedPlan(APIView):
             data["set_ener"] = ppd.energy
             data["set_power"] = ppd.power
             data["act_code"] = ppd.action.action
-            data["set_pres"] = int(ppd.rpm) if ppd.rpm else 0
-            data["set_rota"] = ppd.pressure if ppd.pressure else 0.0
+            data["set_pres"] = ppd.pressure if ppd.pressure else 0.0
+            data["set_rota"] = int(ppd.rpm) if ppd.rpm else 0
             data["ID_step"] = ppd.sn
             data["machineno"] = int(equip_no)
             datas.append(data)
