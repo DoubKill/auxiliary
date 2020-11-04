@@ -224,7 +224,7 @@ class StopPlan(APIView):
             try:
                 WebService.issue(data, 'stop', equip_no=ext_str, equip_name="上辅机")
             except Exception as e:
-                raise ValidationError(f"收皮机连接超时|{e}")
+                raise ValidationError(f"上辅机连接超时|{e}")
             ps_obj.status = '停止'
             ps_obj.save()
             pcp_obj.status = '停止'
@@ -502,7 +502,7 @@ class IssuedPlan(APIView):
         data["recipe_code"] = actual_product_batching.stage_product_batch_no
         data["equip_code"] = actual_product_process.equip_code # 锁定解锁
         data["mini_time"] = actual_product_process.mini_time
-        data["max_time"] = actual_product_process.over_time
+        data["max_time"] = actual_product_process.over_time  # 炼胶超时时间
         data["mini_temp"] = actual_product_process.mini_temp
         data["max_temp"] = actual_product_process.max_temp
         data["over_temp"] = actual_product_process.over_temp
@@ -614,8 +614,8 @@ class IssuedPlan(APIView):
             data["set_ener"] = ppd.energy
             data["set_power"] = ppd.power
             data["act_code"] = ppd.action.action
-            data["set_pres"] = int(ppd.rpm) if ppd.rpm else 0
-            data["set_rota"] = ppd.pressure if ppd.pressure else 0.0
+            data["set_pres"] = ppd.pressure if ppd.pressure else 0.0
+            data["set_rota"] = int(ppd.rpm) if ppd.rpm else 0
             data["ID_step"] = ppd.sn
             data["machineno"] = int(equip_no)
             datas.append(data)

@@ -315,15 +315,6 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         fields = ('trains',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
-    def send_to_yikong(self, validated_data):
-        test_dict = OrderedDict()
-        test_dict['updatestate'] = validated_data.get('trains')
-        try:
-            success_flag = WebService.issue(test_dict, 'updatetrains')
-            if not success_flag:
-                raise serializers.ValidationError("收皮机错误")
-        except Exception as e:
-            raise serializers.ValidationError("收皮机连接超时")
 
     @atomic()
     def update(self, instance, validated_data):
@@ -384,7 +375,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             try:
                 WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
             except Exception as e:
-                raise serializers.ValidationError(f"收皮机连接超时|{e}")
+                raise serializers.ValidationError(f"上辅助连接超时|{e}")
         else:
             from work_station import models as md
             model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
