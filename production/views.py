@@ -36,6 +36,7 @@ import logging
 
 logger = logging.getLogger('sync_log')
 
+
 @method_decorator([api_recorder], name="dispatch")
 class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
                              mixins.RetrieveModelMixin,
@@ -682,6 +683,29 @@ def send_cd_cil(equip_no, tank_type, model_name):
     sc1.close()
 
 
+def send_cd_cil_sum(equip_no, tank_type, model_name, mattype):
+    # 发送油料炭黑数据给易控组态
+    equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
+    mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
+    sql1 = f'''insert into {model_name} (latesttime,matname,matno,mattype,machineno,flag) values '''
+    mts_list = []
+    for mts_obj in mts_set:
+        sql3 = f"""select * from {model_name} where machineno={equip_no_int} and matname='{mts_obj.material_name}'"""
+        sc = SqlClient(sql=sql3, equip_no=equip_no)
+        if sc.cursor.fetchall():
+            sc.save()
+            sc.close()
+            continue
+        mts = f"""('{datetime.datetime.now().strptime("%Y-%m-%d %H:%M:%S")}','{mts_obj.material_name}', {int(mts_obj.tank_no)},'{mattype}', {equip_no_int}, 1)"""
+        mts_list.append(mts)
+        mts_values = ','.join(mts_list)
+        sql2 = sql1 + mts_values
+    if mts_list:
+        sc1 = SqlClient(sql=sql2, equip_no=equip_no)
+        sc1.save()
+        sc1.close()
+
+
 @method_decorator([api_recorder], name="dispatch")
 class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
     queryset = MaterialTankStatus.objects.filter(delete_flag=False, tank_type="1")
@@ -710,11 +734,13 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.low_speed = i.get("low_speed")
             obj.save()
             # 发送炭黑数据给易控组态
-            # try:
-            #     send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
-            # except Exception as e:
-            #     logger.error(e)
-            #     raise ValidationError(f'{obj.equip_no}机台网络连接异常')
+            try:
+                # send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
+                send_cd_cil_sum(equip_no=obj.equip_no, tank_type=1, model_name='sum_mat_cb', mattype='C')
+            except Exception as e:
+                logger.error(e)
+                print(e, '===')
+                raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
