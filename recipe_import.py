@@ -23,7 +23,14 @@ def read_material_excel_data():
         material_name = value[2].strip()
         material_no = value[3].strip()
         if material_no.startswith('A') or not material_no:
-            material_type_id = GlobalCode.objects.get(global_name='天然胶', global_type__type_name='原材料类别').id
+            if "-" not in material_name:
+                material_type_id = GlobalCode.objects.get(global_name='天然胶', global_type__type_name='原材料类别').id
+            else:
+                material_type = material_name.split("-")[1]
+                try:
+                    material_type_id = GlobalCode.objects.get(global_name=material_type, global_type__type_name='原材料类别', global_type_id=4).id
+                except:
+                    print(material_type)
         elif material_no.startswith('B'):
             material_type_id = GlobalCode.objects.get(global_name='合成胶', global_type__type_name='原材料类别').id
         elif material_no.startswith('C'):
@@ -46,17 +53,28 @@ def read_material_excel_data():
             material_type_id = GlobalCode.objects.get(global_name='其他化工类', global_type__type_name='原材料类别').id
         if not material_no:
             material_no = material_name
-        try:
-            if Material.objects.filter(material_no=material_no,
+        if "-" not in material_name:
+            try:
+                if Material.objects.filter(material_no=material_no,
+                                           material_name=material_name).exists():
+                    continue
+                else:
+                    Material.objects.get_or_create(material_no=material_no,
+                                                   material_name=material_name,
+                                                   material_type_id=material_type_id)
+            except Exception:
+                print(traceback.format_exc())
+                raise
+        else:
+            if Material.objects.filter(material_no=material_name,
                                        material_name=material_name).exists():
                 continue
             else:
-                Material.objects.get_or_create(material_no=material_no,
+                Material.objects.get_or_create(material_no=material_name,
                                                material_name=material_name,
                                                material_type_id=material_type_id)
-        except Exception:
-            print(traceback.format_exc())
-            raise
+                print(material_name, material_type_id)
+
 
 
 @atomic()
@@ -64,7 +82,7 @@ def read_product_process():
     data = xlrd.open_workbook('recipe.xls')
     table = data.sheet_by_name('配方步序')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z06')
+    equip = Equip.objects.get(equip_no='Z03')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -118,7 +136,7 @@ def read_product_batching():
     data = xlrd.open_workbook('recipe.xls')
     table = data.sheet_by_name('配料详情')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z06')
+    equip = Equip.objects.get(equip_no='Z03')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -174,7 +192,7 @@ def read_product_process_detail():
     data = xlrd.open_workbook('recipe.xls')
     table = data.sheet_by_name('配方步序详情')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z06')
+    equip = Equip.objects.get(equip_no='Z03')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -221,6 +239,6 @@ def read_product_process_detail():
 
 if __name__ == '__main__':
     read_material_excel_data()
+    read_product_process_detail()
     read_product_process()
     read_product_batching()
-    read_product_process_detail()
