@@ -43,7 +43,7 @@ def one_instance(func):
 def send_to_yikong_run():
     """下达计划"""
     model_list = 'IfdownShengchanjihua'
-    ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
         plan_obj = model_name.objects.filter().first()
@@ -89,13 +89,13 @@ def send_to_yikong_run():
                     try:
                         WebService.issue(test_dict, 'plan', equip_no=ext_str)
                     except Exception as e:
-                        raise ValidationError(f"收皮机连接超时|{e}")
+                        logger.error(f"{ext_str}超时链接|{e}")
 
 
 def send_to_yikong_stop():
     """计划停止"""
     model_list = 'IfdownShengchanjihua'
-    ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
         plan_obj = model_name.objects.filter(recstatus="停止").first()
@@ -107,13 +107,13 @@ def send_to_yikong_stop():
             try:
                 WebService.issue(test_dict, 'stop', equip_no=ext_str)
             except Exception as e:
-                raise ValidationError(f"收皮机连接超时|{e}")
+                logger.error(f"{ext_str}超时链接|{e}")
 
 
 def send_to_yikong_update():
     """更新车次"""
     model_list = 'IfdownShengchanjihua'
-    ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
         scjh_set = model_name.objects.filter(recstatus__in=['车次需更新', "配方车次需更新"])
@@ -128,13 +128,13 @@ def send_to_yikong_update():
                 try:
                     WebService.issue(test_dict, 'updatetrains', equip_no=ext_str)
                 except Exception as e:
-                    raise ValidationError(f"收皮机连接超时|{e}")
+                    logger.error(f"{ext_str}超时链接|{e}")
 
 
 def send_again_yikong_again():
     """配方重传"""
     model_list = 'IfdownShengchanjihua'
-    ext_str_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for ext_str in ext_str_list:
         model_name = getattr(md, model_list + str(ext_str))
         scjh_set = model_name.objects.filter(recstatus__in=["配方需重传", "配方车次需更新"])
@@ -160,7 +160,7 @@ def send_again_yikong_again():
                 try:
                     WebService.issue(test_dict, 'planAgain', equip_no=ext_str)
                 except Exception as e:
-                    raise ValidationError(f"超时链接|{e}")
+                    logger.error(f"{ext_str}超时链接|{e}")
 
 @one_instance
 def run():

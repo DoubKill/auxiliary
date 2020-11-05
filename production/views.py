@@ -668,7 +668,7 @@ def send_cd_cil(equip_no, tank_type, model_name):
     equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
     mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
     sql = f"delete from {model_name} where machineno={equip_no_int} and matname!='卸料'"
-    sc = SqlClient(sql=sql, equip_no=str(equip_no_int), user="sa", host="10.4.23.101", password="123", db="GZSFJ")
+    sc = SqlClient(sql=sql, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
     sc.save()
     sc.close()
     sql1 = f'''insert into {model_name} (matname,matno,code,machineno,flag) values '''
@@ -678,7 +678,7 @@ def send_cd_cil(equip_no, tank_type, model_name):
         mts_list.append(mts)
         mts_values = ','.join(mts_list)
         sql2 = sql1 + mts_values
-    sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.23.101", password="123", db="GZSFJ")
+    sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
     sc1.save()
     sc1.close()
 
@@ -691,17 +691,17 @@ def send_cd_cil_sum(equip_no, tank_type, model_name, mattype):
     mts_list = []
     for mts_obj in mts_set:
         sql3 = f"""select * from {model_name} where machineno={equip_no_int} and matname='{mts_obj.material_name}'"""
-        sc = SqlClient(sql=sql3, equip_no=str(equip_no_int), user="sa", host="10.4.23.101", password="123", db="GZSFJ")
+        sc = SqlClient(sql=sql3, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
         if sc.cursor.fetchall():
             sc.save()
             sc.close()
             continue
-        mts = f"""('{datetime.datetime.now().strptime("%Y-%m-%d %H:%M:%S")}','{mts_obj.material_name}', {int(mts_obj.tank_no)},'{mattype}', {equip_no_int}, 1)"""
+        mts = f"""('{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}','{mts_obj.material_name}', {int(mts_obj.tank_no)},'{mattype}', {equip_no_int}, 1)"""
         mts_list.append(mts)
         mts_values = ','.join(mts_list)
         sql2 = sql1 + mts_values
     if mts_list:
-        sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.23.101", password="123", db="GZSFJ")
+        sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
         sc1.save()
         sc1.close()
 
