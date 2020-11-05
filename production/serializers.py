@@ -343,7 +343,7 @@ class TrainsFeedbacksSerializer2(BaseModelSerializer):
         if not obj.actual_weight:
             return None
         else:
-            return obj.actual_weight / 100
+            return str(obj.actual_weight / 100)
 
     def get_status(self, object):
         ps_obj = PlanStatus.objects.filter(equip_no=object.equip_no,
