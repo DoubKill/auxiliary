@@ -189,11 +189,8 @@ class SqlClient(object):
 
     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW",
                  db='GZSFJ', equip_no=None, equip_name=None):
-        if equip_no or equip_name:
-            if equip_no:
-                csi_obj = ChildSystemInfo.objects.filter(system_name=equip_no).first()
-            if equip_name:
-                csi_obj = ChildSystemInfo.objects.filter(system_name=equip_name).first()
+        if equip_no and equip_name:
+            csi_obj = ChildSystemInfo.objects.filter(system_name=equip_name+equip_no).first()
             host_actual = csi_obj.link_address
             user = "sa"
             password = "123"
