@@ -187,10 +187,6 @@ class StopPlan(APIView):
         version = request.version
         params = request.query_params
         plan_id = params.get("id")
-        equip_no = params.get("equip_no", None)
-        if not equip_no:
-            raise ValidationError('机台号必传')
-        version = VERSION_EQUIP[equip_no]
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
@@ -206,6 +202,9 @@ class StopPlan(APIView):
             return Response({'_': "只有运行中的计划才能停止！"}, status=400)
 
         equip_no = pcp_obj.product_day_plan.equip.equip_no
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
