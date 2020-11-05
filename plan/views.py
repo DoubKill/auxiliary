@@ -781,10 +781,6 @@ class IssuedPlan(APIView):
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
-        equip_no = params.get("equip_name", None)
-        if not equip_no:
-            raise ValidationError('机台号必传')
-        version = VERSION_EQUIP[equip_no]
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法重传")
@@ -792,6 +788,9 @@ class IssuedPlan(APIView):
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if "0" in equip_no:
             ext_str = equip_no[-1]
         else:
