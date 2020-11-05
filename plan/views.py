@@ -18,6 +18,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService, DecimalEncoder
+from mes.conf import VERSION_EQUIP
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
@@ -186,6 +187,10 @@ class StopPlan(APIView):
         version = request.version
         params = request.query_params
         plan_id = params.get("id")
+        equip_no = params.get("equip_name", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
         equip_name = params.get("equip_name")
@@ -243,7 +248,6 @@ class StopPlan(APIView):
         return Response({'_': '修改成功'}, status=200)
 
 
-
 # @method_decorator([api_recorder], name="dispatch")
 class IssuedPlan(APIView):
     """下达计划"""
@@ -258,7 +262,7 @@ class IssuedPlan(APIView):
         except:
             raise ValidationError("无对应日计划胶料配料标准")
         # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
-        end_time = pcp_obj.work_schedule_plan.end_time #取班次的结束时间
+        end_time = pcp_obj.work_schedule_plan.end_time  # 取班次的结束时间
         now_time = datetime.datetime.now()
         if now_time > end_time:
             raise ValidationError(
@@ -475,7 +479,6 @@ class IssuedPlan(APIView):
         Shengchanjihua.update(recstatus='配方需重传')
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
-
     def _map_recipe(self, pcp_object, product_process, product_batching, equip_no):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
@@ -500,21 +503,23 @@ class IssuedPlan(APIView):
         data["oper"] = self.request.user.username
         data["recipe_name"] = actual_product_batching.stage_product_batch_no
         data["recipe_code"] = actual_product_batching.stage_product_batch_no
-        data["equip_code"] = actual_product_process.equip_code # 锁定解锁
+        data["equip_code"] = actual_product_process.equip_code  # 锁定解锁
         data["mini_time"] = actual_product_process.mini_time
         data["max_time"] = actual_product_process.over_time  # 炼胶超时时间
         data["mini_temp"] = actual_product_process.mini_temp
         data["max_temp"] = actual_product_process.max_temp
         data["over_temp"] = actual_product_process.over_temp
         data["reuse_time"] = actual_product_process.reuse_time
-        data["if_not"] = 0 if actual_product_process.reuse_flag else -1  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
+        data[
+            "if_not"] = 0 if actual_product_process.reuse_flag else -1  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
         data["rot_temp"] = actual_product_process.zz_temp
         data["shut_temp"] = actual_product_process.xlm_temp
         data["side_temp"] = actual_product_process.cb_temp
         data["temp_on_off"] = 0 if actual_product_process.temp_use_flag else 1
         data["sp_num"] = actual_product_process.sp_num
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
-        data["recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
+        data[
+            "recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
         data["machineno"] = int(equip_no)
         return data
 
@@ -536,7 +541,6 @@ class IssuedPlan(APIView):
             datas.append(data)
         return datas
 
-
     def _map_oil(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(material__material_type__global_name="油料")
@@ -550,11 +554,10 @@ class IssuedPlan(APIView):
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
             data["act_code"] = sn
-            data["mattype"] = "O" # 油料
+            data["mattype"] = "O"  # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
         return datas
-
 
     def _map_ploy(self, product_batching, product_batching_details, equip_no):
         datas = []
@@ -574,7 +577,6 @@ class IssuedPlan(APIView):
             data["machineno"] = int(equip_no)
             datas.append(data)
         return datas
-
 
     def _map_weigh(self, product_batching, product_batching_details, equip_no):
         # 胶料，油料，炭黑的合表
@@ -646,7 +648,6 @@ class IssuedPlan(APIView):
         data["machineno"] = int(equip_no)
         return data
 
-
     def _sync_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
@@ -660,7 +661,7 @@ class IssuedPlan(APIView):
         if not status:
             raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
-        weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)} # 这是易控那边为获取批量数据约定的数据格式
+        weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
         try:
             status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
         except APIException:
@@ -722,7 +723,6 @@ class IssuedPlan(APIView):
         if not status:
             raise ValidationError(f"配方步序重传失败:{text}")
 
-
     @atomic()
     def post(self, request):
         version = request.version
@@ -730,7 +730,10 @@ class IssuedPlan(APIView):
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
-
+        equip_no = params.get("equip_name", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
 
         if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
@@ -755,8 +758,9 @@ class IssuedPlan(APIView):
             pcp_obj.save()
             # self.send_to_yikong(params, pcp_obj)
         elif version == "v2":
-            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
-        # 模型类的名称需根据设备编号来拼接
+            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
+                                 equip_no=equip_no)
+            # 模型类的名称需根据设备编号来拼接
             ps_obj.status = '运行中'
             ps_obj.save()
             pcp_obj.status = '运行中'
@@ -770,7 +774,6 @@ class IssuedPlan(APIView):
             # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
-
     @atomic()
     def put(self, request):
         version = request.version
@@ -778,6 +781,10 @@ class IssuedPlan(APIView):
         plan_id = params.get("id", None)
         if plan_id is None:
             return Response({'_': "没有传id"}, status=400)
+        equip_no = params.get("equip_name", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         pcp_obj = ProductClassesPlan.objects.filter(id=int(plan_id)).first()
         if pcp_obj.product_day_plan.product_batching.used_type != 4:  # 4对应配方的启用状态
             raise ValidationError("该计划对应配方未启用,无法重传")
@@ -792,10 +799,11 @@ class IssuedPlan(APIView):
         if ps_obj.status != '运行中':
             return Response({'_': "只有运行中的计划才能重传！"}, status=400)
         if version == "v1":
-            self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
+            self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
+                              equip_no=equip_no)
         elif version == "v2":
             self._sync_update_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
-                                 equip_no=equip_no)
+                                        equip_no=equip_no)
         else:
             self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
                               equip_no=equip_no)

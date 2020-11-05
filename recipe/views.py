@@ -186,17 +186,17 @@ class ProductBatchingViewSet(ModelViewSet):
     queryset = ProductBatching.objects.filter(
         delete_flag=False).select_related("equip__category", "product_info"
                                           ).prefetch_related(
-                                            Prefetch('process_details',
-                                                     queryset=ProductProcessDetail.objects.filter(
-                                                         delete_flag=False).select_related('condition', 'action')),
-                                            Prefetch('batching_details',
-                                                     queryset=ProductBatchingDetail.objects.filter(
-                                                         delete_flag=False).select_related('material__material_type'))
-                                            ).order_by('-created_date')
+        Prefetch('process_details',
+                 queryset=ProductProcessDetail.objects.filter(
+                     delete_flag=False).select_related('condition', 'action')),
+        Prefetch('batching_details',
+                 queryset=ProductBatchingDetail.objects.filter(
+                     delete_flag=False).select_related('material__material_type'))
+    ).order_by('-created_date')
     filter_backends = (DjangoFilterBackend,)
     filter_class = ProductBatchingFilter
     model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         if self.action == 'list':
@@ -209,7 +209,7 @@ class ProductBatchingViewSet(ModelViewSet):
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
                 'used_user__username', 'obsolete_user__username', 'equip_id',
-                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id'
+                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id', 'last_updated_date'
             )
         else:
             return self.queryset
