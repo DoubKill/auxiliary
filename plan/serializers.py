@@ -8,7 +8,7 @@ from rest_framework import serializers
 from basics.models import WorkSchedulePlan, Equip, GlobalCode, PlanSchedule
 from mes.base_serializer import BaseModelSerializer
 from mes.common_code import WebService
-from mes.conf import COMMON_READ_ONLY_FIELDS
+from mes.conf import COMMON_READ_ONLY_FIELDS, VERSION_EQUIP
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingClassesPlan
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
@@ -345,7 +345,8 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
-        if self.context.get("request").version == "v1":
+        version = VERSION_EQUIP[equip_no]
+        if version == "v1":
             from work_station import models as md
             model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
             model_name = getattr(md, model_list[0] + ext_str)
@@ -367,7 +368,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
             for model_str in model_list:
                 model_name = getattr(md, model_str + ext_str)
                 model_name.objects.all().update(recstatus=recstatus)
-        elif self.context.get("request").version == "v2":
+        elif version == "v2":
             data = OrderedDict()
             data['updatestate'] = instance.plan_trains
             data['planid'] = instance.plan_classes_uid

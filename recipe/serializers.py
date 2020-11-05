@@ -72,7 +72,7 @@ class ProductBatchingDetailSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductBatchingDetail
-        exclude = ('product_batching', )
+        exclude = ('product_batching',)
 
 
 class ProductBatchingListSerializer(BaseModelSerializer):
@@ -98,7 +98,8 @@ class ProductBatchingListSerializer(BaseModelSerializer):
                   'equip_no', 'equip_name', 'sp_num', 'stage_product_batch_no', 'production_time_interval',
                   'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
                   'category__category_name', 'submit_username', 'reject_username', 'used_username', 'equip_id',
-                  'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id')
+                  'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id',
+                  'last_updated_date')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
@@ -107,15 +108,14 @@ class ProductProcessDetailSerializer(BaseModelSerializer):
 
     class Meta:
         model = ProductProcessDetail
-        exclude = ('product_batching', )
+        exclude = ('product_batching',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
 class ProductProcessSerializer(BaseModelSerializer):
-
     class Meta:
         model = ProductProcess
-        exclude = ('product_batching', )
+        exclude = ('product_batching',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
@@ -252,7 +252,7 @@ class ProductBatchingRetrieveSerializer(BaseModelSerializer):
 class ProductProcessCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductProcess
-        exclude = ('product_batching', )
+        exclude = ('product_batching',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 

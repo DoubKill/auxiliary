@@ -1,5 +1,6 @@
 import datetime
 import re
+from collections import OrderedDict
 
 from django.db import connection
 from django.db.models import Sum, Max, F, Value, CharField
@@ -16,7 +17,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from django.db.transaction import atomic
 from basics.models import PlanSchedule, Equip
 from mes.common_code import CommonDeleteMixin, SqlClient
-from mes.conf import EQUIP_LIST
+from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
@@ -947,15 +948,17 @@ group by equip_status.status;
 class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """称量信息"""
-    # queryset = ExpendMaterial.objects.filter(delete_flag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    # pagination_class = SinglePageNumberPagination
-    # serializer_class = WeighInformationSerializer1
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     # 根据不同版本。返回不同数据
     def get_serializer_class(self):
         version = self.request.version
+        params = self.request.query_params
+        equip_no = params.get("equip_no", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if version == "v1":
             return WeighInformationSerializer1
         elif version == "v2":
@@ -965,6 +968,11 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 
     def get_queryset(self):
         version = self.request.version
+        params = self.request.query_params
+        equip_no = params.get("equip_no", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         feed_back_id = self.request.query_params.get('feed_back_id')
         if version == "v2":
             try:
@@ -1000,15 +1008,17 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                            GenericViewSet):
     """密炼信息"""
-    # queryset = ProductProcessDetail.objects.filter(delete_flagflag=False)
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    # pagination_class = SinglePageNumberPagination
-    # serializer_class = MixerInformationSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     # 根据不同版本。返回不同数据
     def get_serializer_class(self):
         version = self.request.version
+        params = self.request.query_params
+        equip_no = params.get("equip_no", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if version == "v1":
             return MixerInformationSerializer1
         elif version == "v2":
@@ -1019,6 +1029,11 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     def get_queryset(self):
         version = self.request.version
         feed_back_id = self.request.query_params.get('feed_back_id')
+        params = self.request.query_params
+        equip_no = params.get("equip_no", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if version == "v2":
             try:
                 tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
@@ -1086,6 +1101,11 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
 
     def list(self, request, *args, **kwargs):
         version = self.request.version
+        params = request.query_params
+        equip_no = params.get("equip_no", None)
+        if not equip_no:
+            raise ValidationError('机台号必传')
+        version = VERSION_EQUIP[equip_no]
         if version == "v1":
             params = request.query_params
             begin_time = params.get("begin_time", None)
@@ -1144,13 +1164,17 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                     tf_obj['status'] = ps_obj.status
                 else:
                     tf_obj['status'] = None
+            tf_queryset = list(tf_queryset)
+            tf_queryset.append({'version': 'v1'})
             return Response({'count': counts, 'results': tf_queryset})
         elif version == "v2":
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
+                data_list = serializer.data
+                data_list.append({'version': 'v2'})
+                return self.get_paginated_response(data_list)
 
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
@@ -1212,6 +1236,8 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                     tf_obj['status'] = ps_obj.status
                 else:
                     tf_obj['status'] = None
+            tf_queryset = list(tf_queryset)
+            tf_queryset.append({'version': 'v1'})
             return Response({'count': counts, 'results': tf_queryset})
 
 
