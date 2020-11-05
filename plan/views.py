@@ -187,7 +187,7 @@ class StopPlan(APIView):
         version = request.version
         params = request.query_params
         plan_id = params.get("id")
-        equip_no = params.get("equip_name", None)
+        equip_no = params.get("equip_no", None)
         if not equip_no:
             raise ValidationError('机台号必传')
         version = VERSION_EQUIP[equip_no]
