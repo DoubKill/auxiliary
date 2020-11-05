@@ -52,6 +52,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
             if len(str(actual)) >= 5:
                 return str(actual / 100)
         return str(actual)
+
     '''
     # zqf 这些是在原有的基础上加的 随后我重新写了接口 这些就没用了 暂时注释掉
     def get_production_details(self, object):
@@ -88,6 +89,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
 
 class TrainsFeedbacksUpSerializer(BaseModelSerializer):
     """车次产出反馈上传"""
+
     class Meta:
         model = TrainsFeedbacks
         fields = "__all__"
@@ -335,6 +337,13 @@ class CurveInformationSerializer(serializers.ModelSerializer):
 class TrainsFeedbacksSerializer2(BaseModelSerializer):
     """车次产出反馈"""
     status = serializers.SerializerMethodField(read_only=True)
+    actual_weight = serializers.SerializerMethodField(read_only=True)
+
+    def get_actual_weight(self, obj):
+        if not obj.actual_weight:
+            return None
+        else:
+            return str(obj.actual_weight / 100)
 
     def get_status(self, object):
         ps_obj = PlanStatus.objects.filter(equip_no=object.equip_no,
