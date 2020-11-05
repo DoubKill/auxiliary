@@ -338,6 +338,13 @@ class TrainsFeedbacksSerializer2(BaseModelSerializer):
     """车次产出反馈"""
     status = serializers.SerializerMethodField(read_only=True)
     actual_weight = serializers.SerializerMethodField(read_only=True)
+    mixer_time = serializers.SerializerMethodField(read_only=True)
+
+    def get_mixer_time(self, obj):
+        try:
+            return obj.end_time - obj.begin_time
+        except:
+            return None
 
     def get_actual_weight(self, obj):
         if not obj.actual_weight:
