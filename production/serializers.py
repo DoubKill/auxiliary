@@ -90,8 +90,37 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
 class TrainsFeedbacksUpSerializer(BaseModelSerializer):
     """车次产出反馈上传"""
 
+    factory_date = serializers.SerializerMethodField(read_only=True)
+
+    def get_factory_date(self, object):
+        plan_uid = object.plan_classes_uid
+        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
+        if pcp:
+            date = pcp.work_schedule_plan.plan_schedule.day_time
+        else:
+            date = datetime.date.today()
+        return str(date)
+
     class Meta:
         model = TrainsFeedbacks
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class PalletFeedbacksUpSerializer(BaseModelSerializer):
+    """托盘产出反馈"""
+
+    def get_factory_date(self, object):
+        plan_uid = object.plan_classes_uid
+        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
+        if pcp:
+            date = pcp.work_schedule_plan.plan_schedule.day_time
+        else:
+            date = datetime.date.today()
+        return str(date)
+
+    class Meta:
+        model = PalletFeedbacks
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
