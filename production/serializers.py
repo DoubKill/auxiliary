@@ -92,14 +92,14 @@ class TrainsFeedbacksUpSerializer(BaseModelSerializer):
 
     # factory_date = serializers.SerializerMethodField(read_only=True)
 
-    def get_factory_date(self, object):
-        plan_uid = object.plan_classes_uid
-        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
-        if pcp:
-            date = pcp.work_schedule_plan.plan_schedule.day_time
-        else:
-            date = datetime.date.today()
-        return str(date)
+    # def get_factory_date(self, object):
+    #     plan_uid = object.plan_classes_uid
+    #     pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
+    #     if pcp:
+    #         date = pcp.work_schedule_plan.plan_schedule.day_time
+    #     else:
+    #         date = datetime.date.today()
+    #     return str(date)
 
     class Meta:
         model = TrainsFeedbacks
@@ -112,14 +112,14 @@ class PalletFeedbacksUpSerializer(BaseModelSerializer):
 
     # factory_date = serializers.SerializerMethodField(read_only=True)
 
-    def get_factory_date(self, object):
-        plan_uid = object.plan_classes_uid
-        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
-        if pcp:
-            date = pcp.work_schedule_plan.plan_schedule.day_time
-        else:
-            date = datetime.date.today()
-        return str(date)
+    # def get_factory_date(self, object):
+    #     plan_uid = object.plan_classes_uid
+    #     pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_uid).first()
+    #     if pcp:
+    #         date = pcp.work_schedule_plan.plan_schedule.day_time
+    #     else:
+    #         date = datetime.date.today()
+    #     return str(date)
 
     class Meta:
         model = PalletFeedbacks
