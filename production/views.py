@@ -52,7 +52,9 @@ class TrainsFeedbacksViewSet(mixins.CreateModelMixin,
     """
     queryset = TrainsFeedbacks.objects.filter(delete_flag=False)
     # model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = TrainsFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -92,7 +94,9 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
     """
     queryset = PalletFeedbacks.objects.filter()
     # model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = PalletFeedbacksSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -112,6 +116,7 @@ class PalletDetailViewSet(mixins.ListModelMixin,
     """
     queryset = PalletFeedbacks.objects.filter()
     permission_classes = ()
+    authentication_classes = ()
     serializer_class = PalletSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -145,7 +150,9 @@ class EquipStatusViewSet(mixins.CreateModelMixin,
     queryset = EquipStatus.objects.filter(delete_flag=False)
     pagination_class = None
     # model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = EquipStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -167,7 +174,8 @@ class PlanStatusViewSet(mixins.CreateModelMixin,
     """
     queryset = PlanStatus.objects.filter(delete_flag=False)
     # model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = PlanStatusSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
@@ -189,7 +197,9 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
     """
     queryset = ExpendMaterial.objects.filter(delete_flag=False)
     # model_name = queryset.model.__name__.lower()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = ExpendMaterialSerializer
     filter_backends = [OrderingFilter]
     ordering_fields = ('id',)
@@ -285,7 +295,9 @@ class OperationLogViewSet(mixins.CreateModelMixin,
         创建操作日志
     """
     queryset = OperationLog.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = OperationLogSerializer
 
 
@@ -303,7 +315,9 @@ class QualityControlViewSet(mixins.CreateModelMixin,
         创建质检结果
     """
     queryset = QualityControl.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = ()
+    authentication_classes = ()
     serializer_class = QualityControlSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
