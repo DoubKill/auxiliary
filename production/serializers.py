@@ -90,7 +90,7 @@ class TrainsFeedbacksSerializer(BaseModelSerializer):
 class TrainsFeedbacksUpSerializer(BaseModelSerializer):
     """车次产出反馈上传"""
 
-    factory_date = serializers.SerializerMethodField(read_only=True)
+    # factory_date = serializers.SerializerMethodField(read_only=True)
 
     def get_factory_date(self, object):
         plan_uid = object.plan_classes_uid
@@ -110,7 +110,7 @@ class TrainsFeedbacksUpSerializer(BaseModelSerializer):
 class PalletFeedbacksUpSerializer(BaseModelSerializer):
     """托盘产出反馈"""
 
-    factory_date = serializers.SerializerMethodField(read_only=True)
+    # factory_date = serializers.SerializerMethodField(read_only=True)
 
     def get_factory_date(self, object):
         plan_uid = object.plan_classes_uid
