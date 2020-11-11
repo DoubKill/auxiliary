@@ -98,7 +98,7 @@ class GroupExtension(Group):
 class ChildSystemInfo(AbstractEntity):
     """子系统信息"""
     link_address = models.CharField(max_length=64, help_text='连接地址', verbose_name='连接地址')
-    system_type = models.CharField(max_length=64, help_text='系统类型', verbose_name='系统地址')
+    system_type = models.CharField(max_length=64, help_text='系统类型', verbose_name='系统类型')
     system_name = models.CharField(max_length=64, help_text='系统名称', verbose_name='系统名称')
     status = models.CharField(max_length=64, help_text='子系统状态', verbose_name='子系统状态', default="联网")
     status_lock = models.BooleanField(help_text="状态锁/true的时候status不可修改", verbose_name="状态锁", default=False)
