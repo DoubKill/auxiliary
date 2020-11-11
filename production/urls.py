@@ -62,8 +62,10 @@ router.register(r'curve-information-list', CurveInformationList, basename="curve
 # 车次报表展示
 router.register(r'trains-feedbacks-apiview', TrainsFeedbacksAPIView, basename="trains-feedbacks-apiview")
 
+
 urlpatterns = [
     path('', include(router.urls)),
     path('equip-status-plan-list/', EquipStatusPlanList.as_view()),  # 主页面展示
     path('equip-detailed-list/', EquipDetailedList.as_view()),  # 主页面详情展示
+    path('tank-weigh-sync/', )   # 物料罐及称量信息同步
 ]
