@@ -1344,3 +1344,43 @@ class MaterialExport(mixins.CreateModelMixin,
         rep_list = rep_list[(page - 1) * page_size:page_size * page]
         # return Response({"count": count, "results": rep_list})
         return gen_material_export_file_response("results", rep_list)
+
+
+class TankWeighSyncView(APIView):
+
+    @atomic()
+    def put(self, request):
+        data_list = request.data
+        """
+        [latesttime]
+        [oper] --操作者
+        [matno] --物料罐号
+        [matname] --物料名称
+        [slow] -- 慢称值
+        [shark] -- 提前量
+        [adjust] -- 调整值
+        [sharktime] -- 点动时间
+        [fast_speed] -- 快称速度
+        [slow_speed] -- 慢称速度
+        [machineno] --机台号"""
+        for data in data_list:
+            name = data.get("matname")
+            no = data.get("matno")
+            code = "炭黑" if data.get("code") == 2 else "油料"
+            equip = data.get("machineno")
+            try:
+                MaterialTankStatus.objects.filter(equip_no=equip, tank_no=no, material_type=code
+                                                    ).update(
+                    material_name=name,
+                    low_value=data.get("slow", 2),
+                    advance_value=data.get("shark", 2),
+                    adjust_value=data.get("adjust", 2),
+                    dot_time=data.get("sharktime", 2),
+                    fast_speed=data.get("fast_speed", 2),
+                    low_speed=data.get("slow_speed", 2),
+                    product_time=data.get("latesttime", datetime.datetime.now())
+                )
+            except Exception as e:
+                raise ValidationError(f"上行同步罐称量信息失败，详情{e}")
+
+        return Response({"message": "ok"})
