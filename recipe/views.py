@@ -315,7 +315,12 @@ class TankMaterialVIew(APIView):
             raise ValidationError('参数不足')
         if tank_type not in ['1', '2']:
             raise ValidationError('参数错误')
-        mat_nos = set(MaterialTankStatus.objects.filter(equip_no=equip_no,
-                                                        tank_type=tank_type).values_list('material_no', flat=True))
-        data = Material.objects.filter(material_no__in=mat_nos).values('id', 'material_name', 'material_no')
+        data = []
+        material_data = MaterialTankStatus.objects.filter(
+            equip_no=equip_no, tank_type=tank_type).values('material_no', 'material_name', 'tank_no', 'tank_name')
+        for item in material_data:
+            material = Material.objects.filter(material_no=item['material_no']).first()
+            if material:
+                item['id'] = material.id
+                data.append(item)
         return Response(data={'results': data})
