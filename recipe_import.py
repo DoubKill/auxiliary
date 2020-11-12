@@ -1,6 +1,7 @@
 import traceback
 
 import xlrd
+from django.db.models import Sum
 from django.db.transaction import atomic
 
 import os
@@ -22,15 +23,15 @@ def read_material_excel_data():
         value = table.row_values(rowNum)
         material_name = value[2].strip()
         material_no = value[3].strip()
-        if material_no.startswith('A') or not material_no:
-            if "-" not in material_name:
+        if material_no.startswith('A'):
+            if "-" not in material_name or "胶" in material_name:
                 material_type_id = GlobalCode.objects.get(global_name='天然胶', global_type__type_name='原材料类别').id
             else:
                 material_type = material_name.split("-")[1]
                 try:
                     material_type_id = GlobalCode.objects.get(global_name=material_type, global_type__type_name='原材料类别', global_type_id=4).id
                 except:
-                    print(material_type)
+                    material_type_id = GlobalCode.objects.get(global_name='天然胶', global_type__type_name='原材料类别').id
         elif material_no.startswith('B'):
             material_type_id = GlobalCode.objects.get(global_name='合成胶', global_type__type_name='原材料类别').id
         elif material_no.startswith('C'):
@@ -59,9 +60,14 @@ def read_material_excel_data():
                                            material_name=material_name).exists():
                     continue
                 else:
-                    Material.objects.get_or_create(material_no=material_no,
+                    try:
+                        Material.objects.get_or_create(material_no=material_no,
                                                    material_name=material_name,
                                                    material_type_id=material_type_id)
+                    except:
+                        Material.objects.get_or_create(material_no=material_no+"-1",
+                                                       material_name=material_name,
+                                                       material_type_id=material_type_id)
             except Exception:
                 print(traceback.format_exc())
                 raise
@@ -73,7 +79,6 @@ def read_material_excel_data():
                 Material.objects.get_or_create(material_no=material_name,
                                                material_name=material_name,
                                                material_type_id=material_type_id)
-                print(material_name, material_type_id)
 
 
 
@@ -82,7 +87,7 @@ def read_product_process():
     data = xlrd.open_workbook('recipe.xls')
     table = data.sheet_by_name('配方步序')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z03')
+    equip = Equip.objects.get(equip_no='Z05')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -127,16 +132,16 @@ def read_product_process():
                 sp_num=2
             )
         except Exception:
-            print(traceback.format_exc())
+            # print(traceback.format_exc())
             raise
 
 
 @atomic()
-def read_product_batching():
+def read_product_batching1():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配料详情')
+    table = data.sheet_by_name('配料详情1')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z03')
+    equip = Equip.objects.get(equip_no='Z05')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -164,6 +169,7 @@ def read_product_batching():
                         equip=equip,
                         versions=product_info[3]
                     )
+            print(value[3])
             ProductBatchingDetail.objects.create(
                 product_batching=product_batching,
                 sn=1,
@@ -177,22 +183,22 @@ def read_product_batching():
             print(traceback.format_exc())
             raise
 
-    for product_batch in ProductBatching.objects.all():
-        i = 1
-        for product_batch_detail in product_batch.batching_details.all():
-            product_batch_detail.sn = i
-            product_batch_detail.save()
-            i += 1
-            product_batch.batching_weight += product_batch_detail.actual_weight
-        product_batch.save()
+    pb_set = ProductBatching.objects.filter(equip__equip_no="Z05")
+    for pb in pb_set:
+        temp = pb.batching_details.all().filter(delete_flag=False).aggregate(weight=Sum("actual_weight"))
+        if temp:
+            weight = temp.get("weight")
+            if weight:
+                pb.batching_weight = weight
+                pb.save()
 
 
 @atomic()
-def read_product_process_detail():
+def read_product_batching2():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配方步序详情')
+    table = data.sheet_by_name('配料详情2')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z03')
+    equip = Equip.objects.get(equip_no='Z05')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -220,6 +226,122 @@ def read_product_process_detail():
                         equip=equip,
                         versions=product_info[3]
                     )
+            print(value[3])
+            ProductBatchingDetail.objects.create(
+                product_batching=product_batching,
+                sn=1,
+                material=Material.objects.filter(material_name=value[3]).first(),
+                actual_weight=value[4],
+                standard_error=value[5],
+                auto_flag=1,
+                type=1
+            )
+        except Exception:
+            print(traceback.format_exc())
+            raise
+
+    pb_set = ProductBatching.objects.filter(equip__equip_no="Z05")
+    for pb in pb_set:
+        temp = pb.batching_details.all().filter(delete_flag=False).aggregate(weight=Sum("actual_weight"))
+        if temp:
+            weight = temp.get("weight")
+            if weight:
+                pb.batching_weight = weight
+                pb.save()
+
+
+@atomic()
+def read_product_batching3():
+    data = xlrd.open_workbook('recipe.xls')
+    table = data.sheet_by_name('配料详情3')
+    factory = GlobalCode.objects.get(global_name='安吉')
+    equip = Equip.objects.get(equip_no='Z05')
+    for rowNum in range(1, table.nrows):
+        try:
+            value = table.row_values(rowNum)
+            product_name = value[1].strip()
+            product_batching = ProductBatching.objects.filter(equip=equip,
+                                                              stage_product_batch_no=product_name).first()
+            if not product_batching:
+                product_info = product_name.split('-')
+                if not len(product_info) > 2:
+                    product_batching = ProductBatching.objects.create(
+                        factory=factory,
+                        stage_product_batch_no=product_name,
+                        dev_type=equip.category,
+                        equip=equip
+                    )
+                else:
+                    product_batching = ProductBatching.objects.create(
+                        factory=factory,
+                        site=GlobalCode.objects.get(global_name=product_info[0]),
+                        product_info=ProductInfo.objects.get_or_create(product_name=product_info[2],
+                                                                       product_no=product_info[2])[0],
+                        stage_product_batch_no=product_name,
+                        dev_type=equip.category,
+                        stage=GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次'),
+                        equip=equip,
+                        versions=product_info[3]
+                    )
+            print(value[3])
+            if value[3] == "XCJ":
+                continue
+            ProductBatchingDetail.objects.create(
+                product_batching=product_batching,
+                sn=1,
+                material=Material.objects.filter(material_name=value[3]).first(),
+                actual_weight=value[4],
+                standard_error=value[5],
+                auto_flag=1,
+                type=1
+            )
+        except Exception:
+            print(traceback.format_exc())
+            raise
+
+    pb_set = ProductBatching.objects.filter(equip__equip_no="Z05")
+    for pb in pb_set:
+        temp = pb.batching_details.all().filter(delete_flag=False).aggregate(weight=Sum("actual_weight"))
+        if temp:
+            weight = temp.get("weight")
+            if weight:
+                pb.batching_weight = weight
+                pb.save()
+
+@atomic()
+def read_product_process_detail():
+    data = xlrd.open_workbook('recipe.xls')
+    table = data.sheet_by_name('配方步序详情')
+    factory = GlobalCode.objects.get(global_name='安吉')
+    equip = Equip.objects.get(equip_no='Z05')
+    for rowNum in range(1, table.nrows):
+        try:
+            value = table.row_values(rowNum)
+            product_name = value[1].strip()
+            product_batching = ProductBatching.objects.filter(equip=equip,
+                                                              stage_product_batch_no=product_name).first()
+            if not product_batching:
+                product_info = product_name.split('-')
+                if not len(product_info) > 2:
+                    product_batching = ProductBatching.objects.create(
+                        factory=factory,
+                        stage_product_batch_no=product_name,
+                        dev_type=equip.category,
+                        equip=equip
+                    )
+                else:
+                    product_batching = ProductBatching.objects.create(
+                        factory=factory,
+                        site=GlobalCode.objects.get(global_name=product_info[0]),
+                        product_info=ProductInfo.objects.get_or_create(product_name=product_info[2],
+                                                                       product_no=product_info[2])[0],
+                        stage_product_batch_no=product_name,
+                        dev_type=equip.category,
+                        stage=GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次'),
+                        equip=equip,
+                        versions=product_info[3]
+                    )
+            print(value[7])
             ProductProcessDetail.objects.create(
                 product_batching=product_batching,
                 temperature=value[4],
@@ -234,11 +356,15 @@ def read_product_process_detail():
             )
         except Exception:
             print(traceback.format_exc())
-            raise
-
+            # raise
+            pass
 
 if __name__ == '__main__':
-    read_material_excel_data()
-    read_product_process_detail()
-    read_product_process()
-    read_product_batching()
+    # read_material_excel_data()
+    read_product_batching1()
+    read_product_batching2()
+    read_product_batching3()
+    # read_product_process()
+    # read_product_process_detail()
+
+
