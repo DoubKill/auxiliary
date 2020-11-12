@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 from collections import OrderedDict
 
@@ -16,7 +17,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from django.db.transaction import atomic
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin, SqlClient
+from mes.common_code import CommonDeleteMixin, SqlClient, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
@@ -678,47 +679,30 @@ class ProductionRecordViewSet(mixins.ListModelMixin,
     filter_class = PalletFeedbacksFilter
 
 
-def send_cd_cil(equip_no, tank_type, model_name):
-    # 发送油料炭黑数据给易控组态
+def send_cd_cil(equip_no, user_name):
+    # 发送油料、炭黑以及称量信息数据给易控组态
     equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
-    mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
-    sql = f"delete from {model_name} where machineno={equip_no_int} and matname!='卸料'"
-    sc = SqlClient(sql=sql, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
-    sc.save()
-    sc.close()
-    sql1 = f'''insert into {model_name} (matname,matno,code,machineno,flag) values '''
-    mts_list = []
-    for mts_obj in mts_set:
-        mts = f"('{mts_obj.material_name}', {int(mts_obj.tank_no)}, 2, {equip_no_int}, 1)"
-        mts_list.append(mts)
-        mts_values = ','.join(mts_list)
-        sql2 = sql1 + mts_values
-    sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
-    sc1.save()
-    sc1.close()
-
-
-def send_cd_cil_sum(equip_no, tank_type, model_name, mattype):
-    # 发送油料炭黑数据给易控组态
-    equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
-    mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
-    sql1 = f'''insert into {model_name} (latesttime,matname,matno,mattype,machineno,flag) values '''
-    mts_list = []
-    for mts_obj in mts_set:
-        sql3 = f"""select * from {model_name} where machineno={equip_no_int} and matname='{mts_obj.material_name}'"""
-        sc = SqlClient(sql=sql3, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
-        if sc.cursor.fetchall():
-            sc.save()
-            sc.close()
-            continue
-        mts = f"""('{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}','{mts_obj.material_name}', {int(mts_obj.tank_no)},'{mattype}', {equip_no_int}, 1)"""
-        mts_list.append(mts)
-        mts_values = ','.join(mts_list)
-        sql2 = sql1 + mts_values
-    if mts_list:
-        sc1 = SqlClient(sql=sql2, equip_no=str(equip_no_int), user="sa", host="10.4.14.101", password="123", db="GZSFJ")
-        sc1.save()
-        sc1.close()
+    date_dict = {"json": {'data': []}}
+    tank_list = [1, 2]
+    for tank_type in tank_list:
+        mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
+        for mts_obj in mts_set:
+            mts_dict = {"latesttime": mts_obj.product_time,
+                        "oper": user_name,
+                        "matno": int(mts_obj.tank_no),
+                        "matname": mts_obj.material_name + '-' + mts_obj.tank_no,
+                        "slow": str(mts_obj.low_value),
+                        "shark": str(mts_obj.advance_value),
+                        "adjust": str(mts_obj.adjust_value),
+                        "sharktime": str(mts_obj.dot_time),
+                        "fast_speed": str(mts_obj.fast_speed),
+                        "slow_speed": str(mts_obj.low_speed),
+                        "machineno": equip_no_int,
+                        "choices": tank_type}
+            date_dict['json']['data'].append(mts_dict)
+    data = json.dumps(date_dict['json'])
+    date_dict['json'] = data
+    WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=equip_no_int)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -748,13 +732,6 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.save()
-            # 发送炭黑数据给易控组态
-            try:
-                send_cd_cil(equip_no=obj.equip_no, tank_type=1, model_name='chbt_no_cb')
-                send_cd_cil_sum(equip_no=obj.equip_no, tank_type=1, model_name='sum_mat_cb', mattype='C')
-            except Exception as e:
-                logger.error(e)
-                raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
@@ -790,8 +767,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.save()
             # 发送油料数据给易控组态
             try:
-                send_cd_cil(equip_no=obj.equip_no, tank_type=2, model_name='chbt_no_oil1')
-                send_cd_cil_sum(equip_no=obj.equip_no, tank_type=2, model_name='sum_mat_oil', mattype='O')
+                send_cd_cil(equip_no=obj.equip_no, user_name=request.user.username)
             except Exception as e:
                 logger.error(e)
                 raise ValidationError(f'{obj.equip_no}机台网络连接异常')
@@ -827,8 +803,9 @@ class EquipStatusPlanList(APIView):
         plan_data = plan_set.values('work_schedule_plan__classes__global_name',
                                     'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
         plan_uid = plan_set.values_list("plan_classes_uid", flat=True)
-        plan_data = {item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
-                     for item in plan_data}
+        plan_data = {
+            item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
+            for item in plan_data}
 
         # 先按照计划uid分组，取出最大的一条实际数据
         max_ids = TrainsFeedbacks.objects.filter(
@@ -900,7 +877,8 @@ class EquipDetailedList(APIView):
         product_no = params.get('product_no')
         ret_data = {}
         # 当前班次
-        tfb_obj = TrainsFeedbacks.objects.filter(equip_no=equip_no, product_no=product_no, delete_flag=False).order_by(
+        tfb_obj = TrainsFeedbacks.objects.filter(equip_no=equip_no, product_no=product_no,
+                                                 delete_flag=False).order_by(
             'created_date').last()
         if not tfb_obj:
             ret_data['classes_name'] = None
@@ -916,7 +894,8 @@ class EquipDetailedList(APIView):
                                                      work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
                                                      work_schedule_plan__classes__global_name=ret_data[
                                                          'classes_name']).values(
-            'product_day_plan__product_batching__stage_product_batch_no').annotate(sum_plan_trains=Sum('plan_trains'))
+            'product_day_plan__product_batching__stage_product_batch_no').annotate(
+            sum_plan_trains=Sum('plan_trains'))
         for pcp_dict in pcp_plan:
             product_dict = {}
             product_dict['product_no'] = pcp_dict['product_day_plan__product_batching__stage_product_batch_no']
@@ -938,8 +917,8 @@ class EquipDetailedList(APIView):
 
         # 机台状态统计
         air_status_list = f'''select
-       equip_status.status,
-       count(equip_status.status) as count_status
+   equip_status.status,
+   count(equip_status.status) as count_status
 from equip_status
 where equip_status.equip_no = '{equip_no}' and equip_status.delete_flag=FALSE and to_days(equip_status.created_date) = to_days(now())
 group by equip_status.status;
@@ -1308,10 +1287,10 @@ class MaterialExport(mixins.CreateModelMixin,
         else:
             condition_str = ''
         sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
-                            max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
-                            SUM(expend_material.actual_weight / 100) as actual_weight 
-                            from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
-                """
+                        max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
+                        SUM(expend_material.actual_weight / 100) as actual_weight 
+                        from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
+            """
         # return gen_material_export_file_response('导出', sql_str)
 
         return sql_str
@@ -1370,7 +1349,7 @@ class TankWeighSyncView(APIView):
             equip = data.get("machineno")
             try:
                 MaterialTankStatus.objects.filter(equip_no=equip, tank_no=no, material_type=code
-                                                    ).update(
+                                                  ).update(
                     material_name=name,
                     material_no=name,
                     low_value=data.get("slow", 2),
