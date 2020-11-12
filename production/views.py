@@ -1372,6 +1372,7 @@ class TankWeighSyncView(APIView):
                 MaterialTankStatus.objects.filter(equip_no=equip, tank_no=no, material_type=code
                                                     ).update(
                     material_name=name,
+                    material_no=name,
                     low_value=data.get("slow", 2),
                     advance_value=data.get("shark", 2),
                     adjust_value=data.get("adjust", 2),
