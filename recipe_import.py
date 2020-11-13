@@ -180,8 +180,9 @@ def read_product_batching1():
                 type=1
             )
         except Exception:
-            print(traceback.format_exc())
-            raise
+            # print(traceback.format_exc())
+            pass
+            # raise
 
     pb_set = ProductBatching.objects.filter(equip__equip_no="Z05")
     for pb in pb_set:
@@ -234,7 +235,7 @@ def read_product_batching2():
                 actual_weight=value[4],
                 standard_error=value[5],
                 auto_flag=1,
-                type=1
+                type=2
             )
         except Exception:
             print(traceback.format_exc())
@@ -284,7 +285,7 @@ def read_product_batching3():
                         versions=product_info[3]
                     )
             print(value[3])
-            if value[3] == "XCJ":
+            if value[3] == "V700-5":
                 continue
             ProductBatchingDetail.objects.create(
                 product_batching=product_batching,
@@ -293,7 +294,7 @@ def read_product_batching3():
                 actual_weight=value[4],
                 standard_error=value[5],
                 auto_flag=1,
-                type=1
+                type=3
             )
         except Exception:
             print(traceback.format_exc())
@@ -360,10 +361,10 @@ def read_product_process_detail():
             pass
 
 if __name__ == '__main__':
-    # read_material_excel_data()
-    read_product_batching1()
-    read_product_batching2()
-    read_product_batching3()
+    read_material_excel_data()
+    # read_product_batching1()
+    # read_product_batching2()
+    # read_product_batching3()
     # read_product_process()
     # read_product_process_detail()
 
