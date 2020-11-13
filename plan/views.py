@@ -478,6 +478,7 @@ class IssuedPlan(APIView):
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
     def _map_recipe(self, pcp_object, product_process, product_batching, equip_no):
+        # 映射全小写代表对接国自上辅机
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
@@ -509,7 +510,7 @@ class IssuedPlan(APIView):
         data["over_temp"] = actual_product_process.over_temp
         data["reuse_time"] = actual_product_process.reuse_time
         data[
-            "if_not"] = 0 if actual_product_process.reuse_flag else -1  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
+            "if_not"] = 1 if actual_product_process.reuse_flag else 0  # 是否回收  国自(true:回收， false:不回收)  gz上辅机（1:回收， 0:不回收）
         data["rot_temp"] = actual_product_process.zz_temp
         data["shut_temp"] = actual_product_process.xlm_temp
         data["side_temp"] = actual_product_process.cb_temp
