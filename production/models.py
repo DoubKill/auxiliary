@@ -108,7 +108,7 @@ class EquipStatus(AbstractEntity):
     power = models.DecimalField(decimal_places=2, max_digits=8, help_text='功率', verbose_name='功率')
     pressure = models.DecimalField(decimal_places=2, max_digits=8, help_text='压力', verbose_name='压力')
     status = models.CharField(max_length=64, help_text='状态：运行中、等待、故障', verbose_name='状态',
-                              choices=(('运行中', '运行中'), ('等待', '等待'), ('故障', '故障')))
+                              choices=(('运行中', '运行中'), ('等待', '等待'), ('故障', '故障')), default="运行中")
     current_trains = models.IntegerField(help_text='当前车次', verbose_name='当前车次')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
 

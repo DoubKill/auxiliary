@@ -325,7 +325,7 @@ class IssuedPlan(APIView):
 
     def _map_RecipeCb(self, product_batching, product_batching_details):
         datas = []
-        product_batching_details = product_batching_details.filter(material__material_type__global_name="炭黑")
+        product_batching_details = product_batching_details.filter(type=2)
         for pbd in product_batching_details:
             data = {
                 "id": pbd.id,
@@ -342,7 +342,7 @@ class IssuedPlan(APIView):
 
     def _map_RecipeOil1(self, product_batching, product_batching_details):
         datas = []
-        product_batching_details = product_batching_details.filter(material__material_type__global_name="油料")
+        product_batching_details = product_batching_details.filter(type=3)
         for pbd in product_batching_details:
             data = {
                 "id": pbd.id,
@@ -359,8 +359,7 @@ class IssuedPlan(APIView):
 
     def _map_RecipePloy(self, product_batching, product_batching_details):
         datas = []
-        gum_list = GlobalCode.objects.filter(global_type__type_name="胶料").values_list("global_name", flat=True)
-        product_batching_details = product_batching_details.filter(material__material_type__global_name__in=gum_list)
+        product_batching_details = product_batching_details.filter(type=1)
         for pbd in product_batching_details:
             data = {
                 "id": pbd.id,
@@ -479,6 +478,7 @@ class IssuedPlan(APIView):
         IssueWorkStation('IfdownShengchanjihua' + ext_str, Shengchanjihua, ext_str).update_to_db()
 
     def _map_recipe(self, pcp_object, product_process, product_batching, equip_no):
+        # 映射全小写代表对接国自上辅机
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
@@ -510,7 +510,7 @@ class IssuedPlan(APIView):
         data["over_temp"] = actual_product_process.over_temp
         data["reuse_time"] = actual_product_process.reuse_time
         data[
-            "if_not"] = 0 if actual_product_process.reuse_flag else -1  # 是否回收  国自(true:回收， false:不回收)  万龙（0:回收， -1:不回收）
+            "if_not"] = 1 if actual_product_process.reuse_flag else 0  # 是否回收  国自(true:回收， false:不回收)  gz上辅机（1:回收， 0:不回收）
         data["rot_temp"] = actual_product_process.zz_temp
         data["shut_temp"] = actual_product_process.xlm_temp
         data["side_temp"] = actual_product_process.cb_temp
@@ -524,7 +524,7 @@ class IssuedPlan(APIView):
 
     def _map_cb(self, product_batching, product_batching_details, equip_no):
         datas = []
-        product_batching_details = product_batching_details.filter(material__material_type__global_name="炭黑")
+        product_batching_details = product_batching_details.filter(type=2)
         sn = 0
         for pbd in product_batching_details:
             sn += 1
@@ -538,11 +538,12 @@ class IssuedPlan(APIView):
             data["mattype"] = "C"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
+        print("炭黑", datas)
         return datas
 
     def _map_oil(self, product_batching, product_batching_details, equip_no):
         datas = []
-        product_batching_details = product_batching_details.filter(material__material_type__global_name="油料")
+        product_batching_details = product_batching_details.filter(type=3)
         sn = 0
         for pbd in product_batching_details:
             sn += 1
@@ -556,12 +557,12 @@ class IssuedPlan(APIView):
             data["mattype"] = "O"  # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
+        print("油料", datas)
         return datas
 
     def _map_ploy(self, product_batching, product_batching_details, equip_no):
         datas = []
-        gum_list = GlobalCode.objects.filter(global_type__type_name="胶料").values_list("global_name", flat=True)
-        product_batching_details = product_batching_details.filter(material__material_type__global_name__in=gum_list)
+        product_batching_details = product_batching_details.filter(type=1)
         sn = 0
         for pbd in product_batching_details:
             sn += 1
@@ -575,6 +576,7 @@ class IssuedPlan(APIView):
             data["mattype"] = "P"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
+        print("胶料", datas)
         return datas
 
     def _map_weigh(self, product_batching, product_batching_details, equip_no):
@@ -649,16 +651,16 @@ class IssuedPlan(APIView):
 
     def _sync_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
-        recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
-        try:
-            status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
-        except APIException:
-            raise ValidationError("该配方已存在于上辅机，请勿重复下达")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
-
-        if not status:
-            raise ValidationError(f"主配方下达失败:{text}")
+        # recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
+        # try:
+        #     status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+        # except APIException:
+        #     raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+        # except:
+        #     raise ValidationError(f"{equip_no} 网络连接异常")
+        #
+        # if not status:
+        #     raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
         try:
