@@ -24,7 +24,7 @@ from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
     PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
-from production.models import PlanStatus, TrainsFeedbacks
+from production.models import PlanStatus, TrainsFeedbacks, MaterialTankStatus
 from production.utils import strtoint
 # Create your views here.
 from recipe.models import ProductProcess, ProductBatching
@@ -526,7 +526,17 @@ class IssuedPlan(APIView):
         datas = []
         product_batching_details = product_batching_details.filter(type=2)
         sn = 0
+        # equip = product_batching.equip.equip_no
+        if len(equip_no) == 1:
+            equip = "Z0" + equip_no
+        else:
+            equip = "Z" + equip_no
         for pbd in product_batching_details:
+            material_name = pbd.material.material_name
+            tank_no = pbd.tank_no
+            if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='1',
+                                                     equip_no=equip).exists():
+                raise ValidationError("炭黑罐中未匹配到该物料，请检查")
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
@@ -538,14 +548,22 @@ class IssuedPlan(APIView):
             data["mattype"] = "C"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
-        print("炭黑", datas)
         return datas
 
     def _map_oil(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(type=3)
+        if len(equip_no) == 1:
+            equip = "Z0" + equip_no
+        else:
+            equip = "Z" + equip_no
         sn = 0
         for pbd in product_batching_details:
+            material_name = pbd.material.material_name
+            tank_no = pbd.tank_no
+            if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='2',
+                                                     equip_no=equip).exists():
+                raise ValidationError("油料罐中未匹配到该物料，请检查")
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
@@ -557,7 +575,6 @@ class IssuedPlan(APIView):
             data["mattype"] = "O"  # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
-        print("油料", datas)
         return datas
 
     def _map_ploy(self, product_batching, product_batching_details, equip_no):
@@ -576,7 +593,6 @@ class IssuedPlan(APIView):
             data["mattype"] = "P"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
-        print("胶料", datas)
         return datas
 
     def _map_weigh(self, product_batching, product_batching_details, equip_no):
