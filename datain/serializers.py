@@ -6,7 +6,8 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from rest_framework import serializers
 
-from recipe.models import Material, ProductInfo, ProductBatchingDetail, ProductBatching
+from recipe.models import Material, ProductInfo, ProductBatchingDetail, ProductBatching, MaterialAttribute, \
+    MaterialSupplier
 
 
 class GlobalCodeReceiveSerializer(BaseModelSerializer):
@@ -24,9 +25,9 @@ class GlobalCodeReceiveSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         global_no = validated_data['global_no']
-        instance = GlobalCode.objects.filter(global_no=global_no)
+        instance = GlobalCode.objects.filter(global_no=global_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -44,9 +45,9 @@ class WorkScheduleReceiveSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         schedule_no = validated_data['schedule_no']
-        instance = WorkSchedule.objects.filter(schedule_no=schedule_no)
+        instance = WorkSchedule.objects.filter(schedule_no=schedule_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -81,9 +82,9 @@ class ClassesDetailReceiveSerializer(BaseModelSerializer):
     def create(self, validated_data):
         work_schedule = validated_data['work_schedule']
         classes = validated_data['classes']
-        instance = ClassesDetail.objects.filter(work_schedule=work_schedule, classes=classes)
+        instance = ClassesDetail.objects.filter(work_schedule=work_schedule, classes=classes).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -116,9 +117,9 @@ class EquipCategoryAttributeSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         category_no = validated_data['category_no']
-        instance = EquipCategoryAttribute.objects.filter(category_no=category_no)
+        instance = EquipCategoryAttribute.objects.filter(category_no=category_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -154,9 +155,9 @@ class EquipSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         equip_no = validated_data['equip_no']
-        instance = Equip.objects.filter(equip_no=equip_no)
+        instance = Equip.objects.filter(equip_no=equip_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -185,9 +186,9 @@ class PlanScheduleSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         plan_schedule_no = validated_data['plan_schedule_no']
-        instance = PlanSchedule.objects.filter(plan_schedule_no=plan_schedule_no)
+        instance = PlanSchedule.objects.filter(plan_schedule_no=plan_schedule_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -228,9 +229,9 @@ class WorkSchedulePlanSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         work_schedule_plan_no = validated_data['work_schedule_plan_no']
-        instance = WorkSchedulePlan.objects.filter(work_schedule_plan_no=work_schedule_plan_no)
+        instance = WorkSchedulePlan.objects.filter(work_schedule_plan_no=work_schedule_plan_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -258,9 +259,9 @@ class MaterialSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         material_no = validated_data['material_no']
-        instance = Material.objects.filter(material_no=material_no)
+        instance = Material.objects.filter(material_no=material_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -277,9 +278,9 @@ class GlobalCodeTypeSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         type_no = validated_data['type_no']
-        instance = GlobalCodeType.objects.filter(type_no=type_no)
+        instance = GlobalCodeType.objects.filter(type_no=type_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -296,9 +297,9 @@ class ProductInfoSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         product_no = validated_data['product_no']
-        instance = ProductInfo.objects.filter(product_no=product_no)
+        instance = ProductInfo.objects.filter(product_no=product_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -389,3 +390,58 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                   'dev_type', 'stage', 'equip', 'used_time', 'precept', 'stage_product_batch_no',
                   'versions', 'used_type', 'batching_weight', 'manual_material_weight',
                   'auto_material_weight', 'production_time_interval', 'batching_details')
+
+
+class MaterialAttributeReceiveSerializer(serializers.ModelSerializer):
+    material__material_no = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        material__material_no = attrs.pop('material__material_no')
+        try:
+            material = Material.objects.get(material_no=material__material_no)
+        except Material.DoesNotExist:
+            raise serializers.ValidationError('原材料{}不存在'.format(attrs.get('material__material_no')))
+        attrs['material'] = material
+        return attrs
+
+    def create(self, validated_data):
+        material = validated_data['material']
+        instance = MaterialAttribute.objects.filter(material=material).first()
+        if instance:
+            super().update(instance, validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
+    class Meta:
+        model = MaterialAttribute
+        fields = ('material__material_no', 'safety_inventory', 'period_of_validity', 'validity_unit')
+        extra_kwargs = {'material': {'validators': []}}
+
+
+class MaterialSupplierReceiveSerializer(serializers.ModelSerializer):
+    material__material_no = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        material__material_no = attrs.pop('material__material_no')
+        try:
+            material = Material.objects.get(material_no=material__material_no)
+        except Material.DoesNotExist:
+            raise serializers.ValidationError('原材料{}不存在'.format(attrs.get('material__material_no')))
+        attrs['material'] = material
+        return attrs
+
+    @atomic()
+    def create(self, validated_data):
+        supplier_no = validated_data['supplier_no']
+        instance = MaterialSupplier.objects.filter(supplier_no=supplier_no).first()
+        if instance:
+            super().update(instance, validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
+    class Meta:
+        model = MaterialSupplier
+        fields = ('material__material_no', 'supplier_no', 'provenance', 'use_flag')
+        extra_kwargs = {'supplier_no': {'validators': []}}

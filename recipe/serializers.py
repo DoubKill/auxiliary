@@ -10,7 +10,7 @@ from basics.models import GlobalCode
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
     MaterialAttribute, ProductProcess, ProductProcessDetail
-from production.models import PlanStatus
+from production.models import PlanStatus, MaterialTankStatus
 from mes.conf import COMMON_READ_ONLY_FIELDS
 
 logger = logging.getLogger('api_log')
@@ -69,6 +69,20 @@ class ProductBatchingDetailSerializer(BaseModelSerializer):
     material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.filter(delete_flag=False, use_flag=1))
     material_type = serializers.CharField(source='material.material_type.global_name', read_only=True)
     material_name = serializers.CharField(source='material.material_name', read_only=True)
+    provenance = serializers.SerializerMethodField(read_only=True)
+
+    def get_provenance(self, obj):
+        if obj.tank_no:
+            tank = MaterialTankStatus.objects.filter(equip_no=obj.product_batching.equip.equip_no,
+                                                     tank_no=obj.tank_no,
+                                                     tank_type='1' if obj.type == 2 else '2',
+                                                     material_no=obj.material.material_no).first()
+            if tank:
+                return tank.provenance
+            else:
+                return None
+        else:
+            return None
 
     class Meta:
         model = ProductBatchingDetail
