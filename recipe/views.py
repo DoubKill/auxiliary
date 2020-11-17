@@ -22,7 +22,7 @@ from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
     ProductBatchingPartialUpdateSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
-    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -317,10 +317,23 @@ class TankMaterialVIew(APIView):
             raise ValidationError('参数错误')
         data = []
         material_data = MaterialTankStatus.objects.filter(
-            equip_no=equip_no, tank_type=tank_type).values('material_no', 'material_name', 'tank_no', 'tank_name')
+            equip_no=equip_no, tank_type=tank_type).values('material_no', 'tank_no', 'tank_name', 'provenance')
         for item in material_data:
             material = Material.objects.filter(material_no=item['material_no']).first()
             if material:
                 item['id'] = material.id
+                item['material_name'] = material.material_name
                 data.append(item)
         return Response(data={'results': data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class MaterialSupplierView(APIView):
+    """根据原材料获取产地信息, 参数：?material_no=原材料编码"""
+
+    def get(self, request):
+        material_no = self.request.query_params.get('material_no')
+        if not material_no:
+            raise ValidationError('缺失参数')
+        return Response(MaterialSupplier.objects.filter(
+            material__material_no=material_no).values_list('provenance', flat=True))

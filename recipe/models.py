@@ -25,8 +25,9 @@ class Material(AbstractEntity):
 
 class MaterialAttribute(AbstractEntity):
     """原材料属性"""
-    material = models.ForeignKey(Material, help_text='原材料', verbose_name='原材料', on_delete=models.DO_NOTHING)
-    safety_inventory = models.IntegerField(help_text='安全库存标准', verbose_name='安全库存标准')
+    material = models.OneToOneField(Material, help_text='原材料', verbose_name='原材料',
+                                    on_delete=models.CASCADE, related_name='material_attr')
+    safety_inventory = models.PositiveIntegerField(help_text='安全库存标准', verbose_name='安全库存标准')
     period_of_validity = models.PositiveIntegerField(help_text='有效期', verbose_name='有效期')
     validity_unit = models.CharField('有效期单位', help_text='有效期单位', max_length=8, default="天")
 
@@ -36,15 +37,15 @@ class MaterialAttribute(AbstractEntity):
 
 
 class MaterialSupplier(AbstractEntity):
-    """原材料供应商"""
-    material = models.ForeignKey(Material, help_text='原材料', verbose_name='原材料', on_delete=models.DO_NOTHING)
-    supplier_no = models.IntegerField(help_text='供应商编码', verbose_name='供应商编码', unique=True)
-    provenance = models.CharField('来源/产地', max_length=8, blank=True, default='mes')
+    """原材料产地"""
+    material = models.ForeignKey(Material, help_text='原材料', verbose_name='原材料', on_delete=models.CASCADE)
+    supplier_no = models.CharField(max_length=64, help_text='产地编码', verbose_name='编码', unique=True)
+    provenance = models.CharField(max_length=64, help_text='产地', verbose_name='产地')
     use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
 
     class Meta:
         db_table = 'material_supplier'
-        verbose_name_plural = verbose_name = '原材料供应商'
+        verbose_name_plural = verbose_name = '原材料产地'
 
 
 class ProductInfo(AbstractEntity):
@@ -167,6 +168,7 @@ class ProductBatchingDetail(AbstractEntity):
     standard_error = models.DecimalField(help_text='误差值范围', decimal_places=2, max_digits=8, default=0)
     auto_flag = models.PositiveSmallIntegerField(help_text='手动/自动', choices=AUTO_FLAG)
     type = models.PositiveSmallIntegerField(help_text='类别', choices=TYPE_CHOICE, default=1)
+    tank_no = models.CharField(max_length=64, help_text='罐号', blank=True, null=True)
 
     class Meta:
         db_table = 'product_batching_detail'
