@@ -1,7 +1,6 @@
 import datetime
 import json
 import re
-from collections import OrderedDict
 
 from django.db import connection
 from django.db.models import Sum, Max, F, Value, CharField
@@ -17,7 +16,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from django.db.transaction import atomic
 from basics.models import PlanSchedule, Equip
-from mes.common_code import CommonDeleteMixin, SqlClient, WebService
+from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
@@ -30,10 +29,10 @@ from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, Pla
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
-    WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, MaterialStatisticsSerializer, \
-    PalletSerializer, WeighInformationSerializer2, MixerInformationSerializer2, TrainsFeedbacksSerializer2
+    WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, \
+    MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
+    MixerInformationSerializer2, TrainsFeedbacksSerializer2
 from production.utils import strtoint, gen_material_export_file_response
-from recipe.models import ProductProcessDetail
 import logging
 
 logger = logging.getLogger('sync_log')
@@ -766,7 +765,6 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
             obj.provenance = i.get("provenance")
-            obj.save()
             obj.save()
             # 发送油料数据给易控组态
             try:
