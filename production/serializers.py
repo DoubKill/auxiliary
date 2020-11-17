@@ -249,7 +249,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
             "adjust_value",
             "dot_time",
             "fast_speed",
-            "low_speed", "use_flag")
+            "low_speed", "use_flag", 'provenance')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 

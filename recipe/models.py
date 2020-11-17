@@ -168,7 +168,7 @@ class ProductBatchingDetail(AbstractEntity):
     standard_error = models.DecimalField(help_text='误差值范围', decimal_places=2, max_digits=8, default=0)
     auto_flag = models.PositiveSmallIntegerField(help_text='手动/自动', choices=AUTO_FLAG)
     type = models.PositiveSmallIntegerField(help_text='类别', choices=TYPE_CHOICE, default=1)
-    # tank_no = models.CharField(max_length=64, help_text='罐号', blank=True, null=True)
+    tank_no = models.CharField(max_length=64, help_text='罐号', blank=True, null=True)
 
     class Meta:
         db_table = 'product_batching_detail'

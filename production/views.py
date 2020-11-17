@@ -731,6 +731,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             obj.dot_time = i.get("dot_time")
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
+            obj.provenance = i.get("provenance")
             obj.save()
         return Response("ok", status=status.HTTP_201_CREATED)
 
@@ -764,6 +765,8 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.dot_time = i.get("dot_time")
             obj.fast_speed = i.get("fast_speed")
             obj.low_speed = i.get("low_speed")
+            obj.provenance = i.get("provenance")
+            obj.save()
             obj.save()
             # 发送油料数据给易控组态
             try:
