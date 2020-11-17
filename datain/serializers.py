@@ -25,9 +25,9 @@ class GlobalCodeReceiveSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         global_no = validated_data['global_no']
-        instance = GlobalCode.objects.filter(global_no=global_no)
+        instance = GlobalCode.objects.filter(global_no=global_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -45,9 +45,9 @@ class WorkScheduleReceiveSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         schedule_no = validated_data['schedule_no']
-        instance = WorkSchedule.objects.filter(schedule_no=schedule_no)
+        instance = WorkSchedule.objects.filter(schedule_no=schedule_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -82,9 +82,9 @@ class ClassesDetailReceiveSerializer(BaseModelSerializer):
     def create(self, validated_data):
         work_schedule = validated_data['work_schedule']
         classes = validated_data['classes']
-        instance = ClassesDetail.objects.filter(work_schedule=work_schedule, classes=classes)
+        instance = ClassesDetail.objects.filter(work_schedule=work_schedule, classes=classes).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -117,9 +117,9 @@ class EquipCategoryAttributeSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         category_no = validated_data['category_no']
-        instance = EquipCategoryAttribute.objects.filter(category_no=category_no)
+        instance = EquipCategoryAttribute.objects.filter(category_no=category_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -155,9 +155,9 @@ class EquipSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         equip_no = validated_data['equip_no']
-        instance = Equip.objects.filter(equip_no=equip_no)
+        instance = Equip.objects.filter(equip_no=equip_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -186,9 +186,9 @@ class PlanScheduleSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         plan_schedule_no = validated_data['plan_schedule_no']
-        instance = PlanSchedule.objects.filter(plan_schedule_no=plan_schedule_no)
+        instance = PlanSchedule.objects.filter(plan_schedule_no=plan_schedule_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -229,9 +229,9 @@ class WorkSchedulePlanSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         work_schedule_plan_no = validated_data['work_schedule_plan_no']
-        instance = WorkSchedulePlan.objects.filter(work_schedule_plan_no=work_schedule_plan_no)
+        instance = WorkSchedulePlan.objects.filter(work_schedule_plan_no=work_schedule_plan_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -259,9 +259,9 @@ class MaterialSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         material_no = validated_data['material_no']
-        instance = Material.objects.filter(material_no=material_no)
+        instance = Material.objects.filter(material_no=material_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -278,9 +278,9 @@ class GlobalCodeTypeSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         type_no = validated_data['type_no']
-        instance = GlobalCodeType.objects.filter(type_no=type_no)
+        instance = GlobalCodeType.objects.filter(type_no=type_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -297,9 +297,9 @@ class ProductInfoSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         product_no = validated_data['product_no']
-        instance = ProductInfo.objects.filter(product_no=product_no)
+        instance = ProductInfo.objects.filter(product_no=product_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -406,9 +406,9 @@ class MaterialAttributeReceiveSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         material = validated_data['material']
-        instance = MaterialAttribute.objects.filter(material=material)
+        instance = MaterialAttribute.objects.filter(material=material).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data
@@ -434,9 +434,9 @@ class MaterialSupplierReceiveSerializer(serializers.ModelSerializer):
     @atomic()
     def create(self, validated_data):
         supplier_no = validated_data['supplier_no']
-        instance = MaterialSupplier.objects.filter(supplier_no=supplier_no)
+        instance = MaterialSupplier.objects.filter(supplier_no=supplier_no).first()
         if instance:
-            instance.update(**validated_data)
+            super().update(instance, validated_data)
         else:
             super().create(validated_data)
         return validated_data

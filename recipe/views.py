@@ -317,12 +317,12 @@ class TankMaterialVIew(APIView):
             raise ValidationError('参数错误')
         data = []
         material_data = MaterialTankStatus.objects.filter(
-            equip_no=equip_no, tank_type=tank_type).values('material_no', 'material_name',
-                                                           'tank_no', 'tank_name', 'provenance')
+            equip_no=equip_no, tank_type=tank_type).values('material_no', 'tank_no', 'tank_name', 'provenance')
         for item in material_data:
             material = Material.objects.filter(material_no=item['material_no']).first()
             if material:
                 item['id'] = material.id
+                item['material_name'] = material.material_name
                 data.append(item)
         return Response(data={'results': data})
 
