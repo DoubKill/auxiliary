@@ -34,14 +34,14 @@ def inner(sender, instance, created):
 @receiver(post_save, sender=Material)
 def material_in_post_save(sender, instance=None, created=False, update_fields=None, **kwargs):
     inner(sender, instance, created)
-    # if not created:
-    #     """原材料修改后更新其他两张表的数据"""
-    #     ExpendMaterial.objects.filter(material_no=instance.material_no).update(
-    #         material_type=instance.material_type.global_name,
-    #         material_name=instance.material_name)
-    #     MaterialTankStatus.objects.filter(material_no=instance.material_no).update(
-    #             material_type=instance.material_type.global_name,
-    #             material_name=instance.material_name)
+    if not created:
+        """原材料修改后更新其他两张表的数据"""
+        ExpendMaterial.objects.filter(material_no=instance.material_no).update(
+            material_type=instance.material_type.global_name,
+            material_name=instance.material_name)
+        MaterialTankStatus.objects.filter(material_no=instance.material_no).update(
+                material_type=instance.material_type.global_name,
+                material_name=instance.material_name)
 
 
 @receiver(post_save, sender=ProductInfo)

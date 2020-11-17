@@ -5,9 +5,9 @@ from basics.models import GlobalCode
 from datain.serializers import GlobalCodeReceiveSerializer, WorkScheduleReceiveSerializer, \
     ClassesDetailReceiveSerializer, EquipCategoryAttributeSerializer, EquipSerializer, PlanScheduleSerializer, \
     WorkSchedulePlanSerializer, MaterialSerializer, GlobalCodeTypeSerializer, ProductInfoSerializer, \
-    RecipeReceiveSerializer
+    RecipeReceiveSerializer, MaterialAttributeReceiveSerializer, MaterialSupplierReceiveSerializer
 from mes.derorators import api_recorder
-from recipe.models import ProductInfo, ProductBatching
+from recipe.models import ProductInfo, ProductBatching, MaterialAttribute, MaterialSupplier
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -79,3 +79,25 @@ class RecipeReceiveAPiView(CreateAPIView):
     authentication_classes = ()
     serializer_class = RecipeReceiveSerializer
     queryset = ProductBatching.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class MaterialAttributeReceiveAPiView(CreateAPIView):
+    """
+    接受上辅机原材料属性数据接口
+    """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = MaterialAttributeReceiveSerializer
+    queryset = MaterialAttribute.objects.all()
+
+
+@method_decorator([api_recorder], name="dispatch")
+class MaterialSupplierReceiveAPiView(CreateAPIView):
+    """
+    接受上辅机原材料产地数据接口
+    """
+    permission_classes = ()
+    authentication_classes = ()
+    serializer_class = MaterialSupplierReceiveSerializer
+    queryset = MaterialSupplier.objects.all()

@@ -6,7 +6,8 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from rest_framework import serializers
 
-from recipe.models import Material, ProductInfo, ProductBatchingDetail, ProductBatching
+from recipe.models import Material, ProductInfo, ProductBatchingDetail, ProductBatching, MaterialAttribute, \
+    MaterialSupplier
 
 
 class GlobalCodeReceiveSerializer(BaseModelSerializer):
@@ -389,3 +390,58 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                   'dev_type', 'stage', 'equip', 'used_time', 'precept', 'stage_product_batch_no',
                   'versions', 'used_type', 'batching_weight', 'manual_material_weight',
                   'auto_material_weight', 'production_time_interval', 'batching_details')
+
+
+class MaterialAttributeReceiveSerializer(serializers.ModelSerializer):
+    material__material_no = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        material__material_no = attrs.pop('material__material_no')
+        try:
+            material = Material.objects.get(material_no=material__material_no)
+        except Material.DoesNotExist:
+            raise serializers.ValidationError('原材料{}不存在'.format(attrs.get('material__material_no')))
+        attrs['material'] = material
+        return attrs
+
+    def create(self, validated_data):
+        material = validated_data['material']
+        instance = MaterialAttribute.objects.filter(material=material)
+        if instance:
+            instance.update(**validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
+    class Meta:
+        model = MaterialAttribute
+        fields = ('material__material_no', 'safety_inventory', 'period_of_validity', 'validity_unit')
+        extra_kwargs = {'material': {'validators': []}}
+
+
+class MaterialSupplierReceiveSerializer(serializers.ModelSerializer):
+    material__material_no = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        material__material_no = attrs.pop('material__material_no')
+        try:
+            material = Material.objects.get(material_no=material__material_no)
+        except Material.DoesNotExist:
+            raise serializers.ValidationError('原材料{}不存在'.format(attrs.get('material__material_no')))
+        attrs['material'] = material
+        return attrs
+
+    @atomic()
+    def create(self, validated_data):
+        supplier_no = validated_data['supplier_no']
+        instance = MaterialSupplier.objects.filter(supplier_no=supplier_no)
+        if instance:
+            instance.update(**validated_data)
+        else:
+            super().create(validated_data)
+        return validated_data
+
+    class Meta:
+        model = MaterialSupplier
+        fields = ('material__material_no', 'supplier_no', 'provenance', 'use_flag')
+        extra_kwargs = {'supplier_no': {'validators': []}}
