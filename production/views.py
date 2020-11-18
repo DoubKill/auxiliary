@@ -682,14 +682,16 @@ def send_cd_cil(equip_no, user_name):
     # 发送油料、炭黑以及称量信息数据给易控组态
     equip_no_int = int("".join(list(filter(str.isdigit, equip_no))))
     date_dict = {"json": {'data': []}}
-    tank_list = [1, 2]
+    tank_list = ['1', '2']
     for tank_type in tank_list:
         mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
         for mts_obj in mts_set:
             mts_dict = {"latesttime": mts_obj.product_time,
                         "oper": user_name,
                         "matno": int(mts_obj.tank_no),
-                        "matname": mts_obj.material_name + '-' + mts_obj.tank_no,
+                        "matname": "炭黑罐" + str(mts_obj.tank_no) if mts_obj.tank_type == '1' else "油料罐" + str(
+                            mts_obj.tank_no),
+                        "matcode": mts_obj.material_name,
                         "slow": str(mts_obj.low_value),
                         "shark": str(mts_obj.advance_value),
                         "adjust": str(mts_obj.adjust_value),
@@ -697,7 +699,8 @@ def send_cd_cil(equip_no, user_name):
                         "fast_speed": str(mts_obj.fast_speed),
                         "slow_speed": str(mts_obj.low_speed),
                         "machineno": equip_no_int,
-                        "choices": tank_type}
+                        "choices": tank_type,
+                        'matplace': mts_obj.provenance if mts_obj.provenance else " "}
             date_dict['json']['data'].append(mts_dict)
     data = json.dumps(date_dict['json'])
     date_dict['json'] = data
