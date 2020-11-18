@@ -777,12 +777,11 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.save()
             # 发送油料数据给易控组态
             equip_no = obj.equip_no
-        # try:
-        send_cd_cil(equip_no=equip_no, user_name=request.user.username)
-        # except Exception as e:
-        #     print(e)
-            # logger.error(e)
-            # raise ValidationError(f'{equip_no}机台网络连接异常')
+        try:
+            send_cd_cil(equip_no=equip_no, user_name=request.user.username)
+        except Exception as e:
+            logger.error(e)
+            raise ValidationError(f'{equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
