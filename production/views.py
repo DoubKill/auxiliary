@@ -702,6 +702,7 @@ def send_cd_cil(equip_no, user_name):
                         "choices": tank_type,
                         'matplace': mts_obj.provenance if mts_obj.provenance else " "}
             date_dict['json']['data'].append(mts_dict)
+    print(date_dict)
     data = json.dumps(date_dict['json'])
     date_dict['json'] = data
     WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=equip_no_int)
@@ -725,6 +726,7 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
             # id = i['id']
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
+            obj.material_name = i.get("material_name1")
             obj.material_no = i.get("material_no")
             obj.use_flag = i.get("use_flag")
             obj.low_value = i.get("low_value")
@@ -759,6 +761,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             id = i.get("id")
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
+            obj.material_name = i.get("material_name1")
             obj.material_no = i.get("material_no")
             obj.use_flag = i.get("use_flag")
             obj.low_value = i.get("low_value")
@@ -770,11 +773,11 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.provenance = i.get("provenance")
             obj.save()
             # 发送油料数据给易控组态
-            try:
-                send_cd_cil(equip_no=obj.equip_no, user_name=request.user.username)
-            except Exception as e:
-                logger.error(e)
-                raise ValidationError(f'{obj.equip_no}机台网络连接异常')
+            # try:
+        send_cd_cil(equip_no=obj.equip_no, user_name=request.user.username)
+            # except Exception as e:
+            #     logger.error(e)
+            #     raise ValidationError(f'{obj.equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 

@@ -540,7 +540,7 @@ class IssuedPlan(APIView):
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
-            data["matname"] = "炭黑罐" + pbd.tank_no
+            data["matname"] = "卸料" if pbd.tank_no == "卸料" else "炭黑罐" + pbd.tank_no
             data["matcode"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
@@ -568,7 +568,7 @@ class IssuedPlan(APIView):
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
-            data["matname"] = "油料罐" + pbd.tank_no
+            data["matname"] = "卸料" if pbd.tank_no == "卸料" else "油料罐" + pbd.tank_no
             data["matcode"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
