@@ -124,14 +124,20 @@ def add_plan_status():
     tf_set = TrainsFeedbacks.objects.filter(actual_trains__gte=F('plan_trains'))
     if tf_set.exists():
         for tf in tf_set:
-                PlanStatus.objects.create(
-                    plan_classes_uid=tf.plan_classes_uid,
-                    product_no=tf.product_no,
-                    equip_no=tf.equip_no,
-                    status="完成",
-                    operation_user=tf.operation_user,
-                    product_time=tf.product_time,
-                )
+            if PlanStatus.objects.filter(plan_classes_uid=tf.plan_classes_uid,
+                                         product_no=tf.product_no,
+                                         equip_no=tf.equip_no,
+                                         status="完成").exists():
+                continue
+            PlanStatus.objects.create(
+                plan_classes_uid=tf.plan_classes_uid,
+                product_no=tf.product_no,
+                equip_no=tf.equip_no,
+                status="完成",
+                operation_user=tf.operation_user,
+                product_time=tf.product_time,
+            )
+
 
 def plan_status_monitor():
     """计划状态监听"""

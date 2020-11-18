@@ -686,6 +686,8 @@ def send_cd_cil(equip_no, user_name):
     for tank_type in tank_list:
         mts_set = MaterialTankStatus.objects.filter(tank_type=tank_type, equip_no=equip_no)
         for mts_obj in mts_set:
+            if mts_obj.tank_no == "卸料":
+                continue
             mts_dict = {"latesttime": mts_obj.product_time,
                         "oper": user_name,
                         "matno": int(mts_obj.tank_no),
@@ -757,6 +759,7 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
     @atomic()
     def put(self, request, *args, **kwargs):
         data = request.data
+        equip_no = None
         for i in data:
             id = i.get("id")
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
@@ -773,11 +776,13 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
             obj.provenance = i.get("provenance")
             obj.save()
             # 发送油料数据给易控组态
-            # try:
-        send_cd_cil(equip_no=obj.equip_no, user_name=request.user.username)
-            # except Exception as e:
-            #     logger.error(e)
-            #     raise ValidationError(f'{obj.equip_no}机台网络连接异常')
+            equip_no = obj.equip_no
+        # try:
+        send_cd_cil(equip_no=equip_no, user_name=request.user.username)
+        # except Exception as e:
+        #     print(e)
+            # logger.error(e)
+            # raise ValidationError(f'{equip_no}机台网络连接异常')
         return Response("ok", status=status.HTTP_201_CREATED)
 
 
