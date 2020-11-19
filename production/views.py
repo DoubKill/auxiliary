@@ -707,7 +707,7 @@ def send_cd_cil(equip_no, user_name):
     print(date_dict)
     data = json.dumps(date_dict['json'])
     date_dict['json'] = data
-    WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=equip_no_int)
+    WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=str(equip_no_int), equip_name="上辅机")
 
 
 @method_decorator([api_recorder], name="dispatch")
