@@ -534,9 +534,14 @@ class IssuedPlan(APIView):
         for pbd in product_batching_details:
             material_name = pbd.material.material_name
             tank_no = pbd.tank_no
-            if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='1',
-                                                     equip_no=equip).exists():
-                raise ValidationError("炭黑罐中未匹配到该物料，请检查")
+            if material_name == "卸料":
+                if not MaterialTankStatus.objects.filter(material_name=material_name, tank_type='1',
+                                                         equip_no=equip).exists():
+                    raise ValidationError("炭黑罐中未匹配到该物料，请检查")
+            else:
+                if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='1',
+                                                         equip_no=equip).exists():
+                    raise ValidationError("炭黑罐中未匹配到该物料，请检查")
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
@@ -562,9 +567,14 @@ class IssuedPlan(APIView):
         for pbd in product_batching_details:
             material_name = pbd.material.material_name
             tank_no = pbd.tank_no
-            if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='2',
-                                                     equip_no=equip).exists():
-                raise ValidationError("油料罐中未匹配到该物料，请检查")
+            if material_name == "卸料":
+                if not MaterialTankStatus.objects.filter(material_name=material_name, tank_type='2',
+                                                         equip_no=equip).exists():
+                    raise ValidationError("油料罐中未匹配到该物料，请检查")
+            else:
+                if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='2',
+                                                         equip_no=equip).exists():
+                    raise ValidationError("油料罐中未匹配到该物料，请检查")
             sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
