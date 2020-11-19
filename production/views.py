@@ -725,11 +725,10 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         data = request.data
         for i in data:
             id = i.get("id")
-            # id = i['id']
-            # if str(i.get("advance_value")) < "0.01" or str(i.get("advance_value")) > "500":
-            #     raise ValidationError("提前量值异常，请修正后重试")
-            # if str(i.get("low_value")) < "0.01" or str(i.get("low_value"))> "500":
-            #     raise ValidationError("慢称值异常，请修正后重试")
+            if float(i.get("advance_value")) < 0.01 or float(i.get("advance_value")) > 500:
+                raise ValidationError("提前量值必须在[0.01,500]之间，，请修正后重试")
+            if float(i.get("low_value")) < 0.01 or float(i.get("low_value")) > 500:
+                raise ValidationError("慢称值必须在[0.01,500]之间，请修正后重试")
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name1")
@@ -766,10 +765,10 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         equip_no = None
         for i in data:
             id = i.get("id")
-            # if str(i.get("advance_value")) < "0.01" or str(i.get("advance_value")) > "500":
-            #     raise ValidationError("提前量值异常，请修正后重试")
-            # if str(i.get("low_value")) < "0.01" or str(i.get("low_value")) > "500":
-            #     raise ValidationError("慢称值异常，请修正后重试")
+            if float(i.get("advance_value")) < 0.01 or float(i.get("advance_value")) > 500:
+                raise ValidationError("提前量值必须在[0.01,500]之间，请修正后重试")
+            if float(i.get("low_value")) < 0.01 or float(i.get("low_value")) > 500:
+                raise ValidationError("慢称值必须在[0.01,500]之间，请修正后重试")
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
             obj.material_name = i.get("material_name1")
