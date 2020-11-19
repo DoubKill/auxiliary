@@ -104,10 +104,11 @@ class WebService(object):
 
         child_system = ChildSystemInfo.objects.filter(system_name=f"{equip_name}{equip_no}").first()
         recv_ip = child_system.link_address
+        # recv_ip = "10.4.14.52"
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
         body = cls.trans_dict_to_xml(data, category)
-        rep = cls.client(method, url, headers=headers, data=body, timeout=3)
+        rep = cls.client(method, url, headers=headers, data=body, timeout=10)
         # print(rep.text)
         if rep.status_code < 300:
             if "已存在" in rep.text:
@@ -190,7 +191,7 @@ class SqlClient(object):
     def __init__(self, host=BZ_HOST, user=BZ_USR, password=BZ_PASSWORD, sql="select * from v_ASRS_STORE_MESVIEW",
                  db='GZSFJ', equip_no=None, equip_name=None):
         if equip_no and equip_name:
-            csi_obj = ChildSystemInfo.objects.filter(system_name=equip_name+equip_no).first()
+            csi_obj = ChildSystemInfo.objects.filter(system_name=equip_name + equip_no).first()
             host_actual = csi_obj.link_address
             user = "sa"
             password = "123"
