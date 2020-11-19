@@ -707,7 +707,7 @@ def send_cd_cil(equip_no, user_name):
     print(date_dict)
     data = json.dumps(date_dict['json'])
     date_dict['json'] = data
-    WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=equip_no_int)
+    WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=str(equip_no_int), equip_name="上辅机")
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -725,7 +725,6 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         data = request.data
         for i in data:
             id = i.get("id")
-            id = i['id']
             if float(i.get("advance_value")) < 0.01 or float(i.get("advance_value")) > 500:
                 raise ValidationError("提前量值必须在[0.01,500]之间，，请修正后重试")
             if float(i.get("low_value")) < 0.01 or float(i.get("low_value")) > 500:
