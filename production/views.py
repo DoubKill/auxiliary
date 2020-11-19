@@ -726,9 +726,9 @@ class WeighParameterCarbonViewSet(CommonDeleteMixin, ModelViewSet):
         for i in data:
             id = i.get("id")
             # id = i['id']
-            if i.get("advance_value") < "0.01" or i.get("advance_value") > "500":
+            if str(i.get("advance_value")) < "0.01" or str(i.get("advance_value")) > "500":
                 raise ValidationError("提前量值异常，请修正后重试")
-            if i.get("low_value") < "0.01" or i.get("low_value") > "500":
+            if str(i.get("low_value")) < "0.01" or str(i.get("low_value"))> "500":
                 raise ValidationError("慢称值异常，请修正后重试")
             obj = MaterialTankStatus.objects.get(pk=id)
             obj.tank_name = i.get("tank_name")
@@ -766,9 +766,9 @@ class WeighParameterFuelViewSet(mixins.CreateModelMixin,
         equip_no = None
         for i in data:
             id = i.get("id")
-            if i.get("advance_value") < "0.01" or i.get("advance_value") > "500":
+            if str(i.get("advance_value")) < "0.01" or str(i.get("advance_value")) > "500":
                 raise ValidationError("提前量值异常，请修正后重试")
-            if i.get("low_value") < "0.01" or i.get("low_value") > "500":
+            if str(i.get("low_value")) < "0.01" or str(i.get("low_value")) > "500":
                 raise ValidationError("慢称值异常，请修正后重试")
             obj = MaterialTankStatus.objects.get(pk=i.get("id"))
             obj.tank_name = i.get("tank_name")
