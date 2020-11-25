@@ -67,5 +67,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('equip-status-plan-list/', EquipStatusPlanList.as_view()),  # 主页面展示
     path('equip-detailed-list/', EquipDetailedList.as_view()),  # 主页面详情展示
-    path('tank-weigh-sync/', TankWeighSyncView.as_view())   # 物料罐及称量信息同步
+    path('tank-weigh-sync/', TankWeighSyncView.as_view()),   # 物料罐及称量信息同步
 ]

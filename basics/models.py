@@ -50,6 +50,8 @@ class WorkSchedule(AbstractEntity):
     description = models.CharField(max_length=256, blank=True, null=True,
                                    help_text='说明', verbose_name='说明')
     use_flag = models.BooleanField(help_text='是否启用', verbose_name='是否启用', default=True)
+    work_procedure = models.ForeignKey(GlobalCode, models.CASCADE, help_text='工序', verbose_name='工序',
+                                       related_name="work_schedules", default=69)
 
     def __str__(self):
         return self.schedule_name
