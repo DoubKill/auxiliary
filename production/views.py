@@ -15,6 +15,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from django.db.transaction import atomic
+from rest_framework_extensions.cache.decorators import cache_response
+
 from basics.models import PlanSchedule, Equip
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
@@ -808,6 +810,7 @@ class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
+    @cache_response(timeout=60 * 10, cache='default')
     def get(self, request, *args, **kwargs):
 
         equip_nos = Equip.objects.filter(use_flag=True, category__equip_type__global_name="密炼设备").order_by(
