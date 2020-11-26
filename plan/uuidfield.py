@@ -9,7 +9,7 @@ class UUidTools(object):
     @staticmethod
     def uuid1_hex(equip_no):
         global i
-        if i == 99:
+        if i >= 99:
             i = 0
         i += 1
 
