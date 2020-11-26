@@ -68,6 +68,14 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'mes.urls'
 AUTH_USER_MODEL = 'system.User'
 
+# drf扩展: 缓存配置, 获取省份和区县接口使用到
+REST_FRAMEWORK_EXTENSIONS = {
+    # 缓存时间(1小时)
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 10,
+    # 缓存到哪里 (caches中配置的default)
+    'DEFAULT_USE_CACHE': 'default',
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
