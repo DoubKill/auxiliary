@@ -235,7 +235,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
     material_name1 = serializers.SerializerMethodField(read_only=True, help_text='原材料名称')
 
     def get_material_name1(self, obj):
-        tfb_obj = Material.objects.filter(material_no=obj.material_name, use_flag=True).last()
+        tfb_obj = Material.objects.filter(material_name=obj.material_name, use_flag=True).last()
         if tfb_obj:
             return tfb_obj.material_name
         else:
