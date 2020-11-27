@@ -690,7 +690,8 @@ def send_cd_cil(equip_no, user_name):
         for mts_obj in mts_set:
             if mts_obj.tank_no == "卸料":
                 continue
-            mts_dict = {"latesttime": mts_obj.product_time.strftime("%Y-%m-%d %H:%M:%S"),
+            last_time = mts_obj.product_time.strftime("%Y-%m-%d %H:%M:%S") if mts_obj.product_time else mts_obj.product_time,
+            mts_dict = {"latesttime": last_time,
                         "oper": user_name,
                         "matno": int(mts_obj.tank_no),
                         "matname": "炭黑罐" + str(mts_obj.tank_no) if mts_obj.tank_type == '1' else "油料罐" + str(
