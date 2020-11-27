@@ -41,11 +41,22 @@ class GlobalCodeReceiveSerializer(BaseModelSerializer):
 
 class WorkScheduleReceiveSerializer(BaseModelSerializer):
     """倒班管理"""
+    work_procedure__global_no = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        work_procedure_no = attrs.pop('work_procedure__global_no')
+        try:
+            work_procedure = GlobalCode.objects.get(global_no=work_procedure_no)
+        except GlobalCode.DoesNotExist:
+            raise serializers.ValidationError('工序{}不存在'.format(attrs.get('work_procedure')))
+        attrs['work_procedure'] = work_procedure
+        return attrs
 
     @atomic()
     def create(self, validated_data):
         schedule_no = validated_data['schedule_no']
-        instance = WorkSchedule.objects.filter(schedule_no=schedule_no).first()
+        work_procedure = validated_data['work_procedure']
+        instance = WorkSchedule.objects.filter(schedule_no=schedule_no, work_procedure=work_procedure).first()
         if instance:
             super().update(instance, validated_data)
         else:
@@ -54,7 +65,7 @@ class WorkScheduleReceiveSerializer(BaseModelSerializer):
 
     class Meta:
         model = WorkSchedule
-        fields = '__all__'
+        fields = ("schedule_no", "schedule_name", "period", "description", "use_flag", "work_procedure__global_no")
         read_only_fields = COMMON_READ_ONLY_FIELDS
         extra_kwargs = {'schedule_no': {'validators': []}}
 

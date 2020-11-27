@@ -525,7 +525,6 @@ class IssuedPlan(APIView):
     def _map_cb(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(type=2)
-        sn = 0
         # equip = product_batching.equip.equip_no
         if len(equip_no) == 1:
             equip = "Z0" + equip_no
@@ -547,7 +546,6 @@ class IssuedPlan(APIView):
                 if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='1',
                                                          equip_no=equip).exists():
                     raise ValidationError("炭黑罐中未匹配到该物料，请检查")
-            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = "卸料" if tank_no == "卸料" else "炭黑罐" + tank_no
@@ -555,7 +553,7 @@ class IssuedPlan(APIView):
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = sn
+            data["act_code"] = pbd.sn
             data["mattype"] = "C"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)
@@ -568,7 +566,6 @@ class IssuedPlan(APIView):
             equip = "Z0" + equip_no
         else:
             equip = "Z" + equip_no
-        sn = 0
         for pbd in product_batching_details:
             material_name = pbd.material.material_name
             tank_no = pbd.tank_no
@@ -585,16 +582,14 @@ class IssuedPlan(APIView):
                 if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='2',
                                                          equip_no=equip).exists():
                     raise ValidationError("油料罐中未匹配到该物料，请检查")
-            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
-
             data["matname"] = "卸料" if tank_no == "卸料" else "油料罐" + tank_no
             data["matcode"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = sn
+            data["act_code"] = pbd.sn
             data["mattype"] = "O"  # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
@@ -603,16 +598,14 @@ class IssuedPlan(APIView):
     def _map_ploy(self, product_batching, product_batching_details, equip_no):
         datas = []
         product_batching_details = product_batching_details.filter(type=1)
-        sn = 0
         for pbd in product_batching_details:
-            sn += 1
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = pbd.material.material_name
             data["set_weight"] = pbd.actual_weight
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
-            data["act_code"] = sn
+            data["act_code"] = pbd.sn
             data["mattype"] = "P"  # 炭黑
             data["machineno"] = int(equip_no)
             datas.append(data)

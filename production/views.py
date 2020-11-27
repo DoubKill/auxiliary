@@ -15,6 +15,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from django.db.transaction import atomic
+from rest_framework_extensions.cache.decorators import cache_response
+
 from basics.models import PlanSchedule, Equip
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
@@ -808,6 +810,7 @@ class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
+    @cache_response(timeout=60 * 10, cache='default')
     def get(self, request, *args, **kwargs):
 
         equip_nos = Equip.objects.filter(use_flag=True, category__equip_type__global_name="密炼设备").order_by(
@@ -1361,22 +1364,23 @@ class TankWeighSyncView(APIView):
         [slow_speed] -- 慢称速度
         [machineno] --机台号"""
         for data in data_list:
-            name = data.get("matname")
-            no = data.get("matno")
-            code = "炭黑" if data.get("code") == 2 else "油料"
-            equip = data.get("machineno")
+            material_name = data.get("material_name")
+            tank_no = data.get("tank_no")
+            material_type = "炭黑" if data.get("material_type") == 1 else "油料"
+            equip_no = data.get("equip_no")
             try:
-                MaterialTankStatus.objects.filter(equip_no=equip, tank_no=no, material_type=code
+                MaterialTankStatus.objects.filter(equip_no=equip_no, tank_no=str(tank_no), material_type=material_type
                                                   ).update(
-                    material_name=name,
-                    material_no=name,
-                    low_value=data.get("slow", 2),
-                    advance_value=data.get("shark", 2),
-                    adjust_value=data.get("adjust", 2),
-                    dot_time=data.get("sharktime", 2),
+                    material_name=material_name,
+                    material_no=material_name,
+                    low_value=data.get("low_value", 2),
+                    advance_value=data.get("advance_value", 2),
+                    adjust_value=data.get("adjust_value", 2),
+                    dot_time=data.get("dot_time", 2),
                     fast_speed=data.get("fast_speed", 2),
-                    low_speed=data.get("slow_speed", 2),
-                    product_time=data.get("latesttime", datetime.datetime.now())
+                    low_speed=data.get("low_speed", 2),
+                    product_time=data.get("product_time", datetime.datetime.now()),
+                    provenance=data.get("provenance")
                 )
             except Exception as e:
                 raise ValidationError(f"上行同步罐称量信息失败，详情{e}")
