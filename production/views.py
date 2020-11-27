@@ -690,7 +690,7 @@ def send_cd_cil(equip_no, user_name):
         for mts_obj in mts_set:
             if mts_obj.tank_no == "卸料":
                 continue
-            mts_dict = {"latesttime": mts_obj.product_time,
+            mts_dict = {"latesttime": mts_obj.product_time.strftime("%Y-%m-%d %H:%M:%S"),
                         "oper": user_name,
                         "matno": int(mts_obj.tank_no),
                         "matname": "炭黑罐" + str(mts_obj.tank_no) if mts_obj.tank_type == '1' else "油料罐" + str(
@@ -706,7 +706,6 @@ def send_cd_cil(equip_no, user_name):
                         "choices": tank_type,
                         'matplace': mts_obj.provenance if mts_obj.provenance else " "}
             date_dict['json']['data'].append(mts_dict)
-    print(date_dict)
     data = json.dumps(date_dict['json'])
     date_dict['json'] = data
     WebService.issue(date_dict, 'collect_weigh_parameter_service', equip_no=str(equip_no_int), equip_name="上辅机")

@@ -18,7 +18,7 @@ from recipe.models import Material, ProductProcess, ProductBatching, ProductInfo
 @atomic()
 def read_material_excel_data():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('原材料')
+    table = data.sheet_by_name('pmt_mat_Ploy')
     for rowNum in range(1, table.nrows):
         value = table.row_values(rowNum)
         material_name = value[2].strip()
@@ -65,7 +65,7 @@ def read_material_excel_data():
                                                    material_name=material_name,
                                                    material_type_id=material_type_id)
                     except:
-                        Material.objects.get_or_create(material_no=material_no+"-2",
+                        Material.objects.get_or_create(material_no=material_no+"-3",
                                                        material_name=material_name,
                                                        material_type_id=material_type_id)
             except Exception:
@@ -85,9 +85,9 @@ def read_material_excel_data():
 @atomic()
 def read_product_process():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配方步序')
+    table = data.sheet_by_name('pmt_recipe')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z02')
+    equip = Equip.objects.get(equip_no='Z01')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -139,9 +139,9 @@ def read_product_process():
 @atomic()
 def read_product_batching1():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配料详情1')
+    table = data.sheet_by_name('pmt_weigh_Ploy')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z02')
+    equip = Equip.objects.get(equip_no='Z01')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -188,9 +188,9 @@ def read_product_batching1():
 @atomic()
 def read_product_batching2():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配料详情2')
+    table = data.sheet_by_name('pmt_weigh_CB')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z02')
+    equip = Equip.objects.get(equip_no='Z01')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -238,9 +238,9 @@ def read_product_batching2():
 @atomic()
 def read_product_batching3():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配料详情3')
+    table = data.sheet_by_name('pmt_weigh_Oil1')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z02')
+    equip = Equip.objects.get(equip_no='Z01')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -288,9 +288,9 @@ def read_product_batching3():
 @atomic()
 def read_product_process_detail():
     data = xlrd.open_workbook('recipe.xls')
-    table = data.sheet_by_name('配方步序详情')
+    table = data.sheet_by_name('pmt_mix')
     factory = GlobalCode.objects.get(global_name='安吉')
-    equip = Equip.objects.get(equip_no='Z02')
+    equip = Equip.objects.get(equip_no='Z01')
     for rowNum in range(1, table.nrows):
         try:
             value = table.row_values(rowNum)
@@ -338,7 +338,7 @@ def read_product_process_detail():
 
 
 def count_weight():
-    pb_set = ProductBatching.objects.filter(equip__equip_no="Z02")
+    pb_set = ProductBatching.objects.filter(equip__equip_no="Z01")
     for pb in pb_set:
         temp = pb.batching_details.all().filter(delete_flag=False).aggregate(weight=Sum("actual_weight"))
         if temp:
@@ -349,9 +349,9 @@ def count_weight():
 
 
 if __name__ == '__main__':
-    read_material_excel_data()
+    # read_material_excel_data()
     # read_product_batching1()
-    # read_product_batching2()
+    read_product_batching2()
     # read_product_batching3()
     # read_product_process()
     # read_product_process_detail()
