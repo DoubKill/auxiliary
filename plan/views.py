@@ -124,7 +124,7 @@ class PlanStatusList(APIView):
     def get(self, request):
         params = request.query_params
         equip_no = params.get('equip_no')
-        ps_obj = PlanStatus.objects.filter(equip_no=equip_no).last()
+        ps_obj = PlanStatus.objects.filter(equip_no=equip_no, status='运行中').last()
         plan_status_list = {}
         if not ps_obj:
             return Response({'results': plan_status_list}, 200)
