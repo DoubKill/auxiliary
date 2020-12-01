@@ -135,8 +135,8 @@ class PlanStatusList(APIView):
             if not pcp_obj:
                 return Response({'results': plan_status_list}, 200)
             plan_status_list['equip_no'] = equip_no
-            plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time
-            plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time
+            plan_status_list['begin_time'] = pcp_obj.work_schedule_plan.start_time.strftime("%Y-%m-%d %H:%M:%S")
+            plan_status_list['end_time'] = pcp_obj.work_schedule_plan.end_time.strftime("%Y-%m-%d %H:%M:%S")
             plan_status_list['product_no'] = pcp_obj.product_day_plan.product_batching.stage_product_batch_no
             plan_status_list['plan_classes_uid'] = pcp_obj.plan_classes_uid
             plan_status_list['plan_trains'] = pcp_obj.plan_trains
