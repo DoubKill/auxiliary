@@ -166,20 +166,20 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     group = serializers.CharField(source='work_schedule_plan.group.global_name', read_only=True, help_text='班组')
     # begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
     # end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
-    begin_time = serializers.DateTimeField(read_only=True, help_text='开始时间')
-    end_time = serializers.DateTimeField(read_only=True, help_text='结束时间')
+    begin_time = serializers.SerializerMethodField(read_only=True, help_text='开始时间')
+    end_time = serializers.SerializerMethodField(read_only=True, help_text='结束时间')
 
     def get_begin_time(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').first()
         if tfb_obj:
-            return tfb_obj.begin_time
+            return tfb_obj.begin_time.strftime("%Y-%m-%d %H:%M:%S")
         else:
             return None
 
     def get_end_time(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').last()
         if tfb_obj:
-            return tfb_obj.end_time
+            return tfb_obj.end_time.strftime("%Y-%m-%d %H:%M:%S")
         else:
             return None
 
