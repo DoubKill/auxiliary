@@ -164,8 +164,24 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     status = serializers.SerializerMethodField(read_only=True, help_text='状态')
     day_time = serializers.DateField(source='work_schedule_plan.plan_schedule.day_time', read_only=True)
     group = serializers.CharField(source='work_schedule_plan.group.global_name', read_only=True, help_text='班组')
-    begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
-    end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
+    # begin_time = serializers.DateTimeField(source='work_schedule_plan.start_time', read_only=True, help_text='开始时间')
+    # end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
+    begin_time = serializers.DateTimeField(read_only=True, help_text='开始时间')
+    end_time = serializers.DateTimeField(read_only=True, help_text='结束时间')
+
+    def get_begin_time(self, obj):
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').first()
+        if tfb_obj:
+            return tfb_obj.begin_time
+        else:
+            return None
+
+    def get_end_time(self, obj):
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').last()
+        if tfb_obj:
+            return tfb_obj.end_time
+        else:
+            return None
 
     def get_actual_trains(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
@@ -314,7 +330,6 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         model = ProductClassesPlan
         fields = ('trains',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
-
 
     @atomic()
     def update(self, instance, validated_data):
