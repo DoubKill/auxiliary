@@ -40,7 +40,7 @@ class BaseDownloader(object):
         # data["status"] = "完成"
         resp = self.session.post(url, data=data)
         if resp.status_code != 201:
-            raise Exception(resp.content)
+            raise Exception(resp.text)
         return resp.json()
 
     def download(self):
@@ -103,7 +103,7 @@ class ProductClassesPlanDown(BaseDownloader):
         'id', 'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan__work_schedule_plan_no',
         'plan_classes_uid', 'note', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'status',
         'product_day_plan__equip__equip_no', 'product_day_plan__product_batching__stage_product_batch_no',
-        'product_day_plan__plan_schedule__plan_schedule_no', 'delete_flag','created_date')
+        'product_day_plan__plan_schedule__plan_schedule_no', 'delete_flag', 'created_date')
     model = ProductClassesPlan
     # exclude_dict = {'status': '等待'}
 
