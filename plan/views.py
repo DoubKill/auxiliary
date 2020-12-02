@@ -426,7 +426,7 @@ class IssuedPlan(APIView):
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
             'lasttime': params.get("day_time", issue_time),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
-            'starttime': params.get("begin_time", pcp_obj.work_schedule_plan.start_time), # 开始时间
+            'startime': params.get("begin_time", pcp_obj.work_schedule_plan.start_time), # 开始时间
             'stoptime': params.get("end_time", pcp_obj.work_schedule_plan.end_time),  # 结束时间
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
