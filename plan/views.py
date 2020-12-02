@@ -419,14 +419,15 @@ class IssuedPlan(APIView):
         return datas
 
     def _map_Shengchanjihua(self, params, pcp_obj):
+        issue_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         data = {
             'id': pcp_obj.id,  # id
             'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
-            'lasttime': params.get("day_time", datetime.datetime.now()),  # 班日期
+            'lasttime': params.get("day_time", issue_time),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
-            'startime': params.get("begin_time", datetime.datetime.now()),  # 开始时间
-            'stoptime': params.get("end_time", datetime.datetime.now()),  # 结束时间
+            'startime': params.get("begin_time", issue_time),  # 开始时间
+            'stoptime': params.get("end_time", issue_time),  # 结束时间
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
@@ -664,13 +665,14 @@ class IssuedPlan(APIView):
 
     def _map_plan(self, params, pcp_obj, equip_no):
         data = OrderedDict()
+        issue_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         data['id'] = pcp_obj.id  # id
         data['recipe_name'] = params.get("stage_product_batch_no", None)  # 配方名
         data['recipe_code'] = params.get("stage_product_batch_no", None)  # 配方编号
-        data['latesttime'] = params.get("created_date", None)  # 计划创建时间
+        data['latesttime'] = params.get("created_date", issue_time)  # 计划创建时间
         data['planid'] = params.get("plan_classes_uid", None)  # 计划编号  plan_no
-        data['starttime'] = params.get("begin_time", None)  # 开始时间
-        data['stoptime'] = params.get("end_time", None)  # 结束时间
+        data['starttime'] = params.get("begin_time", issue_time)  # 开始时间
+        data['stoptime'] = params.get("end_time", issue_time)  # 结束时间
         data['grouptime'] = params.get("classes", None)  # 班次
         data['groupoper'] = params.get("group", None)  # 班组????
         data['setno'] = params.get("plan_trains", 1)  # 设定车次
