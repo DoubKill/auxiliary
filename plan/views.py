@@ -426,8 +426,8 @@ class IssuedPlan(APIView):
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
             'lasttime': params.get("day_time", issue_time),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
-            'startime': params.get("begin_time", pcp_obj.work_schedule_plan.start_time), # 开始时间
-            'stoptime': params.get("end_time", pcp_obj.work_schedule_plan.end_time),  # 结束时间
+            'startime': params.get("begin_time", pcp_obj.work_schedule_plan.start_time.strftime("%Y-%m-%d %H:%M:%S")), # 开始时间
+            'stoptime': params.get("end_time", pcp_obj.work_schedule_plan.end_time.strftime("%Y-%m-%d %H:%M:%S")),  # 结束时间
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
@@ -672,8 +672,8 @@ class IssuedPlan(APIView):
         data['recipe_code'] = params.get("stage_product_batch_no", None)  # 配方编号
         data['latesttime'] = params.get("created_date", issue_time)  # 计划创建时间
         data['planid'] = params.get("plan_classes_uid", None)  # 计划编号  plan_no
-        data['starttime'] = params.get("begin_time", pcp_obj.work_schedule_plan.start_time)  # 开始时间
-        data['stoptime'] = params.get("end_time", pcp_obj.work_schedule_plan.end_time)  # 结束时间
+        data['starttime'] = params.get("begin_time", pcp_obj.work_schedule_plan.start_time.strftime("%Y-%m-%d %H:%M:%S"))  # 开始时间
+        data['stoptime'] = params.get("end_time", pcp_obj.work_schedule_plan.end_time.strftime("%Y-%m-%d %H:%M:%S"))  # 结束时间
         data['grouptime'] = params.get("classes", None)  # 班次
         data['groupoper'] = params.get("group", None)  # 班组????
         data['setno'] = params.get("plan_trains", 1)  # 设定车次
@@ -720,7 +720,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该计划已存在于上辅机，请勿重复下达")
+            raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
