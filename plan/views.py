@@ -423,10 +423,10 @@ class IssuedPlan(APIView):
             'id': pcp_obj.id,  # id
             'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
-            'lasttime': params.get("day_time", None),  # 班日期
+            'lasttime': params.get("day_time", datetime.datetime.now()),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
-            'startime': params.get("begin_time", None),  # 开始时间
-            'stoptime': params.get("end_time", None),  # 结束时间
+            'startime': params.get("begin_time", datetime.datetime.now()),  # 开始时间
+            'stoptime': params.get("end_time", datetime.datetime.now()),  # 结束时间
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
