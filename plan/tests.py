@@ -27,10 +27,12 @@ from production.models import PlanStatus
 #     PlanStatus.objects.filter().update(status='等待')
 
 
-# pcp_set = ProductClassesPlan.objects.all()
-# for pcp_obj in pcp_set:
-#     uid = pcp_obj.plan_classes_uid
-#     new_pcp = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=uid)
-#     print(pcp_obj.plan_trains, new_pcp.first().plan_trains)
-#     print('---------------------------------------------------')
-#     # new_pcp.update(plan_trains=pcp_obj.plan_trains)
+pcp_set = ProductClassesPlan.objects.all()
+for pcp_obj in pcp_set:
+    uid = pcp_obj.plan_classes_uid
+    new_pcp = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=uid).first()
+    # if pcp_obj.created_date == new_pcp.created_date:
+    if pcp_obj.delete_flag == new_pcp.delete_flag:
+        print(pcp_obj.created_date, pcp_obj.plan_classes_uid)
+        print('---------------------------------------------------')
+    # new_pcp.update(plan_trains=pcp_obj.plan_trains)
