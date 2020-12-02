@@ -690,7 +690,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+            raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
 

@@ -79,7 +79,7 @@ REST_FRAMEWORK_EXTENSIONS = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'dist'), ],
+        'DIRS': [os.path.join(BASE_DIR, 'dist'),],
         # 'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -92,9 +92,9 @@ TEMPLATES = [
         },
     },
 ]
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'dist/static/'),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'dist/static/'),
+# ]
 
 WSGI_APPLICATION = 'mes.wsgi.application'
 
@@ -248,40 +248,24 @@ LOGGING = {
     },
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#         'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
-#         'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
-#         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
-#         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
-#         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
-#     }
-# }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
+    }
+}
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
 #     }
 # }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'NAME': os.getenv('SFJ_DATABASE_NAME', 'AJLJ'),  # 数据库名称
-        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'mes'),  # 用户名
-        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes@2020'),  # 密码
-        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.10.54'),  # HOST
-        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
-    },
-    'mes': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'zcaj1',  # 数据库SID
-        'USER': 'zcajlj',
-        'PASSWORD': 'zcajmes2020',
-        'HOST': '10.4.10.17',
-        'PORT': '1521'
-    }
-}
 
 
 # Password validation
@@ -323,7 +307,7 @@ STATIC_ROOT = os.environ.get('STATIC_ROOT', os.path.join(BASE_DIR, "static/"))
 
 STATICFILES_DIRS = [
     # os.path.join(BASE_DIR, 'static'),# 项目默认会有的路径，如果你部署的不仅是前端打包的静态文件，项目目录static文件下还有其他文件，最好不要删
-    os.path.join(BASE_DIR, "dist/static"),  # 加上这条
+    os.path.join(BASE_DIR, "dist/static"),# 加上这条
 ]
 
 LANGUAGES = (
