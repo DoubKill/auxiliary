@@ -63,7 +63,7 @@ class ProductBatchingDown(BaseDownloader):
         'id', 'factory__global_no', 'site__global_no', 'product_info__product_no', 'precept', 'stage_product_batch_no',
         'dev_type__category_no', 'stage__global_no', 'versions', 'used_type', 'batching_weight',
         'manual_material_weight', 'auto_material_weight', 'volume', 'production_time_interval', 'equip__equip_no',
-        'batching_type')
+        'batching_type', 'delete_flag', 'created_date')
     model = ProductBatching
     filter_dict = {"batching_type": 1, "used_type": 4}
 
@@ -73,7 +73,7 @@ class MaterialDown(BaseDownloader):
     type = 9
     upload_fields = (
         'id', 'material_no', 'material_name', 'for_short', 'material_type__global_no', 'package_unit__global_no',
-        'use_flag')
+        'use_flag', 'delete_flag', 'created_date')
     model = Material
 
 
@@ -83,7 +83,7 @@ class ProductBatchingDetailDown(BaseDownloader):
     upload_fields = (
         'id', 'product_batching__stage_product_batch_no', 'sn', 'material__material_no', 'actual_weight',
         'standard_error',
-        'auto_flag', 'type')
+        'auto_flag', 'type', 'delete_flag', 'created_date')
     filter_dict = {"product_batching__batching_type": 1, "product_batching__used_type": 4}
     model = ProductBatchingDetail
 
@@ -92,7 +92,8 @@ class ProductDayPlanDown(BaseDownloader):
     path = "api/v1/plan/product-day-plan-receive/"
     type = 13
     upload_fields = (
-        'id', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'plan_schedule__plan_schedule_no')
+        'id', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'plan_schedule__plan_schedule_no',
+        'delete_flag', 'created_date')
     model = ProductDayPlan
 
 
@@ -103,7 +104,7 @@ class ProductClassesPlanDown(BaseDownloader):
         'id', 'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan__work_schedule_plan_no',
         'plan_classes_uid', 'note', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'status',
         'product_day_plan__equip__equip_no', 'product_day_plan__product_batching__stage_product_batch_no',
-        'product_day_plan__plan_schedule__plan_schedule_no', 'delete_flag','created_date')
+        'product_day_plan__plan_schedule__plan_schedule_no', 'delete_flag', 'created_date')
     model = ProductClassesPlan
     # exclude_dict = {'status': '等待'}
 
