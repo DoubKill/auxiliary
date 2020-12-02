@@ -423,10 +423,10 @@ class IssuedPlan(APIView):
             'id': pcp_obj.id,  # id
             'recipe': params.get("stage_product_batch_no", None),  # 配方名
             'recipeid': params.get("stage_product_batch_no", None),  # 配方编号
-            'lasttime': params.get("day_time", None),  # 班日期
+            'lasttime': params.get("day_time"),  # 班日期
             'planid': params.get("plan_classes_uid", None),  # 计划编号  plan_no
-            'startime': params.get("begin_time", None),  # 开始时间
-            'stoptime': params.get("end_time", None),  # 结束时间
+            'startime': pcp_obj.work_schedule_plan.start_time.strftime("%Y-%m-%d %H:%M:%S"), # 开始时间
+            'stoptime': pcp_obj.work_schedule_plan.end_time.strftime("%Y-%m-%d %H:%M:%S"),  # 结束时间
             'grouptime': params.get("classes", None),  # 班次
             'groupoper': params.get("group", None),  # 班组????
             'setno': params.get("plan_trains", 1),  # 设定车次
@@ -664,16 +664,19 @@ class IssuedPlan(APIView):
 
     def _map_plan(self, params, pcp_obj, equip_no):
         data = OrderedDict()
+        start_time = pcp_obj.work_schedule_plan.start_time.strftime("%Y-%m-%d %H:%M:%S")
+        end_time = pcp_obj.work_schedule_plan.end_time.strftime("%Y-%m-%d %H:%M:%S")
+        product_no = pcp_obj.product_batching.stage_product_batch_no
         data['id'] = pcp_obj.id  # id
-        data['recipe_name'] = params.get("stage_product_batch_no", None)  # 配方名
-        data['recipe_code'] = params.get("stage_product_batch_no", None)  # 配方编号
-        data['latesttime'] = params.get("created_date", None)  # 计划创建时间
-        data['planid'] = params.get("plan_classes_uid", None)  # 计划编号  plan_no
-        data['starttime'] = params.get("begin_time", None)  # 开始时间
-        data['stoptime'] = params.get("end_time", None)  # 结束时间
-        data['grouptime'] = params.get("classes", None)  # 班次
-        data['groupoper'] = params.get("group", None)  # 班组????
-        data['setno'] = params.get("plan_trains", 1)  # 设定车次
+        data['recipe_name'] = product_no  # 配方名
+        data['recipe_code'] = product_no  # 配方编号
+        data['latesttime'] = pcp_obj.created_date.strftime("%Y-%m-%d %H:%M:%S")  # 计划创建时间
+        data['planid'] = pcp_obj.plan_classes_uid  # 计划编号  plan_no
+        data['starttime'] = start_time  # 开始时间
+        data['stoptime'] = end_time  # 结束时间
+        data['grouptime'] = pcp_obj.work_schedule_plan.classes.global_name  # 班次
+        data['groupoper'] = pcp_obj.work_schedule_plan.group.global_name  # 班组????
+        data['setno'] = pcp_obj.plan_trains
         data['actno'] = 0,  # 当前车次
         data['oper'] = self.request.user.username  # 操作员角色
         data['runstate'] = '运行中'  # 计划状态：等待，运行中，完成
@@ -687,7 +690,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该配方已存在于上辅机，请勿重复下达")
+            raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
 
@@ -717,7 +720,7 @@ class IssuedPlan(APIView):
         try:
             status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            raise ValidationError("该计划已存在于上辅机，请勿重复下达")
+            raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
         if not status:
