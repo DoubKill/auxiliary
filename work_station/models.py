@@ -1349,3 +1349,126 @@ class IfupReportWeight(models.Model):
     class Meta:
         # managed = False
         db_table = 'ifup_report_weight'
+
+
+class SfjProducePlan(models.Model):
+    """上辅机计划主表"""
+    recipe_name = models.CharField(max_length=20)
+    recipe_code = models.CharField(max_length=20)
+    latesttime = models.DateTimeField()
+    planid = models.CharField(max_length=20)
+    starttime = models.DateTimeField()
+    stoptime = models.DateTimeField()
+    grouptime = models.CharField(max_length=10)
+    groupoper = models.CharField(max_length=10)
+    setno = models.IntegerField()
+    finishno = models.IntegerField()
+    oper = models.CharField(max_length=20)
+    runstate = models.CharField(max_length=10)
+    runmark = models.IntegerField()
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'produce_plan'
+
+
+
+class SfjRecipeCon(models.Model):
+    """上辅机配方主表"""
+    latesttime = models.DateTimeField()
+    oper = models.CharField(max_length=20)
+    recipe_name = models.CharField(max_length=20)
+    recipe_code = models.CharField(max_length=20)
+    equip_code = models.DecimalField(max_digits=5, decimal_places=3)
+    mini_time = models.IntegerField()
+    max_time = models.IntegerField()
+    mini_temp = models.IntegerField()
+    max_temp = models.IntegerField()
+    over_temp = models.IntegerField()
+    reuse_time = models.IntegerField()
+    if_not = models.IntegerField()
+    rot_temp = models.IntegerField()
+    shut_temp = models.IntegerField()
+    side_temp = models.IntegerField()
+    temp_on_off = models.IntegerField()
+    sp_num = models.IntegerField()
+    recipe_off = models.IntegerField()
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipe_con'
+
+
+class SfjRecipeCb(models.Model):
+    """上辅机炭黑配料表"""
+    matname = models.CharField(max_length=32)
+    matcode = models.CharField(max_length=32)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField()
+    mattype = models.CharField(max_length=10)
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+
+    class Meta:
+        managed = False
+        db_table = 'recipe_cb'
+
+
+class SfjRecipeOil1(models.Model):
+    """上辅机油配料表"""
+    matname = models.CharField(max_length=32)
+    matcode = models.CharField(max_length=32)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField()
+    mattype = models.CharField(max_length=10)
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipe_oil1'
+
+
+class SfjRecipeGum(models.Model):
+    """上辅机炭胶料料表"""
+    matname = models.CharField(max_length=32)
+    set_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    error_allow = models.DecimalField(max_digits=10, decimal_places=2)
+    recipe_name = models.CharField(max_length=20)
+    act_code = models.IntegerField()
+    mattype = models.CharField(max_length=10)
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipe_gum'
+
+
+class SfjRecipeMix(models.Model):
+    """上辅机炭黑配料表"""
+    recipe_name = models.CharField(max_length=20)
+    set_condition = models.CharField(max_length=20)
+    set_time = models.IntegerField()
+    set_temp = models.IntegerField()
+    set_ener = models.DecimalField(max_digits=5, decimal_places=1)
+    set_power = models.DecimalField(max_digits=5, decimal_places=1)
+    act_code = models.CharField(max_length=20)
+    set_pres = models.IntegerField()
+    set_rota = models.IntegerField()
+    ID_step = models.IntegerField()
+    machineno = models.IntegerField()
+    flag = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipe_mix'
