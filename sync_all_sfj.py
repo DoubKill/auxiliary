@@ -103,7 +103,7 @@ def sync_plan(db, pb):
         group = plan.groupoper
         h = int(actual_times.strftime("%H"))
         times = actual_times.strftime("%Y-%m-%d")
-        if classes in ["晚班", "夜班"]:
+        if classes in ["夜班", "夜班"]:
             if 0 < h < 8:
                 times = (actual_times + datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
         # 2、代码核心（这里应该没啥子问题）

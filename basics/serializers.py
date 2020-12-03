@@ -246,14 +246,14 @@ class PlanScheduleSerializer(BaseModelSerializer):
         morning_class = ClassesDetail.objects.filter(work_schedule=instance.work_schedule,
                                                      classes__global_name='早班').first()
         evening_class = ClassesDetail.objects.filter(work_schedule=instance.work_schedule,
-                                                     classes__global_name='晚班').first()
+                                                     classes__global_name='夜班').first()
         for plan in work_schedule_plan:
             classes = plan['classes']
             class_detail = ClassesDetail.objects.filter(work_schedule=instance.work_schedule,
                                                         classes=plan['classes']).first()
             if not class_detail:
                 raise serializers.ValidationError('暂无此班次倒班数据')
-            if classes.global_name == '晚班':  # 晚班的结束时间小于等于早班的开始时间，日期则加一天
+            if classes.global_name == '夜班':  # 夜班的结束时间小于等于早班的开始时间，日期则加一天
                 if all([morning_class, evening_class]):
                     if evening_class.end_time <= morning_class.start_time:
                         day_time = (day_time + timedelta(days=1)).strftime("%Y-%m-%d")
