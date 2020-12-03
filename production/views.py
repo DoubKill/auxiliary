@@ -556,11 +556,11 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         "actual_trains": 0,
                         "classes": "中班"
                     }
-                if class_name == "晚班":
+                if class_name == "夜班":
                     day_plan_dict[day_plan_id]["class_data"][2] = {
                         "plan_trains": pcp.get('plan_trains'),
                         "actual_trains": 0,
-                        "classes": "晚班"
+                        "classes": "夜班"
                     }
                 continue
             day_plan_dict[day_plan_id]["actual_trains"] += tf_dict[plan_classes_uid][0]
@@ -577,11 +577,11 @@ class ProductActualViewSet(mixins.ListModelMixin,
                     "actual_trains": tf_dict[pcp.plan_classes_uid][0],
                     "classes": "中班"
                 }
-            if tf_dict[plan_classes_uid][2] == "晚班":
+            if tf_dict[plan_classes_uid][2] == "夜班":
                 day_plan_dict[day_plan_id]["class_data"][2] = {
                     "plan_trains": pcp.get('plan_trains'),
                     "actual_trains": tf_dict[plan_classes_uid][0],
-                    "classes": "晚班"
+                    "classes": "夜班"
                 }
         ret = {"data": [_ for _ in day_plan_dict.values()]}
         return Response(ret)
@@ -643,7 +643,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         day_plan_actual[0] = temp_class_actual
                     elif class_name == "中班":
                         day_plan_actual[1] = temp_class_actual
-                    elif class_name == "晚班":
+                    elif class_name == "夜班":
                         day_plan_actual[2] = temp_class_actual
                     else:
                         day_plan_actual.append(temp_class_actual)
@@ -657,7 +657,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         day_plan_actual[0] = temp_class_actual
                     elif class_name == "中班":
                         day_plan_actual[1] = temp_class_actual
-                    elif class_name == "晚班":
+                    elif class_name == "夜班":
                         day_plan_actual[2] = temp_class_actual
                     else:
                         day_plan_actual.append(temp_class_actual)
@@ -853,7 +853,7 @@ class EquipStatusPlanList(APIView):
 
         ret_data = {item: [] for item in equip_nos}
 
-        class_dict = {'早班': 1, '中班': 2, '晚班': 3}
+        class_dict = {'早班': 1, '中班': 2, '夜班': 3}
         for key, value in plan_data.items():
             class_name = value['work_schedule_plan__classes__global_name']
             equip_no = value['product_day_plan__equip__equip_no']
