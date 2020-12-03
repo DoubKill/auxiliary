@@ -257,7 +257,19 @@ DATABASES = {
         'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
-    }
+    },
+    'Z05': {
+        'ENGINE': 'sql_server.pyodbc',
+        'NAME': 'GZSFJ',
+        'HOST': '10.4.14.136',
+        'PORT': '1433',
+        'USER': 'sa',
+        'PASSWORD': '123',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'MARS_Connection': True,
+            },
+        },
 }
 
 # DATABASES = {

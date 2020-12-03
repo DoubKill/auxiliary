@@ -1,4 +1,6 @@
 import datetime
+
+from django.db.transaction import atomic
 from rest_framework import serializers
 from basics.models import Equip, WorkSchedulePlan, GlobalCode
 from mes.base_serializer import BaseModelSerializer
@@ -167,6 +169,14 @@ class PlanStatusSerializer(BaseModelSerializer):
         model = PlanStatus
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    @atomic
+    def create(self, validated_data):
+        uid = validated_data.get("plan_classes_uid")
+        pcp = ProductClassesPlan.objects.get(plan_classes_uid=uid)
+        pcp.status = "完成"
+        pcp.save()
+        return super().create(validated_data)
 
 
 class ExpendMaterialSerializer(BaseModelSerializer):
