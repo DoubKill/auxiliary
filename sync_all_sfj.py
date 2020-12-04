@@ -9,16 +9,21 @@ import django
 import datetime
 import logging
 
-from django.db import IntegrityError
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from django.db import IntegrityError
+from django.db.transaction import atomic
+
+from production.models import EquipStatus, AlarmLog
 from mes.settings import DATABASES
 from plan.models import ProductClassesPlan, ProductDayPlan
 from recipe.models import ProductBatching, ProductInfo, ProductProcess, ProductProcessDetail, BaseCondition, BaseAction, \
     ProductBatchingDetail, Material
-from work_station.models import SfjRecipeCon, SfjRecipeMix, SfjRecipeCb, SfjRecipeOil1, SfjRecipeGum, SfjProducePlan
+from work_station.models import SfjRecipeCon, SfjRecipeMix, SfjRecipeCb, SfjRecipeOil1, SfjRecipeGum, SfjProducePlan, \
+    SfjEquipStatus, SfjAlarmLog
 from basics.models import PlanSchedule, WorkSchedule, GlobalCode, WorkSchedulePlan, Equip
 
 
@@ -65,7 +70,7 @@ def sync_gum(db, pb, recipe_name):
             )
         except Exception as e:
             print("缺料", gum.matname)
-            logger("缺料", gum.matname)
+            logger.error("缺料", gum.matname)
             pass
         gum.flag = 2
         gum.save()
@@ -251,6 +256,38 @@ def sync_recipe(db):
             recipe.flag = 2
             recipe.save()
 
+@atomic
+def sync_product_feedback(db):
+    total_equip = SfjEquipStatus.objects.using(db).filter()
+    total_equip_set = total_equip.values()
+    equip_list = []
+    for x in total_equip_set:
+        equip_list.append(EquipStatus(
+            plan_classes_uid=x.get("plan_classes_uid", "无计划号"),
+            equip_no=x.get("equip_no", "Z00"),
+            temperature=x.get("temperature",1),
+            rpm=x.get("rpm",1),
+            energy=x.get("energy",1),
+            power=x.get("power",1),
+            pressure=x.get("pressure",1),
+            status=x.get("status", "运行中"),
+            current_trains=x.get("current_trains",1),
+            product_time=x.get("product_time")
+        ))
+    EquipStatus.objects.bulk_create(equip_list)
+    total_equip.delete()
+    al = AlarmLog.objects.filter(equip_no=db).order_by("product_time").last()
+    if al:
+        product_time = al.product_time
+        sfj_al_set = SfjAlarmLog.objects.using(db).filter(latesttime__gt=product_time).values("content", "latesttime")
+        sfj_list = [AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in sfj_al_set]
+        AlarmLog.objects.bulk_create(sfj_list)
+    else:
+        sfj_al_set = SfjAlarmLog.objects.using(db).filter().values("content", "latesttime")
+        sfj_list = [AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in
+                    sfj_al_set]
+        AlarmLog.objects.bulk_create(sfj_list)
+
 
 if __name__ == '__main__':
     for db in DATABASES:
@@ -259,6 +296,11 @@ if __name__ == '__main__':
         else:
             try:
                 sync_recipe(db)
+            except Exception as e:
+                print(e)
+                logger.error(e)
+            try:
+                sync_product_feedback(db)
             except Exception as e:
                 print(e)
                 logger.error(e)
