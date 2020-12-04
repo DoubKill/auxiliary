@@ -1,5 +1,5 @@
 # Create your views here.
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Max
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -14,7 +14,7 @@ from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
 from mes.permissions import PermissionClass, ProductBatchingPermissions
-from production.models import MaterialTankStatus
+from production.models import MaterialTankStatus, PlanStatus
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
@@ -253,6 +253,14 @@ class ProductBatchingViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.used_type == 4:  # 停用
+            if instance.equip:
+                max_ids = PlanStatus.objects.filter(
+                    product_no=instance.stage_product_batch_no,
+                    equip_no=instance.equip.equip_no).values(
+                    'plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
+                exist_status = set(PlanStatus.objects.filter(id__in=max_ids).values_list('status', flat=True))
+                if exist_status & {'已下达', '运行中'}:
+                    raise ValidationError('该配方生产计划已下达或在运行中，无法停用！')
             instance.used_type = 7
         elif instance.used_type == 7:  # 启用
             instance.used_type = 4
