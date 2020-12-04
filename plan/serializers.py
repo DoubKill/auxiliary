@@ -104,6 +104,9 @@ class ProductDayPlanSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
+        pb = validated_data.get('product_batching', None)
+        if pb.used_type != 4:
+            raise serializers.ValidationError('改配方不是启用状态！')
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
