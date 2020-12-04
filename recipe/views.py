@@ -251,6 +251,13 @@ class ProductBatchingViewSet(ModelViewSet):
         else:
             return ProductBatchingUpdateSerializer
 
+    def perform_destroy(self, instance):
+        if instance.used_type == 4:  # 停用
+            instance.used_type = 7
+        elif instance.used_type == 7:  # 启用
+            instance.used_type = 4
+        instance.save()
+
 
 @method_decorator([api_recorder], name="dispatch")
 class ActionListView(APIView):
