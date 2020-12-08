@@ -260,6 +260,8 @@ class IssuedPlan(APIView):
             product_batching = pcp_obj.product_day_plan.product_batching
         except:
             raise ValidationError("无对应日计划胶料配料标准")
+        if product_batching.used_type != 4:
+            raise ValidationError("该计划所选配方未启用")
         # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
         end_time = pcp_obj.work_schedule_plan.end_time  # 取班次的结束时间
         now_time = datetime.datetime.now()
@@ -281,6 +283,8 @@ class IssuedPlan(APIView):
         return product_batching, product_batching_details, product_process, product_process_details, pcp_obj
 
     def _map_PmtRecipe(self, pcp_object, product_process, product_batching, equip_no):
+        if product_batching.used_type != 4:
+            raise ValidationError("该计划所选配方未启用")
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
@@ -479,6 +483,8 @@ class IssuedPlan(APIView):
 
     def _map_recipe(self, pcp_object, product_process, product_batching, equip_no):
         # 映射全小写代表对接国自上辅机
+        if product_batching.used_type != 4:
+            raise ValidationError("该计划所选配方未启用")
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
