@@ -27,13 +27,13 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback
+    ProcessFeedback, AlarmLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, \
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
-    MixerInformationSerializer2, TrainsFeedbacksSerializer2
+    MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer
 from production.utils import strtoint, gen_material_export_file_response
 import logging
 
@@ -1100,6 +1100,28 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
         return irc_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
+class AlarmLogList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                   GenericViewSet):
+    """报警信息"""
+    queryset = AlarmLog.objects.filter()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = AlarmLogSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            al_queryset = AlarmLog.objects.filter(equip_no=tfb_obk.equip_no,
+                                                  product_time__gte=tfb_obk.begin_time,
+                                                  product_time__lte=tfb_obk.end_time).order_by('product_time')
+        except:
+            raise ValidationError('报警日志没有数据')
+
+        return al_queryset
 
 
 @method_decorator([api_recorder], name="dispatch")
