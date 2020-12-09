@@ -36,7 +36,9 @@ logger = logging.getLogger('sync_log')
 
 class MesUpClient(object):
     # 生产数据上报mes
-    UP_TABLE_LIST = ["TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial"]
+    UP_TABLE_LIST = [
+        # "TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial",
+        "ProcessFeedback", "AlarmLog"]
     Client = requests.request
     mes = ChildSystemInfo.objects.filter(system_name="MES").first()
     mes_ip = mes.link_address
@@ -46,7 +48,9 @@ class MesUpClient(object):
         "PalletFeedbacks" : "/api/v1/production/pallet-feedbacks-batch/",
         "EquipStatus": "/api/v1/production/equip-status-batch/",
         "PlanStatus": "/api/v1/production/plan-status-batch/",
-        "ExpendMaterial": "/api/v1/production/expend-material-batch/"
+        "ExpendMaterial": "/api/v1/production/expend-material-batch/",
+        "ProcessFeedback": "/api/v1/production/process-feedback-batch/",
+        "AlarmLog": "/api/v1/production/alarm-log-batch/",
     }
 
 
@@ -357,14 +361,14 @@ def main():
 def run():
     global current_trains
     while True:
-        try:
-            main()
-        except Exception as e:
-            logger.error(f"工作站至群控上行异常:{e}")
-        try:
-            plan_status_monitor()
-        except Exception as e:
-            logger.error(f"计划状态同步异常:{e}")
+        # try:
+        #     main()
+        # except Exception as e:
+        #     logger.error(f"工作站至群控上行异常:{e}")
+        # try:
+        #     plan_status_monitor()
+        # except Exception as e:
+        #     logger.error(f"计划状态同步异常:{e}")
         try:
             MesUpClient.sync()
         except Exception as e:
@@ -378,7 +382,6 @@ if __name__ == "__main__":
     # ifup上行中间表是在每车完成同步插入数据的吗, 理论上来说对于万隆应该是个双写的逻辑
     run()
     # 后续进程函数或者类封装
-
 
     #TODO
     # 1. 该脚本不在是一个单独的上行脚本，若报产数据上来没有计划，则需在计划表里新增一条数据
