@@ -137,7 +137,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             # 再一次判断是怕排班有间隔
             if not wsp_obj:
                 raise serializers.ValidationError('当前时间不在排班时间内！！！')
-            # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time)
+            # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time,wsp_obj.classes)
             nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
             # 这里就是判断当前的排班是不是最后一个班次 进而日期加1，来获取下一天的第一个班次
             if not nest_wsp_obj:
@@ -148,12 +148,12 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                 ps_obj = PlanSchedule.objects.filter(day_time=tomorrow,
                                                      work_schedule=instance.plan_schedule.work_schedule).first()
                 nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
-            # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time)
+            # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time,nest_wsp_obj.classes)
 
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
             if work_schedule_plan not in [wsp_obj, nest_wsp_obj]:
-                raise serializers.ValidationError('只允许创建当前班次和下一个班次的计划')
+                raise serializers.ValidationError(f'只允许创建当前班次和下一个班次的计划,当前班次为{wsp_obj.start_time}至{wsp_obj.end_time}的{wsp_obj.classes}')
 
             '''这里是之前做的 只允许创建当前的排班的计划
             ## 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
