@@ -37,7 +37,7 @@ logger = logging.getLogger('sync_log')
 class MesUpClient(object):
     # 生产数据上报mes
     UP_TABLE_LIST = [
-        # "TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial",
+        "TrainsFeedbacks", "PalletFeedbacks", "EquipStatus", "PlanStatus", "ExpendMaterial",
         "ProcessFeedback", "AlarmLog"]
     Client = requests.request
     mes = ChildSystemInfo.objects.filter(system_name="MES").first()
