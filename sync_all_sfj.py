@@ -152,11 +152,11 @@ def sync_plan(db, pb):
     for plan in plan_set:
         actual_times = plan.latesttime
         classes = plan.grouptime
-        if classes == "夜班":
-            classes = "晚班"
+        if classes == "晚班":
+            classes = "夜班"
         h = int(actual_times.strftime("%H"))
         times = actual_times.strftime("%Y-%m-%d")
-        if classes in ["夜班", "夜班"]:
+        if classes in ["夜班", "晚班"]:
             if 0 < h < 8:
                 times = (actual_times + datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
         # 2、代码核心（这里应该没啥子问题）

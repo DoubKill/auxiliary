@@ -270,6 +270,14 @@ DATABASES = {
             'MARS_Connection': True,
             },
         },
+    'H-Z04': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'PKSJ',  # 数据库SID
+        'USER': 'CUSTOMER',
+        'PASSWORD': 'CUSTOMER',
+        'HOST':'10.4.23.165',
+        'PORT':'1521'
+    },
 }
 
 # DATABASES = {
