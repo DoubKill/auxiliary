@@ -104,6 +104,9 @@ class ProductDayPlanSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
+        pb = validated_data.get('product_batching', None)
+        if pb.used_type != 4:
+            raise serializers.ValidationError('改配方不是启用状态！')
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
@@ -113,15 +116,58 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             if not detail['plan_trains']:
                 continue
             classes = detail.pop('classes')
+            # 这里是只允许创建当前排班和下一个排班的计划
+            ps_obj = PlanSchedule.objects.filter(day_time=datetime.date.today(),
+                                                 work_schedule=instance.plan_schedule.work_schedule).first()
+            # 这里是判断当前日期可能已经没有这个排班了
+            if not ps_obj:
+                raise serializers.ValidationError('当前时间已经没有此排班了')
+            wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__lte=datetime.datetime.now(),
+                                                             end_time__gte=datetime.datetime.now()).first()
+            # 判断当前是不是今天的工厂排班，不是的话取昨天的
+            if not wsp_obj:
+                today = datetime.date.today()
+                oneday = datetime.timedelta(days=1)
+                yesterday = today - oneday
+                ps_obj = PlanSchedule.objects.filter(day_time=yesterday,
+                                                     work_schedule=instance.plan_schedule.work_schedule).first()
+                wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__lte=datetime.datetime.now(),
+                                                                 end_time__gte=datetime.datetime.now()).first()
+
+            # 再一次判断是怕排班有间隔
+            if not wsp_obj:
+                raise serializers.ValidationError('当前时间不在排班时间内！！！')
+            # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time,wsp_obj.classes)
+            nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
+            # 这里就是判断当前的排班是不是最后一个班次 进而日期加1，来获取下一天的第一个班次
+            if not nest_wsp_obj:
+                today = wsp_obj.plan_schedule.day_time
+                # print(today)
+                oneday = datetime.timedelta(days=1)
+                tomorrow = today + oneday
+                ps_obj = PlanSchedule.objects.filter(day_time=tomorrow,
+                                                     work_schedule=instance.plan_schedule.work_schedule).first()
+                nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
+            # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time,nest_wsp_obj.classes)
+
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
-            # # 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
+            if work_schedule_plan not in [wsp_obj, nest_wsp_obj]:
+                raise serializers.ValidationError(f'只允许创建当前班次和下一个班次的计划,当前班次为{wsp_obj.start_time}至{wsp_obj.end_time}的{wsp_obj.classes}')
+
+            '''这里是之前做的 只允许创建当前的排班的计划
+            ## 不允许创建上一个班次的计划，(ps:举例说明 比如现在是中班，那么今天的早班是创建不了的，今天之前的计划也是创建不了的)
+            # 值允许创建当前班次的计划
             end_time = work_schedule_plan.end_time  # 取班次的结束时间
+            start_time = work_schedule_plan.start_time
             now_time = datetime.datetime.now()
             if now_time > end_time:
                 raise serializers.ValidationError(
-                    f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建')
-
+                    f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建，只允许创建当前班次的计划')
+            if now_time > end_time or now_time < start_time:
+                raise serializers.ValidationError(
+                    f'{end_time.strftime("%Y-%m-%d")}的{work_schedule_plan.classes.global_name}的计划不允许现在创建，只允许创建当前班次的计划')
+            '''
             if not work_schedule_plan:
                 raise serializers.ValidationError('暂无该班次排班数据')
             detail['plan_classes_uid'] = UUidTools.uuid1_hex(instance.equip.equip_no)
