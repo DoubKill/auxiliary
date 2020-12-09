@@ -1508,3 +1508,95 @@ class SfjEquipStatus(models.Model):
     class Meta:
         managed = False
         db_table = 'equip_status'
+
+
+class I_RECIPES_V(models.Model):
+    recipe_id = models.IntegerField(primary_key=True)
+    line_name = models.CharField(max_length=20)
+    recipe_number = models.CharField(max_length=240)
+    recipe_code = models.CharField(max_length=30)
+    recipe_version = models.IntegerField()
+    recipe_description = models.CharField(max_length=240)
+    recipe_blocked = models.CharField(max_length=20)
+    last_changed_date = models.DateTimeField()
+    recipe_type = models.CharField(max_length=240)
+
+    class Meta:
+        managed = False
+        db_table = 'i_recipes_v'
+
+
+class ProdOrdersImp(models.Model):
+
+    pori_id = models.IntegerField(primary_key=True)
+    pori_pror_id = models.IntegerField()
+    pori_host_id = models.IntegerField()
+    pori_line_name = models.CharField(max_length=30)
+    pori_order_number = models.CharField(max_length=30)
+    pori_sequence_id = models.CharField(max_length=30)
+    pori_order_stage = models.IntegerField()
+    pori_order_stage_id = models.CharField(max_length=30)
+    pori_auto_orderchange_flag = models.IntegerField()
+    pori_recipe_code = models.CharField(max_length=30)
+    pori_recipe_version = models.IntegerField()
+    pori_article_number = models.CharField(max_length=30)
+    pori_batch_quantity_set = models.IntegerField()
+    pori_order_weight = models.DecimalField(max_digits=12, decimal_places=6)
+    pori_cust_batch_prefix = models.CharField(max_length=30)
+    pori_cust_batch_counter = models.DecimalField(max_digits=12, decimal_places=6)
+    pori_cust_batch_suffix = models.CharField(max_length=30)
+    pori_start_date = models.DateTimeField()
+    pori_end_date = models.DateTimeField()
+    pori_pror_blocked = models.IntegerField()
+    pori_batch_quantity_act = models.DecimalField(max_digits=12, decimal_places=6)
+    pori_pror_status = models.IntegerField()
+    pori_order_weight_act = models.DecimalField(max_digits=12, decimal_places=6)
+    pori_start_date_act = models.DateTimeField()
+    pori_end_date_act = models.DateTimeField()
+    pori_stock_number = models.CharField(max_length=240)
+    pori_function = models.IntegerField()
+    pori_status = models.IntegerField()
+    pori_freetext_1 = models.TextField(max_length=1000)
+    pori_freetext_2 = models.TextField(max_length=1000)
+    pori_goods_recipient = models.CharField(max_length=240)
+    pori_unloading_point = models.CharField(max_length=240)
+    pori_planning_blocked = models.IntegerField()
+    insert_user = models.CharField(max_length=30)
+    insert_date = models.DateTimeField()
+    update_user = models.CharField(max_length=30)
+    update_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'prod_orders_imp'
+
+
+class LogTable(models.Model):
+
+    lgtb_id = models.IntegerField(primary_key=True)
+    lgtb_username = models.CharField(max_length=240)
+    lgtb_date = models.DateTimeField()
+    lgtb_action = models.TextField(max_length=1000)
+    lgtb_sql_errormessage = models.TextField(max_length=1000)
+    lgtb_pks_errormessage = models.TextField(max_length=1000)
+    lgtb_return_status = models.IntegerField()
+    lgtb_host_id = models.IntegerField()
+    lgtb_transfer_table_ident = models.CharField(max_length=240)
+    insert_user = models.CharField(max_length=30)
+    insert_date = models.DateTimeField()
+    update_user = models.CharField(max_length=30)
+    update_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "log_table"
+
+
+class BatchReport(models.Model):
+
+    batr_id = models.IntegerField(primary_key=True)
+    batr_measured_data = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = "batch_report"
