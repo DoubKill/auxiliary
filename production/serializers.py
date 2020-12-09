@@ -375,15 +375,6 @@ class CurveInformationSerializer(serializers.ModelSerializer):
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
-class AlarmLogSerializer(serializers.ModelSerializer):
-    """报警信息"""
-
-    class Meta:
-        model = AlarmLog
-        fields = '__all__'
-        read_only_fields = COMMON_READ_ONLY_FIELDS
-
-
 class TrainsFeedbacksSerializer2(BaseModelSerializer):
     """车次产出反馈"""
     status = serializers.SerializerMethodField(read_only=True)
@@ -416,5 +407,23 @@ class TrainsFeedbacksSerializer2(BaseModelSerializer):
 
     class Meta:
         model = TrainsFeedbacks
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class ProcessFeedbackSerializer(BaseModelSerializer):
+    """步序反馈报表"""
+
+    class Meta:
+        model = ProcessFeedback
+        fields = "__all__"
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class AlarmLogSerializer(BaseModelSerializer):
+    """步序反馈报表"""
+
+    class Meta:
+        model = AlarmLog
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS

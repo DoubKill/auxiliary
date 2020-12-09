@@ -176,7 +176,7 @@ class ExpendMaterial(AbstractEntity):
             models.Index(fields=['product_time']), ]
 
 
-class ProcessFeedback(models.Model):
+class ProcessFeedback(AbstractEntity):
     """步序反馈表"""
     sn = models.PositiveIntegerField(help_text='序号/步骤号')
     condition = models.CharField(max_length=20, help_text='条件', blank=True, null=True)
