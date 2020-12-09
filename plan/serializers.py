@@ -137,18 +137,18 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             # 再一次判断是怕排班有间隔
             if not wsp_obj:
                 raise serializers.ValidationError('当前时间不在排班时间内！！！')
-            print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time,wsp_obj.classes)
+            # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time,wsp_obj.classes)
             nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
             # 这里就是判断当前的排班是不是最后一个班次 进而日期加1，来获取下一天的第一个班次
             if not nest_wsp_obj:
                 today = wsp_obj.plan_schedule.day_time
-                print(today)
+                # print(today)
                 oneday = datetime.timedelta(days=1)
                 tomorrow = today + oneday
                 ps_obj = PlanSchedule.objects.filter(day_time=tomorrow,
                                                      work_schedule=instance.plan_schedule.work_schedule).first()
                 nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
-            print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time,nest_wsp_obj.classes)
+            # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time,nest_wsp_obj.classes)
 
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
