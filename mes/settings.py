@@ -261,7 +261,7 @@ DATABASES = {
     'Z05': {
         'ENGINE': 'sql_server.pyodbc',
         'NAME': 'GZSFJ',
-        'HOST': '10.4.14.136',
+        'HOST': '10.4.23.65',
         'PORT': '1433',
         'USER': 'sa',
         'PASSWORD': '123',
