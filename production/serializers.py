@@ -1,11 +1,13 @@
 import datetime
+
+from django.db.transaction import atomic
 from rest_framework import serializers
 from basics.models import Equip, WorkSchedulePlan, GlobalCode
 from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, QualityControl, \
-    OperationLog, MaterialTankStatus, ProcessFeedback
+    OperationLog, MaterialTankStatus, ProcessFeedback, AlarmLog
 from django.db.models import Sum
 from django.forms.models import model_to_dict
 from production.utils import strtoint
@@ -167,6 +169,14 @@ class PlanStatusSerializer(BaseModelSerializer):
         model = PlanStatus
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
+
+    @atomic
+    def create(self, validated_data):
+        uid = validated_data.get("plan_classes_uid")
+        pcp = ProductClassesPlan.objects.get(plan_classes_uid=uid)
+        pcp.status = "完成"
+        pcp.save()
+        return super().create(validated_data)
 
 
 class ExpendMaterialSerializer(BaseModelSerializer):
@@ -361,6 +371,15 @@ class CurveInformationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EquipStatus
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class AlarmLogSerializer(serializers.ModelSerializer):
+    """报警信息"""
+
+    class Meta:
+        model = AlarmLog
         fields = '__all__'
         read_only_fields = COMMON_READ_ONLY_FIELDS
 

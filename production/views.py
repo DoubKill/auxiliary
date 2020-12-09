@@ -27,13 +27,13 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback
+    ProcessFeedback, AlarmLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, \
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
-    MixerInformationSerializer2, TrainsFeedbacksSerializer2
+    MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer
 from production.utils import strtoint, gen_material_export_file_response
 import logging
 
@@ -556,11 +556,11 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         "actual_trains": 0,
                         "classes": "中班"
                     }
-                if class_name == "晚班":
+                if class_name == "夜班":
                     day_plan_dict[day_plan_id]["class_data"][2] = {
                         "plan_trains": pcp.get('plan_trains'),
                         "actual_trains": 0,
-                        "classes": "晚班"
+                        "classes": "夜班"
                     }
                 continue
             day_plan_dict[day_plan_id]["actual_trains"] += tf_dict[plan_classes_uid][0]
@@ -577,11 +577,11 @@ class ProductActualViewSet(mixins.ListModelMixin,
                     "actual_trains": tf_dict[pcp.plan_classes_uid][0],
                     "classes": "中班"
                 }
-            if tf_dict[plan_classes_uid][2] == "晚班":
+            if tf_dict[plan_classes_uid][2] == "夜班":
                 day_plan_dict[day_plan_id]["class_data"][2] = {
                     "plan_trains": pcp.get('plan_trains'),
                     "actual_trains": tf_dict[plan_classes_uid][0],
-                    "classes": "晚班"
+                    "classes": "夜班"
                 }
         ret = {"data": [_ for _ in day_plan_dict.values()]}
         return Response(ret)
@@ -643,7 +643,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         day_plan_actual[0] = temp_class_actual
                     elif class_name == "中班":
                         day_plan_actual[1] = temp_class_actual
-                    elif class_name == "晚班":
+                    elif class_name == "夜班":
                         day_plan_actual[2] = temp_class_actual
                     else:
                         day_plan_actual.append(temp_class_actual)
@@ -657,7 +657,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
                         day_plan_actual[0] = temp_class_actual
                     elif class_name == "中班":
                         day_plan_actual[1] = temp_class_actual
-                    elif class_name == "晚班":
+                    elif class_name == "夜班":
                         day_plan_actual[2] = temp_class_actual
                     else:
                         day_plan_actual.append(temp_class_actual)
@@ -853,7 +853,7 @@ class EquipStatusPlanList(APIView):
 
         ret_data = {item: [] for item in equip_nos}
 
-        class_dict = {'早班': 1, '中班': 2, '晚班': 3}
+        class_dict = {'早班': 1, '中班': 2, '夜班': 3}
         for key, value in plan_data.items():
             class_name = value['work_schedule_plan__classes__global_name']
             equip_no = value['product_day_plan__equip__equip_no']
@@ -1100,6 +1100,28 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
         return irc_queryset
+
+
+@method_decorator([api_recorder], name="dispatch")
+class AlarmLogList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                   GenericViewSet):
+    """报警信息"""
+    queryset = AlarmLog.objects.filter()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    serializer_class = AlarmLogSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    def get_queryset(self):
+        feed_back_id = self.request.query_params.get('feed_back_id')
+        try:
+            tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
+            al_queryset = AlarmLog.objects.filter(equip_no=tfb_obk.equip_no,
+                                                  product_time__gte=tfb_obk.begin_time,
+                                                  product_time__lte=tfb_obk.end_time).order_by('product_time')
+        except:
+            raise ValidationError('报警日志没有数据')
+
+        return al_queryset
 
 
 @method_decorator([api_recorder], name="dispatch")
