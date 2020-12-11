@@ -1593,10 +1593,112 @@ class LogTable(models.Model):
 
 
 class BatchReport(models.Model):
+    """批次报表数据"""
+    batr_id = models.IntegerField(primary_key=True)
+    batr_host_id = models.IntegerField()
+    batr_line_name = models.CharField(max_length=30)
+    batr_camp_number = models.CharField(max_length=30)
+    batr_recipe_group = models.CharField(max_length=30)
+    batr_order_id = models.IntegerField()
+    batr_order_number = models.CharField(max_length=30)
+    batr_order_stage = models.IntegerField()
+    batr_batch_quantity_set = models.IntegerField()
+    batr_batch_id = models.IntegerField()
+    batr_batch_number = models.IntegerField()
+    batr_batch_customer_name = models.CharField(max_length=240)
+    batr_batch_code = models.CharField(max_length=30)
+    batr_batch_code_packing_id = models.CharField(max_length=30)
+    batr_recipe_id = models.IntegerField()
+    batr_recipe_code = models.CharField(max_length=30)
+    batr_recipe_version = models.IntegerField()
+    batr_article_number = models.CharField(max_length=30)
+    batr_stock_number = models.CharField(max_length=240)
+    batr_batch_weight = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_batch_weight_act = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_start_date = models.DateTimeField()
+    batr_end_date = models.DateTimeField()
+    batr_station_ident = models.CharField(max_length=240)
+    batr_quality = models.IntegerField()
+    batr_total_spec_energy = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_tot_integr_energy = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_total_revolutions = models.IntegerField()
+    batr_ram_distance = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_cycle_time = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_drop_cycle_time = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_mixing_time = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_time_ram_pressing = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_time_ram_down = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_transition_temperature = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_tc1 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_tc2 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_tc3 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_chamber1 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_chamber2 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_water_tcu1 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_water_tcu2 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_water_tcu3 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_temp_water_tcu4 = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_drive_current = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_drive_power = models.DecimalField(max_digits=12, decimal_places=6)
+    batr_packing_date = models.DateTimeField()
+    batr_expiration_date = models.DateTimeField()
+    batr_user_id = models.IntegerField()
+    batr_user_name = models.CharField(max_length=30)
+    batr_release_date = models.DateTimeField()
+    batr_release_status = models.IntegerField()
+    batr_batch_duration = models.DecimalField(max_digits=12, decimal_places=6)
+    insert_user = models.CharField(max_length=30)
+    insert_date = models.DateTimeField()
+    update_user = models.CharField(max_length=30)
+    update_date = models.DateTimeField()
 
+
+    class Meta:
+        managed = False
+        db_table = "batch_report"
+
+
+class EquipRunData(models.Model):
+    """用于单独从批次报表中获取曲线数据"""
     batr_id = models.IntegerField(primary_key=True)
     batr_measured_data = models.TextField()
 
     class Meta:
         managed = False
         db_table = "batch_report"
+
+
+class MaterialsConsumption(models.Model):
+    """消耗报表"""
+    maco_id = models.IntegerField(primary_key=True)
+    maco_date = models.DateTimeField()
+    maco_line_name = models.CharField(max_length=30)
+    maco_camp_number = models.CharField(max_length=30)
+    maco_order_id = models.IntegerField()
+    maco_order_number = models.CharField(max_length=30)
+    maco_order_stage = models.IntegerField()
+    maco_batch_id = models.IntegerField()
+    maco_batch_number = models.IntegerField()
+    maco_batch_customer_name = models.CharField(max_length=240)
+    maco_mat_code = models.CharField(max_length=240)
+    maco_packing_id = models.CharField(max_length=30)
+    maco_raw_material_id = models.IntegerField()
+    maco_lot_number = models.CharField(max_length=240)
+    maco_consumed_quantity = models.DecimalField(max_digits=12, decimal_places=6)
+    maco_start_date = models.DateTimeField()
+    maco_end_date = models.DateTimeField()
+    maco_station_ident = models.CharField(max_length=30)
+    maco_host = models.CharField(max_length=30)
+    maco_recipe_id = models.IntegerField()
+    maco_recipe_code = models.CharField(max_length=30)
+    maco_recipe_version = models.IntegerField()
+    maco_recipe_group = models.CharField(max_length=30)
+    maco_set_quantity = models.DecimalField(max_digits=12, decimal_places=6)
+    insert_user = models.CharField(max_length=30)
+    insert_date = models.DateTimeField()
+    update_user = models.CharField(max_length=30)
+    update_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "materials_consumption"

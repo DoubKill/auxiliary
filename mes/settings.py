@@ -258,6 +258,38 @@ DATABASES = {
         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
     },
+    # 'Z02': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.62',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    'Z03': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME': 'GZSFJ',
+            'HOST': '10.4.23.63',
+            'PORT': '1433',
+            'USER': 'sa',
+            'PASSWORD': '123',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'MARS_Connection': True,
+                },
+            },
+    'H-Z04': {
+            'ENGINE': 'django.db.backends.oracle',
+            'NAME': 'PKSJ',  # 数据库SID
+            'USER': 'CUSTOMER',
+            'PASSWORD': 'CUSTOMER',
+            'HOST':'10.4.23.165',
+            'PORT':'1521'
+        },
     'Z05': {
         'ENGINE': 'sql_server.pyodbc',
         'NAME': 'GZSFJ',
@@ -270,14 +302,42 @@ DATABASES = {
             'MARS_Connection': True,
             },
         },
-    'H-Z04': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'PKSJ',  # 数据库SID
-        'USER': 'CUSTOMER',
-        'PASSWORD': 'CUSTOMER',
-        'HOST':'10.4.23.165',
-        'PORT':'1521'
-    },
+    # 'Z06': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.66',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    # 'Z07': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.65',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    # 'Z08': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.65',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
 }
 
 # DATABASES = {

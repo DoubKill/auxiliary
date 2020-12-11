@@ -29,6 +29,7 @@ from production.utils import strtoint
 # Create your views here.
 from recipe.models import ProductProcess, ProductBatching
 from work_station.api import IssueWorkStation
+from work_station.models import I_RECIPES_V, ProdOrdersImp, LogTable
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -807,13 +808,57 @@ class IssuedPlan(APIView):
             ps_obj.save()
             pcp_obj.status = '运行中'
             pcp_obj.save()
+        elif version == "v3":
+            # 四号机只会有计划订单下达，所以单独写一块代码， 至于封装问题，等逻辑处理完再说
+            recipe_name = pcp_obj.product_batching.stage_product_batch_no
+            hf_recipe_version = pcp_obj.product_batching.precept
+            if hf_recipe_version is None:
+                hf_recipe_version = 1
+            else:
+                try:
+                    hf_recipe_version = int(pcp_obj.product_batching.precept)
+                except:
+                    raise ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            try:
+                I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
+                ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                                                            pori_order_number=pcp_obj.plan_classes_uid,
+                                                            pori_recipe_code=recipe_name,
+                                                            pori_recipe_version=hf_recipe_version).delete()
+                ProdOrdersImp.objects.using("H-Z04").create(
+                    pori_line_name='Z04',
+                    pori_order_number=pcp_obj.plan_classes_uid,
+                    pori_recipe_code=recipe_name,
+                    pori_recipe_version=hf_recipe_version,
+                    pori_batch_quantity_set=pcp_obj.plan_trains,
+                    pori_order_weight=pcp_obj.weight,
+                    pori_pror_blocked=0,
+                    pori_function=9,
+                    pori_host_id=host_id
+                )
+            except:
+                lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+            else:
+                plan_status =  ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                                                            pori_order_number=pcp_obj.plan_classes_uid,
+                                                            pori_recipe_code=recipe_name,
+                                                            pori_recipe_version=hf_recipe_version).order_by("pori_id").pori_status
+                if plan_status < 0:
+                    lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+                else:
+                    return Response({'_': '下达成功'}, status=200)
+
         else:
-            self._sync(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str, equip_no=equip_no)
-            ps_obj.status = '已下达'
+            self._sync_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
+                                 equip_no=equip_no)
+            # 模型类的名称需根据设备编号来拼接
+            ps_obj.status = '运行中'
             ps_obj.save()
-            pcp_obj.status = '已下达'
+            pcp_obj.status = '运行中'
             pcp_obj.save()
-            # self.send_to_yikong(params, pcp_obj)
         return Response({'_': '下达成功'}, status=200)
 
     @atomic()
@@ -869,3 +914,11 @@ class PlanReceive(CreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class HfRecipeList(APIView):
+
+    def get(self, request):
+        recipe_set = I_RECIPES_V.objects.using("H-Z04").all().values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
+
+        return Response({"results": recipe_set})

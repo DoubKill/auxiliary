@@ -9,7 +9,7 @@ import django
 import datetime
 import logging
 
-
+from django.db.models import F
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -17,13 +17,13 @@ django.setup()
 from django.db import IntegrityError
 from django.db.transaction import atomic
 
-from production.models import EquipStatus, AlarmLog
+from production.models import EquipStatus, AlarmLog, TrainsFeedbacks, PlanStatus, ExpendMaterial
 from mes.settings import DATABASES
 from plan.models import ProductClassesPlan, ProductDayPlan
 from recipe.models import ProductBatching, ProductInfo, ProductProcess, ProductProcessDetail, BaseCondition, BaseAction, \
     ProductBatchingDetail, Material
 from work_station.models import SfjRecipeCon, SfjRecipeMix, SfjRecipeCb, SfjRecipeOil1, SfjRecipeGum, SfjProducePlan, \
-    SfjEquipStatus, SfjAlarmLog
+    SfjEquipStatus, SfjAlarmLog, BatchReport, MaterialsConsumption
 from basics.models import PlanSchedule, WorkSchedule, GlobalCode, WorkSchedulePlan, Equip
 
 
@@ -289,18 +289,171 @@ def sync_product_feedback(db):
         AlarmLog.objects.bulk_create(sfj_list)
 
 
-if __name__ == '__main__':
-    for db in DATABASES:
-        if not db.startswith("Z"):
+@atomic()
+def add_plan_status():
+    tf_set = TrainsFeedbacks.objects.filter(actual_trains__gte=F('plan_trains'))
+    if tf_set.exists():
+        for tf in tf_set:
+            if PlanStatus.objects.filter(plan_classes_uid=tf.plan_classes_uid,
+                                         product_no=tf.product_no,
+                                         equip_no=tf.equip_no,
+                                         status="完成").exists():
+                continue
+            PlanStatus.objects.create(
+                plan_classes_uid=tf.plan_classes_uid,
+                product_no=tf.product_no,
+                equip_no=tf.equip_no,
+                status="完成",
+                operation_user=tf.operation_user,
+                product_time=tf.product_time,
+            )
+
+
+#Z04 数据需单独上传
+@atomic()
+def hf_trains_up():
+    tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
+    if tf:
+        batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
+                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name"
+                  "batr_batch_weight", "batr_start_date", "batr_end_date", "batr_quality", "batr_total_spec_energy", "batr_tot_integr_energy",
+                  "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature")
+    else:
+        batch_set = BatchReport.objects.using("H-Z04").filter().values("batr_batch_quantity_set",
+                                                                                            "batr_batch_number",
+                                                                                            "batr_recipe_code",
+                                                                                            "batr_order_number",
+                                                                                            "batr_recipe_version",
+                                                                                            "batr_batch_weight",
+                                                                                            "batr_start_date",
+                                                                                            "batr_end_date",
+                                                                                            "batr_quality",
+                                                                                            "batr_total_spec_energy",
+                                                                                            "batr_tot_integr_energy",
+                                                                                            "batr_total_revolutions",
+                                                                                            "batr_cycle_time",
+                                                                                            "batr_mixing_time",
+                                                                                            "batr_drop_cycle_time",
+                                                                                            "batr_transition_temperature",
+                                                                                            "batr_user_name")
+    temp1 = None
+    for temp in batch_set:
+        try:
+            plan  = ProductClassesPlan.objects.get(plan_classes_uid=temp.get("batr_order_number"))
+        except Exception as e:
             continue
-        else:
-            try:
-                sync_recipe(db)
-            except Exception as e:
-                print(e)
-                logger.error(e)
-            try:
-                sync_product_feedback(db)
-            except Exception as e:
-                print(e)
-                logger.error(e)
+        try:
+            plan_weight = plan.weight if plan.weight else 23000
+            class_name = plan.work_schedule_plan.classes.global_name
+            if temp1:
+                interval_time = (temp.get("batr_start_date") - temp1.get("batr_end_date")).total_seconds()
+            else:
+                interval_time = 15
+            consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
+            train = dict(
+                plan_classes_uid = temp.get("batr_order_number"),
+                plan_trains =temp.get("batr_batch_quantity_set"),
+                actual_trains = temp.get("batr_batch_number"),
+                bath_no = 1,
+                equip_no = "Z04",
+                product_no = temp.get("batr_recipe_code"),
+                plan_weight=plan_weight,
+                actual_weight = temp.get("batr_batch_weight", 230)*100,
+                begin_time = temp.get("batr_start_date"),
+                end_time = temp.get("batr_end_date"),
+                operation_user = temp.get("batr_user_name"),
+                classes = class_name,
+                product_time = temp.get("batr_end_date"),
+                control_mode="远控",
+                operating_type = "自动",
+                evacuation_time = int(temp.get("batr_drop_cycle_time")),
+                evacuation_temperature = temp.get("batr_transition_temperature"),
+                evacuation_energy = int(temp.get("batr_tot_integr_energy")),
+                interval_time=int(interval_time),
+                mixer_time=int(temp.get("batr_mixing_time")),
+                consum_time=int(consume_time),
+            )
+            temp1 = temp
+            TrainsFeedbacks.objects.create(**train)
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04车次报表上行失败:{e}")
+            continue
+
+
+@atomic()
+def consume_data_up():
+    ep = ExpendMaterial.objects.filter(equip_no="Z04").order_by("product_time").last()
+    if ep:
+        consume_set = MaterialsConsumption.objects.using("H-Z04").filter(maco_end_date__gt=ep.product_time).values(
+            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date", "maco_recipe_code"
+            "insert_user", "maco_set_quantity", "maco_batch_number")
+    else:
+        consume_set = MaterialsConsumption.objects.using("H-Z04").filter().values(
+            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date",
+            "maco_recipe_code", "insert_user", "maco_set_quantity", "maco_batch_number"
+        )
+    for temp in consume_set:
+        try:
+            ProductClassesPlan.objects.get(plan_classes_uid=temp.get("maco_order_number"))
+        except:
+            continue
+        try:
+            material_name = temp.get("maco_mat_code")
+            if not material_name:
+                continue
+            material = Material.objects.filter(material_name=material_name).last()
+            material_no = material.material_no
+            material_type = material.material_type.global_name
+            consume = dict(
+                plan_classes_uid=temp.get("maco_order_number"),
+                equip_no ="Z04",
+                product_no =temp.get("maco_recipe_code"),
+                trains =temp.get("maco_batch_number"),
+                plan_weight =temp.get("maco_set_quantity"),
+                actual_weight =temp.get("maco_consumed_quantity"),
+                material_no =material_no,
+                material_type=material_type,
+                material_name=temp.get("maco_mat_code"),
+                product_time=temp.get("maco_end_date"),
+            )
+            ExpendMaterial.objects.create(**consume)
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04消耗报表上行失败:{e}")
+            continue
+
+
+
+if __name__ == '__main__':
+    # for db in DATABASES:
+    #     if not db.startswith("Z"):
+    #         continue
+    #     else:
+    #         try:
+    #             sync_recipe(db)
+    #         except Exception as e:
+    #             print(e)
+    #             logger.error(e)
+    #         try:
+    #             sync_product_feedback(db)
+    #         except Exception as e:
+    #             print(e)
+    #             logger.error(e)
+    #
+    # try:
+    #     add_plan_status()
+    # except Exception as e:
+    #     print(e)
+    #     logger.error(e)
+    try:
+        hf_trains_up()
+    except Exception as e:
+        print(e)
+        logger.error(e)
+    try:
+        consume_data_up()
+    except Exception as e:
+        print(e)
+        logger.error(e)
+

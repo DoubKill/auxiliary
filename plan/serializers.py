@@ -13,6 +13,7 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, Pr
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
+from work_station.models import I_RECIPES_V, ProdOrdersImp, LogTable
 
 logger = logging.getLogger('api_log')
 
@@ -438,28 +439,56 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
             except Exception as e:
                 raise serializers.ValidationError(f"上辅助连接超时|{e}")
-        else:
-            from work_station import models as md
-            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-            model_name = getattr(md, model_list[0] + ext_str)
-            mid_plan_instance = model_name.objects.filter().first()
-            if not mid_plan_instance:
-                raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-            if mid_plan_instance.recstatus == "车次需更新":
-                recstatus = "车次需更新"
-            elif mid_plan_instance.recstatus == "运行中":
-                recstatus = "车次需更新"
-            elif mid_plan_instance.recstatus == "配方车次需更新":
-                recstatus = "配方车次需更新"
-            elif mid_plan_instance.recstatus == '配方需重传':
-                recstatus = "配方车次需更新"
+        elif version == "v3":
+            # 四号机只会有计划订单下达，所以单独写一块代码， 至于封装问题，等逻辑处理完再说
+            recipe_name = instance.product_batching.stage_product_batch_no
+            hf_recipe_version = instance.product_batching.precept
+            if hf_recipe_version is None:
+                hf_recipe_version = 1
             else:
-                raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
-            mid_plan_instance.setno = trains
-            mid_plan_instance.save()
-            for model_str in model_list:
-                model_name = getattr(md, model_str + ext_str)
-                model_name.objects.all().update(recstatus=recstatus)
+                try:
+                    hf_recipe_version = int(instance.product_batching.precept)
+                except:
+                    raise serializers.ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            try:
+                I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
+                ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                                                            pori_order_number=instance.plan_classes_uid,
+                                                            pori_recipe_code=recipe_name,
+                                                            pori_recipe_version=hf_recipe_version).delete()
+                ProdOrdersImp.objects.using("H-Z04").create(
+                    pori_line_name='Z04',
+                    pori_order_number=instance.plan_classes_uid,
+                    pori_recipe_code=recipe_name,
+                    pori_recipe_version=hf_recipe_version,
+                    pori_batch_quantity_set=instance.plan_trains,
+                    pori_order_weight=instance.weight,
+                    pori_pror_blocked=0,
+                    pori_function=4,
+                    pori_host_id=host_id
+                )
+            except:
+                lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+            else:
+                plan_status = ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                                                                          pori_order_number=instance.plan_classes_uid,
+                                                                          pori_recipe_code=recipe_name,
+                                                                          pori_recipe_version=hf_recipe_version).order_by(
+                    "pori_id").pori_status
+                if plan_status < 0:
+                    lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+        else:
+            data = OrderedDict()
+            data['updatestate'] = instance.plan_trains
+            data['planid'] = instance.plan_classes_uid
+            data['no'] = ext_str
+            try:
+                WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
+            except Exception as e:
+                raise serializers.ValidationError(f"上辅助连接超时|{e}")
         return instance
 
 
