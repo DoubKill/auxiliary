@@ -810,6 +810,7 @@ class IssuedPlan(APIView):
             pcp_obj.save()
         elif version == "v3":
             # 四号机只会有计划订单下达，所以单独写一块代码， 至于封装问题，等逻辑处理完再说
+            test_db = "default"
             recipe_name = pcp_obj.product_batching.stage_product_batch_no
             hf_recipe_version = pcp_obj.product_batching.precept
             if hf_recipe_version is None:
@@ -822,11 +823,11 @@ class IssuedPlan(APIView):
             host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
             try:
                 I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
-                ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                ProdOrdersImp.objects.using(test_db).filter(pori_line_name='Z04',
                                                             pori_order_number=pcp_obj.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
                                                             pori_recipe_version=hf_recipe_version).delete()
-                ProdOrdersImp.objects.using("H-Z04").create(
+                ProdOrdersImp.objects.using(test_db).create(
                     pori_line_name='Z04',
                     pori_order_number=pcp_obj.plan_classes_uid,
                     pori_recipe_code=recipe_name,
@@ -838,15 +839,15 @@ class IssuedPlan(APIView):
                     pori_host_id=host_id
                 )
             except:
-                lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                 raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:
-                plan_status =  ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                plan_status =  ProdOrdersImp.objects.using(test_db).filter(pori_line_name='Z04',
                                                             pori_order_number=pcp_obj.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
                                                             pori_recipe_version=hf_recipe_version).order_by("pori_id").pori_status
                 if plan_status < 0:
-                    lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
                 else:
                     ps_obj.status = '运行中'
@@ -894,6 +895,8 @@ class IssuedPlan(APIView):
         elif version == "v2":
             self._sync_update_interface(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
                                         equip_no=equip_no)
+        elif version == "v3":
+            raise ValidationError("特殊机台不支持重传")
         else:
             self._sync_update(self.plan_recipe_integrity_check(pcp_obj), params=params, ext_str=ext_str,
                               equip_no=equip_no)
