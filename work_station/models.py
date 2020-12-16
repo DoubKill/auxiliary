@@ -1549,7 +1549,7 @@ class ProdOrdersImp(models.Model):
     pori_end_date = models.DateTimeField(null=True, blank=True,)
     pori_pror_blocked = models.IntegerField(null=True, blank=True,)
     pori_batch_quantity_act = models.DecimalField(null=True, blank=True,max_digits=12, decimal_places=6)
-    pori_pror_status = models.IntegerField(null=True, blank=True,)
+    pori_pror_status = models.IntegerField(default=0)
     pori_order_weight_act = models.DecimalField(null=True, blank=True,max_digits=12, decimal_places=6)
     pori_start_date_act = models.DateTimeField(null=True, blank=True,)
     pori_end_date_act = models.DateTimeField(null=True, blank=True,)

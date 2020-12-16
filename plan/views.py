@@ -18,7 +18,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from basics.models import GlobalCode
 from basics.views import CommonDeleteMixin
 from mes.common_code import WebService, DecimalEncoder
-from mes.conf import VERSION_EQUIP
+from mes.conf import VERSION_EQUIP, hf_db
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
@@ -810,7 +810,6 @@ class IssuedPlan(APIView):
             pcp_obj.save()
         elif version == "v3":
             # 四号机只会有计划订单下达，所以单独写一块代码， 至于封装问题，等逻辑处理完再说
-            test_db = "default"
             recipe_name = pcp_obj.product_batching.stage_product_batch_no
             hf_recipe_version = pcp_obj.product_batching.precept
             if hf_recipe_version is None:
@@ -821,13 +820,19 @@ class IssuedPlan(APIView):
                 except Exception as e:
                     raise ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
             host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
+                                                         pori_order_number=pcp_obj.plan_classes_uid,
+                                                         pori_recipe_code=recipe_name,
+                                                         pori_recipe_version=hf_recipe_version,
+                                                         pori_pror_status__in=[0, 1, 2, 4, None]).exists():
+                raise ValidationError("当前机台有计划正在执行，禁止下达新计划")
             try:
                 I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
-                ProdOrdersImp.objects.using(test_db).filter(pori_line_name='Z04',
+                ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                             pori_order_number=pcp_obj.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
                                                             pori_recipe_version=hf_recipe_version).delete()
-                ProdOrdersImp.objects.using(test_db).create(
+                ProdOrdersImp.objects.using(hf_db).create(
                     pori_line_name='Z04',
                     pori_order_number=pcp_obj.plan_classes_uid,
                     pori_recipe_code=recipe_name,
@@ -839,15 +844,15 @@ class IssuedPlan(APIView):
                     pori_host_id=host_id
                 )
             except Exception as e:
-                lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                 raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:
-                plan_status =  ProdOrdersImp.objects.using(test_db).filter(pori_line_name='Z04',
+                plan_status =  ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                             pori_order_number=pcp_obj.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
                                                             pori_recipe_version=hf_recipe_version).order_by("pori_id").last().pori_status
                 if plan_status < 0:
-                    lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
                 else:
                     ps_obj.status = '运行中'
@@ -926,6 +931,6 @@ class PlanReceive(CreateAPIView):
 class HfRecipeList(APIView):
 
     def get(self, request):
-        recipe_set = I_RECIPES_V.objects.using("H-Z04").all().values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
+        recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
 
         return Response({"results": recipe_set})

@@ -8,7 +8,7 @@ from rest_framework import serializers
 from basics.models import WorkSchedulePlan, Equip, GlobalCode, PlanSchedule
 from mes.base_serializer import BaseModelSerializer
 from mes.common_code import WebService
-from mes.conf import COMMON_READ_ONLY_FIELDS, VERSION_EQUIP
+from mes.conf import COMMON_READ_ONLY_FIELDS, VERSION_EQUIP, hf_db
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingClassesPlan
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
@@ -479,13 +479,20 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 except:
                     raise serializers.ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
             host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
+                                                         pori_order_number=instance.plan_classes_uid,
+                                                         pori_recipe_code=recipe_name,
+                                                         pori_recipe_version=hf_recipe_version,
+                                                         pori_pror_status__in=[3]).exists():
+                raise serializers.ValidationError("计划当前不可修改车次")
             try:
                 I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
-                ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+
+                ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                             pori_order_number=instance.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
                                                             pori_recipe_version=hf_recipe_version).delete()
-                ProdOrdersImp.objects.using("H-Z04").create(
+                ProdOrdersImp.objects.using(hf_db).create(
                     pori_line_name='Z04',
                     pori_order_number=instance.plan_classes_uid,
                     pori_recipe_code=recipe_name,
@@ -496,17 +503,17 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                     pori_function=4,
                     pori_host_id=host_id
                 )
-            except:
-                lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+            except Exception as e:
+                lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                 raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:
-                plan_status = ProdOrdersImp.objects.using("H-Z04").filter(pori_line_name='Z04',
+                plan_status = ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                                           pori_order_number=instance.plan_classes_uid,
                                                                           pori_recipe_code=recipe_name,
                                                                           pori_recipe_version=hf_recipe_version).order_by(
-                    "pori_id").pori_status
+                    "pori_id").last().pori_status
                 if plan_status < 0:
-                    lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
         else:
             data = OrderedDict()
