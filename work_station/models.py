@@ -1555,7 +1555,7 @@ class ProdOrdersImp(models.Model):
     pori_end_date_act = models.DateTimeField(null=True, blank=True,)
     pori_stock_number = models.CharField(null=True, blank=True,max_length=240)
     pori_function = models.IntegerField(null=True, blank=True,)
-    pori_status = models.IntegerField(null=True, blank=True,)
+    pori_status = models.IntegerField(default=0)
     pori_freetext_1 = models.TextField(null=True, blank=True,max_length=1000)
     pori_freetext_2 = models.TextField(null=True, blank=True,max_length=1000)
     pori_goods_recipient = models.CharField(null=True, blank=True,max_length=240)

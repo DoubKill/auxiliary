@@ -845,7 +845,7 @@ class IssuedPlan(APIView):
                 plan_status =  ProdOrdersImp.objects.using(test_db).filter(pori_line_name='Z04',
                                                             pori_order_number=pcp_obj.plan_classes_uid,
                                                             pori_recipe_code=recipe_name,
-                                                            pori_recipe_version=hf_recipe_version).order_by("pori_id").pori_status
+                                                            pori_recipe_version=hf_recipe_version).order_by("pori_id").last().pori_status
                 if plan_status < 0:
                     lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
