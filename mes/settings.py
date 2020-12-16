@@ -252,11 +252,11 @@ LOGGING = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
-        'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
-        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
-        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
-        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
+        'NAME': os.getenv('SFJ_DATABASE_NAME', 'SHFJ'),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.10.120.47'),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     },
     # 'Z02': {
     #         'ENGINE': 'sql_server.pyodbc',
@@ -283,13 +283,21 @@ DATABASES = {
                 },
             },
     'H-Z04': {
-            'ENGINE': 'django.db.backends.oracle',
-            'NAME': 'PKSJ',  # 数据库SID
-            'USER': 'CUSTOMER',
-            'PASSWORD': 'CUSTOMER',
-            'HOST':'10.4.23.165',
-            'PORT':'1521'
-        },
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('SFJ_DATABASE_NAME', 'SHFJ'),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.10.120.47'),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
+    },
+    # 'H-Z04': {
+    #         'ENGINE': 'django.db.backends.oracle',
+    #         'NAME': 'PKSJ',  # 数据库SID
+    #         'USER': 'CUSTOMER',
+    #         'PASSWORD': 'CUSTOMER',
+    #         'HOST':'10.4.23.165',
+    #         'PORT':'1521'
+    #     },
     'Z05': {
         'ENGINE': 'sql_server.pyodbc',
         'NAME': 'GZSFJ',

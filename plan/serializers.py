@@ -88,12 +88,15 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         read_only=True,
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
+    product_batching = serializers.IntegerField(required=False)
+    product_batch_no = serializers.CharField(required=False)
+    product_version = serializers.IntegerField(required=False)
 
     class Meta:
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
                   'product_no', 'batching_weight', 'production_time_interval', 'product_batching',
-                  'pdp_product_classes_plan', 'dev_type_name')
+                  'pdp_product_classes_plan', 'dev_type_name', 'product_batch_no', "product_version")
         read_only_fields = COMMON_READ_ONLY_FIELDS
         # validators = [
         #     UniqueTogetherValidator(
@@ -106,11 +109,32 @@ class ProductDayPlanSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         pb = validated_data.get('product_batching', None)
-        if pb.used_type != 4:
+        equip = validated_data.get("equip")
+        if VERSION_EQUIP[equip.equip_no] == "v3":
+            try:
+                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
+                    stage_product_batch_no=validated_data.pop("product_batch_no"),
+                    used_type=4,
+                    equip=equip,
+                    precept=validated_data.pop("product_version"),
+                )
+            except Exception as e:
+                print(e)
+                raise serializers.ValidationError("无法根据Z04机台返回信息绑定配方")
+        else:
+            try:
+                product_batching = ProductBatching.objects.exclude(used_type=6).get(
+                        stage_product_batch_no=validated_data.pop("product_batch_no"),
+                        equip=equip)
+            except Exception as e:
+                print(e)
+                raise serializers.ValidationError("胶料信息异常,详情:{}".format(e))
+        if product_batching.used_type != 4:
             raise serializers.ValidationError('改配方不是启用状态！')
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
+        validated_data["product_batching"] = product_batching
         instance = super().create(validated_data)
         # 创建胶料日班次班次计划和原材料需求量
         for detail in details:
@@ -179,7 +203,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
             detail['equip'] = instance.equip
-            detail['product_batching'] = instance.product_batching
+            detail['product_batching'] = product_batching
             detail['status'] = '等待'
 
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)

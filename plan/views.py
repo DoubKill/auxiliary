@@ -849,6 +849,10 @@ class IssuedPlan(APIView):
                     lt = LogTable.objects.using("H-Z04").filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
                 else:
+                    ps_obj.status = '运行中'
+                    ps_obj.save()
+                    pcp_obj.status = '运行中'
+                    pcp_obj.save()
                     return Response({'_': '下达成功'}, status=200)
 
         else:

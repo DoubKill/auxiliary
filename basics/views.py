@@ -15,6 +15,7 @@ from basics.serializers import GlobalCodeTypeSerializer, GlobalCodeSerializer, W
     EquipSerializer, SysbaseEquipLevelSerializer, WorkSchedulePlanSerializer, WorkScheduleUpdateSerializer, \
     PlanScheduleSerializer, EquipCategoryAttributeSerializer, ClassesSimpleSerializer
 from mes.common_code import return_permission_params, CommonDeleteMixin
+from mes.conf import VERSION_EQUIP
 from mes.derorators import api_recorder
 from mes.permissions import PermissionClass
 from mes.paginations import SinglePageNumberPagination
@@ -189,6 +190,8 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
             # 目前写死过滤密炼设备，后期如有更改则需前端修改参数
             data = queryset.filter(use_flag=1, category__equip_type__global_name='密炼设备'
                                    ).values('id', 'equip_no', 'equip_name', 'category__category_name')
+            for x in data:
+                x["version"] = VERSION_EQUIP[x['equip_no']]
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)

@@ -1522,7 +1522,7 @@ class I_RECIPES_V(models.Model):
     recipe_type = models.CharField(max_length=240)
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'i_recipes_v'
 
 
@@ -1567,7 +1567,7 @@ class ProdOrdersImp(models.Model):
     update_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = 'prod_orders_imp'
 
 
@@ -1588,7 +1588,7 @@ class LogTable(models.Model):
     update_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = "log_table"
 
 
@@ -1654,7 +1654,7 @@ class BatchReport(models.Model):
 
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = "batch_report"
 
 
@@ -1700,5 +1700,5 @@ class MaterialsConsumption(models.Model):
     update_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        # managed = False
         db_table = "materials_consumption"
