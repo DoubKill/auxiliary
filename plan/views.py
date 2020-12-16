@@ -766,7 +766,7 @@ class IssuedPlan(APIView):
         if not status:
             raise ValidationError(f"配方步序重传失败:{text}")
 
-    @atomic()
+    # @atomic()
     def post(self, request):
         version = request.version
         params = request.data
@@ -818,7 +818,7 @@ class IssuedPlan(APIView):
             else:
                 try:
                     hf_recipe_version = int(pcp_obj.product_batching.precept)
-                except:
+                except Exception as e:
                     raise ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
             host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
             try:
@@ -838,7 +838,7 @@ class IssuedPlan(APIView):
                     pori_function=9,
                     pori_host_id=host_id
                 )
-            except:
+            except Exception as e:
                 lt = LogTable.objects.using(test_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                 raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:

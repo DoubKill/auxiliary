@@ -1511,7 +1511,7 @@ class SfjEquipStatus(models.Model):
 
 
 class I_RECIPES_V(models.Model):
-    recipe_id = models.IntegerField(primary_key=True)
+    recipe_id = models.AutoField(primary_key=True)
     line_name = models.CharField(max_length=20)
     recipe_number = models.CharField(max_length=240)
     recipe_code = models.CharField(max_length=30)
@@ -1528,7 +1528,7 @@ class I_RECIPES_V(models.Model):
 
 class ProdOrdersImp(models.Model):
 
-    pori_id = models.IntegerField(primary_key=True)
+    pori_id = models.AutoField(primary_key=True)
     pori_pror_id = models.IntegerField()
     pori_host_id = models.IntegerField()
     pori_line_name = models.CharField(max_length=30)
@@ -1573,7 +1573,7 @@ class ProdOrdersImp(models.Model):
 
 class LogTable(models.Model):
 
-    lgtb_id = models.IntegerField(primary_key=True)
+    lgtb_id = models.AutoField(primary_key=True)
     lgtb_username = models.CharField(max_length=240)
     lgtb_date = models.DateTimeField()
     lgtb_action = models.TextField(max_length=1000)
@@ -1594,7 +1594,7 @@ class LogTable(models.Model):
 
 class BatchReport(models.Model):
     """批次报表数据"""
-    batr_id = models.IntegerField(primary_key=True)
+    batr_id = models.AutoField(primary_key=True)
     batr_host_id = models.IntegerField()
     batr_line_name = models.CharField(max_length=30)
     batr_camp_number = models.CharField(max_length=30)
@@ -1660,7 +1660,7 @@ class BatchReport(models.Model):
 
 class EquipRunData(models.Model):
     """用于单独从批次报表中获取曲线数据"""
-    batr_id = models.IntegerField(primary_key=True)
+    batr_id = models.AutoField(primary_key=True)
     batr_measured_data = models.TextField()
 
     class Meta:
@@ -1670,7 +1670,7 @@ class EquipRunData(models.Model):
 
 class MaterialsConsumption(models.Model):
     """消耗报表"""
-    maco_id = models.IntegerField(primary_key=True)
+    maco_id = models.AutoField(primary_key=True)
     maco_date = models.DateTimeField()
     maco_line_name = models.CharField(max_length=30)
     maco_camp_number = models.CharField(max_length=30)
