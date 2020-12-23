@@ -1511,6 +1511,7 @@ class SfjEquipStatus(models.Model):
 
 
 class I_RECIPES_V(models.Model):
+    """Z04配方视图"""
     recipe_id = models.AutoField(primary_key=True)
     line_name = models.CharField(null=True, blank=True,max_length=20)
     recipe_number = models.CharField(null=True, blank=True,max_length=240)
@@ -1527,7 +1528,7 @@ class I_RECIPES_V(models.Model):
 
 
 class ProdOrdersImp(models.Model):
-
+    """Z04计划交互"""
     pori_id = models.AutoField(primary_key=True)
     pori_pror_id = models.IntegerField(null=True, blank=True,)
     pori_host_id = models.IntegerField(null=True, blank=True,)
@@ -1572,7 +1573,7 @@ class ProdOrdersImp(models.Model):
 
 
 class LogTable(models.Model):
-
+    """Z04错误日志"""
     lgtb_id = models.AutoField(primary_key=True)
     lgtb_username = models.CharField(null=True, blank=True,max_length=240)
     lgtb_date = models.DateTimeField(null=True, blank=True,)
@@ -1702,3 +1703,36 @@ class MaterialsConsumption(models.Model):
     class Meta:
         # managed = False
         db_table = "materials_consumption"
+
+
+class I_ORDER_STATE_V(models.Model):
+    """计划订单状态视图"""
+    order_id = models.IntegerField()
+    order_name = models.CharField(max_length=240)
+    recipe_id = models.IntegerField()
+    recipe = models.CharField(max_length=30)
+    recipe_code = models.CharField(max_length=30)
+    recipe_name = models.CharField(max_length=240)
+    recipe_version = models.IntegerField()
+    recipe_weight = models.DecimalField(max_digits=12, decimal_places=3)
+    order_sequence = models.IntegerField()
+    order_freetext_1 = models.TextField(max_length=1000)
+    order_freetext_2 = models.TextField(max_length=1000)
+    batches_set = models.IntegerField()
+    batches_act = models.IntegerField()
+    order_auto_change = models.CharField(max_length=1)
+    planned_start_date = models.DateTimeField()
+    order_start_date = models.DateTimeField()
+    order_end_date = models.DateTimeField()
+    order_released = models.IntegerField()
+    order_insert_date = models.DateTimeField()
+    order_weight = models.DecimalField(max_digits=12, decimal_places=3)
+    order_weight_act = models.DecimalField(max_digits=12, decimal_places=3)
+    station_ident = models.CharField(max_length=100)
+    station_name = models.CharField(max_length=30)
+    line_name = models.CharField(max_length=240)
+    order_status = models.CharField(max_length=240)
+
+    class Meta:
+        # managed = False
+        db_table = 'i_order_state_v'

@@ -17,6 +17,7 @@ import requests
 from django.db.models import F
 
 from mes.conf import MES_PORT
+from work_station.models import I_ORDER_STATE_V
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -28,7 +29,6 @@ from production import models as pd
 from production import serializers as sz
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
     IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
-from work_station.models import IfupReportMix, IfupReportBasis
 
 logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
@@ -105,24 +105,33 @@ def one_instance(func):
     return f
 
 
-def update_plan_status(obj, status1, status2):
-    """定时刷新计划状态"""
-    if obj:
-        equip_no = obj.equip_no
-        product_no = obj.product_no
-        plan_uid = obj.plan_classes_uid
-        if "0" in equip_no:
-            en = equip_no[-1]
+
+def update_Z04_plan_status():
+    order_set_status = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_end_date__date=datetime.datetime.today(),
+                                                                     order_status__in=["FINISHED", "UNFINISHED"])
+    for order in order_set_status:
+        if PlanStatus.objects.filter(plan_classes_uid=order.order_name,
+                                         product_no=order.recipe_name,
+                                         equip_no=order.line_name,
+                                         status__in=["完成", "停止"]).exists():
+            continue
+        PlanStatus.objects.create(
+            plan_classes_uid=order.order_name,
+            product_no=order.recipe_name,
+            equip_no=order.line_name,
+            status="完成" if order.order_status=="FINISHED" else "停止",
+            operation_user="hf",
+            product_time=datetime.datetime.now()
+        )
+        try:
+            plan = ProductClassesPlan.objects.get(plan_classes_uid=order.order_name)
+        except Exception as e:
+            logger.error(e)
         else:
-            en = equip_no[1:3]
-        model = getattr(md, "IfdownShengchanjihua" + en)
-        if model.objects.filter(recstatus=status2, recipe=product_no, planid=plan_uid):
-            PlanStatus.objects.filter(
-                plan_classes_uid=plan_uid,
-                product_no=product_no,
-                equip_no=equip_no,
-                status=status1
-            ).update(status=status2)
+            plan.status = "完成" if order.order_status=="FINISHED" else "停止"
+            plan.save()
+
+
 
 def add_plan_status():
     tf_set = TrainsFeedbacks.objects.filter(actual_trains__gte=F('plan_trains'))
@@ -152,6 +161,7 @@ def plan_status_monitor():
     # if ps_stop:
     #     update_plan_status(ps_stop, '待停止', '停止')
     add_plan_status()
+    update_Z04_plan_status()
 
 
 
@@ -180,10 +190,6 @@ if __name__ == "__main__":
     # ifup上行中间表是在每车完成同步插入数据的吗, 理论上来说对于万隆应该是个双写的逻辑
     run()
     # 后续进程函数或者类封装
-
-    #TODO
-    # 1. 该脚本不在是一个单独的上行脚本，若报产数据上来没有计划，则需在计划表里新增一条数据
-    # 2. 预留入口，可以扩展其他功能
 
     # def main():
     #     # temp_list = dir(md)  # 原计划动态导入中间表，改为写死

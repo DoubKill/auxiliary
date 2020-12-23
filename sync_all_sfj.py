@@ -426,26 +426,26 @@ def consume_data_up():
 
 
 if __name__ == '__main__':
-    # for db in DATABASES:
-    #     if not db.startswith("Z"):
-    #         continue
-    #     else:
-    #         try:
-    #             sync_recipe(db)
-    #         except Exception as e:
-    #             print(e)
-    #             logger.error(e)
-    #         try:
-    #             sync_product_feedback(db)
-    #         except Exception as e:
-    #             print(e)
-    #             logger.error(e)
-    #
-    # try:
-    #     add_plan_status()
-    # except Exception as e:
-    #     print(e)
-    #     logger.error(e)
+    for db in DATABASES:
+        if not db.startswith("Z"):
+            continue
+        else:
+            try:
+                sync_recipe(db)
+            except Exception as e:
+                print(e)
+                logger.error(e)
+            try:
+                sync_product_feedback(db)
+            except Exception as e:
+                print(e)
+                logger.error(e)
+
+    try:
+        add_plan_status()
+    except Exception as e:
+        print(e)
+        logger.error(e)
     try:
         hf_trains_up()
     except Exception as e:
