@@ -817,7 +817,7 @@ class IssuedPlan(APIView):
                     hf_recipe_version = int(pcp_obj.product_batching.precept)
                 except Exception as e:
                     raise ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
-            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))/111
             if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                          pori_recipe_code=recipe_name,
                                                          pori_recipe_version=hf_recipe_version,
@@ -841,6 +841,8 @@ class IssuedPlan(APIView):
                 )
             except Exception as e:
                 lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                if not lt:
+                    raise ValidationError(f"未知错误：{e}")
                 raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:
                 plan_status =  ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
@@ -851,9 +853,9 @@ class IssuedPlan(APIView):
                     lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
                     raise ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
                 else:
-                    ps_obj.status = '运行中'
+                    ps_obj.status = "已下达"
                     ps_obj.save()
-                    pcp_obj.status = '运行中'
+                    pcp_obj.status = '已下达'
                     pcp_obj.save()
                     return Response({'_': '下达成功'}, status=200)
 

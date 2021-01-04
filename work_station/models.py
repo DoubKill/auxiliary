@@ -1707,7 +1707,7 @@ class MaterialsConsumption(models.Model):
 
 class I_ORDER_STATE_V(models.Model):
     """计划订单状态视图"""
-    order_id = models.IntegerField()
+    order_id = models.IntegerField(primary_key=True)
     order_name = models.CharField(max_length=240)
     recipe_id = models.IntegerField()
     recipe = models.CharField(max_length=30)
@@ -1736,3 +1736,16 @@ class I_ORDER_STATE_V(models.Model):
     class Meta:
         # managed = False
         db_table = 'i_order_state_v'
+
+class I_RECIPE_COMPONENTS_V(models.Model):
+    """配方称量视图"""
+    reco_id = models.IntegerField(primary_key=True)
+    line_aggregate = models.CharField(max_length=64, help_text="串行密炼机类型")
+    weight = models.DecimalField(max_digits=12, decimal_places=3, help_text="原材料重量")
+    recipe_number = models.CharField(max_length=64, help_text="配方编号")
+    recipe_version = models.IntegerField(help_text="配方版本")
+    production_line_name = models.CharField(max_length=64, help_text="机台号")
+
+    class Meta:
+        # managed = False
+        db_table = 'i_recipe_components_v'

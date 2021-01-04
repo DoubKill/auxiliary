@@ -13,7 +13,7 @@ from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, Pr
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
-from work_station.models import I_RECIPES_V, ProdOrdersImp, LogTable
+from work_station.models import I_RECIPES_V, ProdOrdersImp, LogTable, I_RECIPE_COMPONENTS_V
 
 logger = logging.getLogger('api_log')
 
@@ -110,13 +110,24 @@ class ProductDayPlanSerializer(BaseModelSerializer):
     def create(self, validated_data):
         pb = validated_data.get('product_batching', None)
         equip = validated_data.get("equip")
+        product_no = validated_data.pop("product_batch_no")
+        precept = validated_data.pop("product_version")
+        product_info = product_no.split('-')
+        try:
+            stage = GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次')
+        except:
+            stage = None
+        recipe_weight = I_RECIPE_COMPONENTS_V.objects.using("H-Z04").get(line_aggregate="Mixer2", recipe_number=product_no, recipe_version=precept).weight
+
         if VERSION_EQUIP[equip.equip_no] == "v3":
             try:
                 product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
-                    stage_product_batch_no=validated_data.pop("product_batch_no"),
+                    stage_product_batch_no= product_no,
                     used_type=4,
                     equip=equip,
-                    precept=validated_data.pop("product_version"),
+                    precept=precept,
+                    batching_weight=recipe_weight,
+                    stage=stage,
                 )
             except Exception as e:
                 print(e)
@@ -124,13 +135,13 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         else:
             try:
                 product_batching = ProductBatching.objects.exclude(used_type=6).get(
-                        stage_product_batch_no=validated_data.pop("product_batch_no"),
+                        stage_product_batch_no=product_no,
                         equip=equip)
             except Exception as e:
                 print(e)
                 raise serializers.ValidationError("胶料信息异常,详情:{}".format(e))
         if product_batching.used_type != 4:
-            raise serializers.ValidationError('改配方不是启用状态！')
+            raise serializers.ValidationError('该配方不是启用状态！')
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
@@ -478,7 +489,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                     hf_recipe_version = int(instance.product_batching.precept)
                 except:
                     raise serializers.ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
-            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))//111
             if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                          pori_order_number=instance.plan_classes_uid,
                                                          pori_recipe_code=recipe_name,

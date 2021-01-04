@@ -79,9 +79,9 @@ def send_to_yikong_run():
                     test_dict['finishno'] = tfb_obj.actual_trains
                 else:
                     test_dict['finishno'] = 0
-                test_dict['weight'] = pcp_obj[0].get("product_day_plan__product_batching__batching_weight", "")
-
-                test_dict['sp_number'] = pcp_obj[0].get("product_day_plan__product_batching__processes__sp_num", "")
+                recipe_weight = pcp_obj[0].get("product_day_plan__product_batching__batching_weight", 220)
+                test_dict['weight'] = recipe_weight
+                test_dict['sp_number'] = 750 // recipe_weight
                 try:
                     WebService.issue(test_dict, 'plan', equip_no="4")
                 except Exception as e:
@@ -95,7 +95,7 @@ def send_to_yikong_stop():
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
         test_dict['planid'] = plan_obj.order_name
-        test_dict['no'] = '4'
+        test_dict['no'] = 4
         try:
             WebService.issue(test_dict, 'stop', equip_no='4')
         except Exception as e:
@@ -104,19 +104,18 @@ def send_to_yikong_stop():
 
 def send_to_yikong_update():
     """更新车次"""
-    scjh_set = I_ORDER_STATE_V.objects.filter(order_status="PRODUCTION").order_by("order_start_date").last()
-    if not scjh_set:
+    plan = I_ORDER_STATE_V.objects.filter(order_status="PRODUCTION").order_by("order_start_date").last()
+    if not plan:
         pass
     else:
-        for scjh_obj in scjh_set:
-            test_dict = OrderedDict()
-            test_dict['updatestate'] = scjh_obj.setno
-            test_dict['planid'] = scjh_obj.planid
-            test_dict['no'] = "4"
-            try:
-                WebService.issue(test_dict, 'updatetrains', equip_no="4")
-            except Exception as e:
-                logger.error(f"Z04超时链接|{e}")
+        test_dict = OrderedDict()
+        test_dict['updatestate'] = plan.setno
+        test_dict['planid'] = plan.planid
+        test_dict['no'] = 4
+        try:
+            WebService.issue(test_dict, 'updatetrains', equip_no="4")
+        except Exception as e:
+            logger.error(f"Z04超时链接|{e}")
 
 
 def send_again_yikong_again():
@@ -156,7 +155,7 @@ def run():
     while True:
         # 防止报错之后脚本就直接停了
         # 计划下达
-        for fun in [send_to_yikong_run, send_to_yikong_stop, send_to_yikong_update, send_again_yikong_again]:
+        for fun in [send_to_yikong_run, send_to_yikong_stop, send_to_yikong_update]:
             try:
                 fun()
             except Exception as e:
