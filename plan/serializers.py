@@ -111,15 +111,17 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         pb = validated_data.get('product_batching', None)
         equip = validated_data.get("equip")
         product_no = validated_data.pop("product_batch_no")
-        precept = validated_data.pop("product_version")
         product_info = product_no.split('-')
         try:
             stage = GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次')
         except:
             stage = None
-        recipe_weight = I_RECIPE_COMPONENTS_V.objects.using("H-Z04").get(line_aggregate="Mixer2", recipe_number=product_no, recipe_version=precept).weight
-
         if VERSION_EQUIP[equip.equip_no] == "v3":
+            precept = validated_data.pop("product_version")
+            recipe_weight = I_RECIPE_COMPONENTS_V.objects.using("H-Z04").get(line_aggregate="Mixer2",
+                                                                             recipe_number=product_no,
+                                                                             recipe_version=precept).weight
+
             try:
                 product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
                     stage_product_batch_no= product_no,
