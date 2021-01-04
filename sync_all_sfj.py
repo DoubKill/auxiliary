@@ -9,7 +9,7 @@ import django
 import datetime
 import logging
 
-
+from django.db.models import F
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -17,13 +17,13 @@ django.setup()
 from django.db import IntegrityError
 from django.db.transaction import atomic
 
-from production.models import EquipStatus, AlarmLog
+from production.models import EquipStatus, AlarmLog, TrainsFeedbacks, PlanStatus, ExpendMaterial
 from mes.settings import DATABASES
 from plan.models import ProductClassesPlan, ProductDayPlan
 from recipe.models import ProductBatching, ProductInfo, ProductProcess, ProductProcessDetail, BaseCondition, BaseAction, \
     ProductBatchingDetail, Material
 from work_station.models import SfjRecipeCon, SfjRecipeMix, SfjRecipeCb, SfjRecipeOil1, SfjRecipeGum, SfjProducePlan, \
-    SfjEquipStatus, SfjAlarmLog
+    SfjEquipStatus, SfjAlarmLog, BatchReport, MaterialsConsumption
 from basics.models import PlanSchedule, WorkSchedule, GlobalCode, WorkSchedulePlan, Equip
 
 
@@ -287,6 +287,8 @@ def sync_product_feedback(db):
         sfj_list = [AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in
                     sfj_al_set]
         AlarmLog.objects.bulk_create(sfj_list)
+
+
 
 
 if __name__ == '__main__':
