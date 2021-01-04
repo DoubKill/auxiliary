@@ -14,21 +14,21 @@ import django
 import logging
 
 import requests
-from django.db.models import F
 
-from mes.conf import MES_PORT
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from django.db.transaction import atomic
+from recipe.models import Material
 from system.models import SystemConfig, ChildSystemInfo
-from work_station import models as md
+from mes.conf import MES_PORT
+from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption
 from plan.models import ProductClassesPlan
 from production import models as pd
 from production import serializers as sz
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
     IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
-from work_station.models import IfupReportMix, IfupReportBasis
 
 logger = logging.getLogger('sync_log')
 # 该字典存储中间表与群控model及更新数据的映射关系
@@ -105,284 +105,200 @@ def one_instance(func):
     return f
 
 
-def update_plan_status(obj, status1, status2):
-    """定时刷新计划状态"""
-    if obj:
-        equip_no = obj.equip_no
-        product_no = obj.product_no
-        plan_uid = obj.plan_classes_uid
-        if "0" in equip_no:
-            en = equip_no[-1]
-        else:
-            en = equip_no[1:3]
-        model = getattr(md, "IfdownShengchanjihua" + en)
-        if model.objects.filter(recstatus=status2, recipe=product_no, planid=plan_uid):
-            PlanStatus.objects.filter(
-                plan_classes_uid=plan_uid,
-                product_no=product_no,
-                equip_no=equip_no,
-                status=status1
-            ).update(status=status2)
 
-def add_plan_status():
-    tf_set = TrainsFeedbacks.objects.filter(actual_trains__gte=F('plan_trains'))
-    if tf_set.exists():
-        for tf in tf_set:
-            if PlanStatus.objects.filter(plan_classes_uid=tf.plan_classes_uid,
-                                         product_no=tf.product_no,
-                                         equip_no=tf.equip_no,
-                                         status="完成").exists():
-                continue
-            PlanStatus.objects.create(
-                plan_classes_uid=tf.plan_classes_uid,
-                product_no=tf.product_no,
-                equip_no=tf.equip_no,
-                status="完成",
-                operation_user=tf.operation_user,
-                product_time=tf.product_time,
-            )
+def add_Z04_plan_status():
+    order_set_status = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_start_date__gte=(datetime.datetime.now() -
+                                                                     datetime.timedelta(days=1)),
+                                                                     order_status__in=["FINISHED", "UNFINISHED"])
+    for order in order_set_status:
+        if PlanStatus.objects.filter(plan_classes_uid=order.order_name,
+                                         product_no=order.recipe_name,
+                                         equip_no=order.line_name,
+                                         status__in=["完成", "停止"]).exists():
+            continue
+
+        if order.order_status == "FINISHED":
+            status = "完成"
+        elif order.order_status == "UNFINISHED":
+            status = "停止"
+        else:
+            status = "unknown"
+
+        PlanStatus.objects.create(
+            plan_classes_uid=order.order_name,
+            product_no=order.recipe_name,
+            equip_no=order.line_name,
+            status=status,
+            operation_user="hf",
+            product_time=datetime.datetime.now()
+        )
+        try:
+            ProductClassesPlan.objects.filter(plan_classes_uid=order.order_name).update(status=status)
+        except Exception as e:
+            logger.error(e)
+
+
+def update_Z04_plan_status():
+    run_status = "运行中"
+    plan_set = PlanStatus.objects.filter(equip_no="Z04", status="已下达", product_time__gte=(datetime.datetime.now() -
+                                                                     datetime.timedelta(days=1)))
+    for plan in plan_set:
+        if I_ORDER_STATE_V.objects.using("H-Z04").filter(order_name=plan.plan_classes_uid, recipe_name=plan.product_no,
+                                                      line_name="Z04", status="PRODUCTION").exists():
+            plan.status = run_status
+            plan.save()
+            try:
+                ProductClassesPlan.objects.filter(plan_classes_uid=plan.plan_classes_uid).update(status=run_status)
+            except Exception as e:
+                logger.error(e)
+
+
 
 
 def plan_status_monitor():
     """计划状态监听"""
-    ps = PlanStatus.objects.filter(status="已下达").last()
-    ps_stop = PlanStatus.objects.filter(status="待停止").last()
-    if ps:
-        update_plan_status(ps, '已下达', '运行中')
-    if ps_stop:
-        update_plan_status(ps_stop, '待停止', '停止')
-    add_plan_status()
+    add_Z04_plan_status()
+    update_Z04_plan_status()
 
 
+#Z04 数据需单独上传
+@atomic()
+def hf_trains_up():
+    tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
+    if tf:
+        batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
+                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name"
+                  "batr_batch_weight", "batr_start_date", "batr_end_date", "batr_quality", "batr_total_spec_energy", "batr_tot_integr_energy",
+                  "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature")
+    else:
+        batch_set = BatchReport.objects.using("H-Z04").filter().values("batr_batch_quantity_set",
+                                                                                            "batr_batch_number",
+                                                                                            "batr_recipe_code",
+                                                                                            "batr_order_number",
+                                                                                            "batr_recipe_version",
+                                                                                            "batr_batch_weight",
+                                                                                            "batr_start_date",
+                                                                                            "batr_end_date",
+                                                                                            "batr_quality",
+                                                                                            "batr_total_spec_energy",
+                                                                                            "batr_tot_integr_energy",
+                                                                                            "batr_total_revolutions",
+                                                                                            "batr_cycle_time",
+                                                                                            "batr_mixing_time",
+                                                                                            "batr_drop_cycle_time",
+                                                                                            "batr_transition_temperature",
+                                                                                            "batr_user_name")
+    temp1 = None
+    for temp in batch_set:
+        try:
+            plan  = ProductClassesPlan.objects.get(plan_classes_uid=temp.get("batr_order_number"))
+        except Exception as e:
+            continue
+        try:
+            plan_weight = plan.weight if plan.weight else 23000
+            class_name = plan.work_schedule_plan.classes.global_name
+            if temp1:
+                interval_time = (temp.get("batr_start_date") - temp1.get("batr_end_date")).total_seconds()
+            else:
+                interval_time = 15
+            consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
+            train = dict(
+                plan_classes_uid = temp.get("batr_order_number"),
+                plan_trains =temp.get("batr_batch_quantity_set"),
+                actual_trains = temp.get("batr_batch_number"),
+                bath_no = 1,
+                equip_no = "Z04",
+                product_no = temp.get("batr_recipe_code"),
+                plan_weight=plan_weight,
+                actual_weight = temp.get("batr_batch_weight", 230)*100,
+                begin_time = temp.get("batr_start_date"),
+                end_time = temp.get("batr_end_date"),
+                operation_user = temp.get("batr_user_name"),
+                classes = class_name,
+                product_time = temp.get("batr_end_date"),
+                control_mode="远控",
+                operating_type = "自动",
+                evacuation_time = int(temp.get("batr_drop_cycle_time")),
+                evacuation_temperature = temp.get("batr_transition_temperature"),
+                evacuation_energy = int(temp.get("batr_tot_integr_energy")),
+                interval_time=int(interval_time),
+                mixer_time=int(temp.get("batr_mixing_time")),
+                consum_time=int(consume_time),
+            )
+            temp1 = temp
+            TrainsFeedbacks.objects.create(**train)
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04车次报表上行失败:{e}")
+            continue
 
-def main():
-    # temp_list = dir(md)  # 原计划动态导入中间表，改为写死
-    # 手动对中间表模型进行排序确保业务逻辑正确
-    bath_no = 1 # 没有批次号编码,暂时写死
-    temp_model_set = None
-    temp = None
-    current_trains = 0
-    temp_list = ["IfupReportCurve", "IfupReportMix", "IfupReportWeight", "IfupMachineStatus", "IfupReportBasis"]
-    for m in temp_list:
-        temp_model = getattr(md, m)
-        temp_model_set = temp_model.objects.filter(recstatus="待更新")
-        if m == "IfupMachineStatus":
-            """设备状态表"""
-            # 每次循环最后检测，补充修改设备状态
-            for temp in temp_model_set:
-                if temp.运行状态 == 1:
-                    equip_status = "运行中"
-                elif temp.运行状态 == 2:
-                    equip_status = "停机"
-                elif temp.运行状态 == 3:
-                    equip_status = "故障"
-                else:
-                    equip_status = "unknown"
-                EquipStatus.objects.filter(plan_classes_uid=temp.计划号,
-                                           equip_no=temp.机台号).update(status=equip_status)
 
-        elif m == "IfupReportBasis":
-            """车次报表主信息"""
-            sync_data_list = []
-            for temp in temp_model_set:
-                uid = temp.计划号
-                equip_no = str(temp.机台号)
-                if len(equip_no) == 1:
-                    equip_no = "Z0" + equip_no
-                else:
-                    equip_no = "Z" + equip_no
-                product_no = temp.配方号  # 这里不确定是否一致
-                # 暂时只能通过这个方案获取计划车次，理论上uid是唯一的
-                pcp = ProductClassesPlan.objects.filter(
-                    plan_classes_uid=uid
-                ).last()
-                begin_time_str = temp.开始时间
-                end_time_str = temp.存盘时间
-                if len(begin_time_str) == 15:
-                    begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M")
-                elif len(begin_time_str) ==19:
-                    # begin_time = datetime.datetime.strptime(begin_time_str, "%Y/%m/%d %H:%M:%S")
-                    begin_time = datetime.datetime.strptime(begin_time_str, "%Y-%m-%d %H:%M:%S")
-                else:
-                    continue
-                if len(end_time_str) == 15:
-                    end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                elif len(end_time_str) ==19:
-                    # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
-                    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
-                else:
-                    continue
-                adapt_data_trains = {
-                    "plan_classes_uid": uid,
-                    "plan_trains": pcp.plan_trains if pcp else 0,
-                    "actual_trains": temp.车次号,
-                    "bath_no": bath_no,
-                    "equip_no": equip_no,
-                    "product_no": product_no,
-                    "plan_weight": pcp.weight if pcp else 0,
-                    "actual_weight": temp.总重量,
-                    "begin_time": begin_time, # 2020/4/15 16:08
-                    "end_time": end_time,
-                    "operation_user": temp.员工代号,
-                    "classes": pcp.work_schedule_plan.classes.global_name if pcp else "",
-                    "product_time": end_time,
-                    # "factory_date": pcp.work_schedule_plan.plan_schedule.day_time,
-                }
-                sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
-            TrainsFeedbacks.objects.bulk_create(sync_data_list)
-            IfupReportBasisBackups.objects.bulk_create(list(temp_model_set))
-        elif m == "IfupReportCurve":
-            """车次报表工艺曲线数据表"""
-            sync_data_list = []
-            for temp in temp_model_set:
-                uid = temp.计划号
-                equip_no = str(temp.机台号)
-                if len(equip_no) == 1:
-                    equip_no = "Z0" + equip_no
-                else:
-                    equip_no = "Z" + equip_no
-                end_time_str = temp.存盘时间
-                if len(end_time_str) == 15:
-                    end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-                elif len(end_time_str) == 19:
-                    # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
-                    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
-                else:
-                    continue
-                mix_obj = IfupReportMix.objects.filter(计划号=uid, 配方号=temp.配方号, 机台号=temp.机台号)
-                if mix_obj:
-                    current_trains = mix_obj.last().密炼车次
-                else:
-                    current_trains = current_trains
-                adapt_data = {
-                    "plan_classes_uid": uid,
-                    "equip_no": equip_no,  # 机台号可能需要根据规则格式化
-                    "temperature": temp.温度,
-                    "rpm": temp.转速,
-                    "energy": temp.能量,
-                    "power": temp.功率,
-                    "pressure": temp.压力,
-                    "current_trains": current_trains,
-                    "status": "运行中",
-                    "product_time": end_time,
-                }
-                sync_data_list.append(EquipStatus(**adapt_data))
-            EquipStatus.objects.bulk_create(sync_data_list)
-            IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
-        elif m == "IfupReportMix":
-            """车次报表步序表"""
-            IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
-        elif m == "IfupReportWeight":
-            """车次报表材料重量表"""
-            sync_data_list = []
-            for temp in temp_model_set:
-                equip_str = str(temp.机台号)
-                if len(equip_str) == 1:
-                    equip_no = "Z0" + equip_str
-                else:
-                    equip_no = "Z" + equip_str
-                uid = temp.计划号
-                product_no = temp.配方号
-                trains = temp.车次号
-                plan_weight = temp.设定重量
-                actual_weight = temp.实际重量
-                material_no = temp.物料编码
-                material_type = temp.物料类型
-                if material_type == "C":
-                    material_type = "炭黑"
-                elif material_type == "O":
-                    material_type = "油料"
-                elif material_type == "P":
-                    material_type = "胶料"
-                material_name = temp.物料名称
-                product_time = temp.存盘时间
-                current_trains = trains
-                adapt_data = {
-                    "plan_classes_uid": uid,
-                    "equip_no": equip_no,
-                    "product_no": product_no,
-                    "trains": trains,
-                    "plan_weight": plan_weight,
-                    "actual_weight": actual_weight,
-                    "material_no": material_no,
-                    "material_type": material_type,
-                    "material_name": material_name,
-                    "product_time": product_time
-                }
-                sync_data_list.append(ExpendMaterial(**adapt_data))
-            ExpendMaterial.objects.bulk_create(sync_data_list)
-            IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
-        else:
-            # 该分支正常情况执行，若执行需告警
-            logger.error("出现未知同步表，请立即检查")
-        temp_model_set.update(recstatus="更新完成")
-    # 改部分代码目前未生效
-    if temp is IfupReportBasis:
-        plan_no = temp.计划号
-        product_no = temp.配方号
-        equip_str = str(temp.机台号)
-        if len(equip_str) == 1:
-            equip_no = "Z0" + equip_str
-        else:
-            equip_no = "Z" + equip_str
-        product_time = temp.存盘时间
-        actual_trains = temp.车次号
-        current_trains = actual_trains
-        plan_trains = pcp.plan_trains if pcp else 0
-        model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix',
-                      # 'IfdownRecipePloy', 'IfdownRecipeOil1','IfdownRecipeCb',
-                      'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-        if actual_trains < plan_trains:
-            status = "运行中"
-            model_name = getattr(md, model_list[0] + equip_str)
-            instance = model_name.objects.all().first()
-            if instance:
-                if instance.recstatus == "停止":
-                    status = "停止"
-        # elif: 这里预留一个分支判断，当满足时可能计划被删除
-        else:
-            status = "已完成"
-            for model_str in model_list:
-                model_name = getattr(md, model_str + equip_str)
-                model_name.objects.all().update(recstatus='完成')
-        operation_user = temp.员工代号
-        if not operation_user:
-            operation_user = ""
-        PlanStatus.objects.create(plan_classes_uid=plan_no,
-                                       product_no=product_no,
-                                       equip_no=equip_no,
-                                       operation_user=operation_user,
-                                       product_time=product_time,
-                                       status=status
-                                       )
+@atomic()
+def consume_data_up():
+    ep = ExpendMaterial.objects.filter(equip_no="Z04").order_by("product_time").last()
+    if ep:
+        consume_set = MaterialsConsumption.objects.using("H-Z04").filter(maco_end_date__gt=ep.product_time).values(
+            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date", "maco_recipe_code"
+            "insert_user", "maco_set_quantity", "maco_batch_number")
+    else:
+        consume_set = MaterialsConsumption.objects.using("H-Z04").filter().values(
+            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date",
+            "maco_recipe_code", "insert_user", "maco_set_quantity", "maco_batch_number"
+        )
+    for temp in consume_set:
+        try:
+            ProductClassesPlan.objects.get(plan_classes_uid=temp.get("maco_order_number"))
+        except:
+            continue
+        try:
+            material_name = temp.get("maco_mat_code")
+            if not material_name:
+                continue
+            material = Material.objects.filter(material_name=material_name).last()
+            material_no = material.material_no
+            material_type = material.material_type.global_name
+            consume = dict(
+                plan_classes_uid=temp.get("maco_order_number"),
+                equip_no ="Z04",
+                product_no =temp.get("maco_recipe_code"),
+                trains =temp.get("maco_batch_number"),
+                plan_weight =temp.get("maco_set_quantity") * 100,
+                actual_weight =temp.get("maco_consumed_quantity") * 100,
+                material_no =material_no,
+                material_type=material_type,
+                material_name=temp.get("maco_mat_code"),
+                product_time=temp.get("maco_end_date"),
+            )
+            ExpendMaterial.objects.create(**consume)
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04消耗报表上行失败:{e}")
+            continue
+
 
 
 @one_instance
 def run():
-    global current_trains
     while True:
-        # try:
-        #     main()
-        # except Exception as e:
-        #     logger.error(f"工作站至群控上行异常:{e}")
-        # try:
-        #     plan_status_monitor()
-        # except Exception as e:
-        #     logger.error(f"计划状态同步异常:{e}")
+        try:
+            plan_status_monitor()
+        except Exception as e:
+            logger.error(f"计划状态同步异常:{e}")
         try:
             MesUpClient.sync()
         except Exception as e:
             logger.error(f"群控至MES上行异常:{e}")
+        try:
+            hf_trains_up()
+        except Exception as e:
+            print(e)
+            logger.error(e)
+        try:
+            consume_data_up()
+        except Exception as e:
+            print(e)
+            logger.error(e)
         time.sleep(5)
 
 if __name__ == "__main__":
-    # 问题1 recstatus字段是否要修改 文档1中是字符，sql建的表是整型
-    # 2 两张上行表中的设备数据取拿张，或者说策略
-    # 什么时候写入车次反馈数据什么时候回写入批次反馈数据，跟万隆对接只有车次数据
-    # ifup上行中间表是在每车完成同步插入数据的吗, 理论上来说对于万隆应该是个双写的逻辑
     run()
-    # 后续进程函数或者类封装
-
-    #TODO
-    # 1. 该脚本不在是一个单独的上行脚本，若报产数据上来没有计划，则需在计划表里新增一条数据
-    # 2. 预留入口，可以扩展其他功能

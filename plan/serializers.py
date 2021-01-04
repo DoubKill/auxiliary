@@ -8,11 +8,12 @@ from rest_framework import serializers
 from basics.models import WorkSchedulePlan, Equip, GlobalCode, PlanSchedule
 from mes.base_serializer import BaseModelSerializer
 from mes.common_code import WebService
-from mes.conf import COMMON_READ_ONLY_FIELDS, VERSION_EQUIP
+from mes.conf import COMMON_READ_ONLY_FIELDS, VERSION_EQUIP, hf_db
 from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, ProductBatchingClassesPlan
 from plan.uuidfield import UUidTools
 from production.models import TrainsFeedbacks, PlanStatus
 from recipe.models import ProductBatching
+from work_station.models import I_RECIPES_V, ProdOrdersImp, LogTable, I_RECIPE_COMPONENTS_V
 
 logger = logging.getLogger('api_log')
 
@@ -87,12 +88,15 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                         read_only=True,
                                                         help_text='配料时间', decimal_places=2, max_digits=10)
     dev_type_name = serializers.CharField(source='product_batching.dev_type.global_name', read_only=True)
+    product_batching = serializers.IntegerField(required=False)
+    product_batch_no = serializers.CharField(required=False)
+    product_version = serializers.IntegerField(required=False)
 
     class Meta:
         model = ProductDayPlan
         fields = ('id', 'equip', 'equip_no', 'category', 'plan_schedule',
                   'product_no', 'batching_weight', 'production_time_interval', 'product_batching',
-                  'pdp_product_classes_plan', 'dev_type_name')
+                  'pdp_product_classes_plan', 'dev_type_name', 'product_batch_no', "product_version")
         read_only_fields = COMMON_READ_ONLY_FIELDS
         # validators = [
         #     UniqueTogetherValidator(
@@ -105,11 +109,43 @@ class ProductDayPlanSerializer(BaseModelSerializer):
     @atomic()
     def create(self, validated_data):
         pb = validated_data.get('product_batching', None)
-        if pb.used_type != 4:
-            raise serializers.ValidationError('改配方不是启用状态！')
+        equip = validated_data.get("equip")
+        product_no = validated_data.pop("product_batch_no")
+        precept = validated_data.pop("product_version")
+        product_info = product_no.split('-')
+        try:
+            stage = GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次')
+        except:
+            stage = None
+        recipe_weight = I_RECIPE_COMPONENTS_V.objects.using("H-Z04").get(line_aggregate="Mixer2", recipe_number=product_no, recipe_version=precept).weight
+
+        if VERSION_EQUIP[equip.equip_no] == "v3":
+            try:
+                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
+                    stage_product_batch_no= product_no,
+                    used_type=4,
+                    equip=equip,
+                    precept=precept,
+                    batching_weight=recipe_weight,
+                    stage=stage,
+                )
+            except Exception as e:
+                print(e)
+                raise serializers.ValidationError("无法根据Z04机台返回信息绑定配方")
+        else:
+            try:
+                product_batching = ProductBatching.objects.exclude(used_type=6).get(
+                        stage_product_batch_no=product_no,
+                        equip=equip)
+            except Exception as e:
+                print(e)
+                raise serializers.ValidationError("胶料信息异常,详情:{}".format(e))
+        if product_batching.used_type != 4:
+            raise serializers.ValidationError('该配方不是启用状态！')
         details = validated_data.pop('pdp_product_classes_plan', None)
         validated_data['created_user'] = self.context['request'].user
         # 创建胶料日计划
+        validated_data["product_batching"] = product_batching
         instance = super().create(validated_data)
         # 创建胶料日班次班次计划和原材料需求量
         for detail in details:
@@ -178,7 +214,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['product_day_plan'] = instance
             detail['work_schedule_plan'] = work_schedule_plan
             detail['equip'] = instance.equip
-            detail['product_batching'] = instance.product_batching
+            detail['product_batching'] = product_batching
             detail['status'] = '等待'
 
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
@@ -442,28 +478,63 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
             except Exception as e:
                 raise serializers.ValidationError(f"上辅助连接超时|{e}")
-        else:
-            from work_station import models as md
-            model_list = ['IfdownShengchanjihua', 'IfdownRecipeMix', 'IfdownPmtRecipe', "IfdownRecipeWeigh"]
-            model_name = getattr(md, model_list[0] + ext_str)
-            mid_plan_instance = model_name.objects.filter().first()
-            if not mid_plan_instance:
-                raise serializers.ValidationError({'trains': "异常接收状态,仅运行中状态允许修改车次"})
-            if mid_plan_instance.recstatus == "车次需更新":
-                recstatus = "车次需更新"
-            elif mid_plan_instance.recstatus == "运行中":
-                recstatus = "车次需更新"
-            elif mid_plan_instance.recstatus == "配方车次需更新":
-                recstatus = "配方车次需更新"
-            elif mid_plan_instance.recstatus == '配方需重传':
-                recstatus = "配方车次需更新"
+        elif version == "v3":
+            # 四号机只会有计划订单下达，所以单独写一块代码， 至于封装问题，等逻辑处理完再说
+            recipe_name = instance.product_batching.stage_product_batch_no
+            hf_recipe_version = instance.product_batching.precept
+            if hf_recipe_version is None:
+                hf_recipe_version = 1
             else:
-                raise serializers.ValidationError({'trains': "等待状态中的计划，无法修改工作站车次"})
-            mid_plan_instance.setno = trains
-            mid_plan_instance.save()
-            for model_str in model_list:
-                model_name = getattr(md, model_str + ext_str)
-                model_name.objects.all().update(recstatus=recstatus)
+                try:
+                    hf_recipe_version = int(instance.product_batching.precept)
+                except:
+                    raise serializers.ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))//111
+            if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
+                                                         pori_order_number=instance.plan_classes_uid,
+                                                         pori_recipe_code=recipe_name,
+                                                         pori_recipe_version=hf_recipe_version,
+                                                         pori_pror_status__in=[3]).exists():
+                raise serializers.ValidationError("计划当前不可修改车次")
+            try:
+                I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
+
+                ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
+                                                            pori_order_number=instance.plan_classes_uid,
+                                                            pori_recipe_code=recipe_name,
+                                                            pori_recipe_version=hf_recipe_version).delete()
+                ProdOrdersImp.objects.using(hf_db).create(
+                    pori_line_name='Z04',
+                    pori_order_number=instance.plan_classes_uid,
+                    pori_recipe_code=recipe_name,
+                    pori_recipe_version=hf_recipe_version,
+                    pori_batch_quantity_set=instance.plan_trains,
+                    pori_order_weight=instance.weight,
+                    pori_pror_blocked=0,
+                    pori_function=4,
+                    pori_host_id=host_id
+                )
+            except Exception as e:
+                lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+            else:
+                plan_status = ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
+                                                                          pori_order_number=instance.plan_classes_uid,
+                                                                          pori_recipe_code=recipe_name,
+                                                                          pori_recipe_version=hf_recipe_version).order_by(
+                    "pori_id").last().pori_status
+                if plan_status < 0:
+                    lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
+                    raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
+        else:
+            data = OrderedDict()
+            data['updatestate'] = instance.plan_trains
+            data['planid'] = instance.plan_classes_uid
+            data['no'] = ext_str
+            try:
+                WebService.issue(data, 'updatetrains', equip_no=ext_str, equip_name="上辅机")
+            except Exception as e:
+                raise serializers.ValidationError(f"上辅助连接超时|{e}")
         return instance
 
 

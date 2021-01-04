@@ -252,12 +252,44 @@ LOGGING = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'NAME': os.getenv('SFJ_DATABASE_NAME', ''),  # 数据库名称
-        'USER': os.getenv('SFJ_DATABASE_USERNAME', ''),  # 用户名
-        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', ''),  # 密码
-        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', ''),  # HOST
-        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', ''),  # 端口
+        'NAME': os.getenv('SFJ_DATABASE_NAME', 'common'),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.10.120.47'),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     },
+    # 'Z02': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.62',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    'Z03': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME': 'GZSFJ',
+            'HOST': '10.4.23.63',
+            'PORT': '1433',
+            'USER': 'sa',
+            'PASSWORD': '123',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'MARS_Connection': True,
+                },
+            },
+    'H-Z04': {
+            'ENGINE': 'django.db.backends.oracle',
+            'NAME': 'PKSJ',  # 数据库SID
+            'USER': 'CUSTOMER',
+            'PASSWORD': 'CUSTOMER',
+            'HOST':'10.4.23.165',
+            'PORT':'1521'
+        },
     'Z05': {
         'ENGINE': 'sql_server.pyodbc',
         'NAME': 'GZSFJ',
@@ -270,14 +302,42 @@ DATABASES = {
             'MARS_Connection': True,
             },
         },
-    'H-Z04': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'PKSJ',  # 数据库SID
-        'USER': 'CUSTOMER',
-        'PASSWORD': 'CUSTOMER',
-        'HOST':'10.4.23.165',
-        'PORT':'1521'
-    },
+    # 'Z06': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.66',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    # 'Z07': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.65',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
+    # 'Z08': {
+    #         'ENGINE': 'sql_server.pyodbc',
+    #         'NAME': 'GZSFJ',
+    #         'HOST': '10.4.23.65',
+    #         'PORT': '1433',
+    #         'USER': 'sa',
+    #         'PASSWORD': '123',
+    #         'OPTIONS': {
+    #             'driver': 'ODBC Driver 17 for SQL Server',
+    #             'MARS_Connection': True,
+    #             },
+    #         },
 }
 
 # DATABASES = {
@@ -375,5 +435,5 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 # mes同步端口
-MES_URL = os.environ.get('MES_URL', 'http://10.4.10.54:80/')
-# MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')
+# MES_URL = os.environ.get('MES_URL', 'http://10.4.10.54:80/')
+MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')

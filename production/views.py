@@ -1214,66 +1214,16 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
         else:
-            params = request.query_params
-            begin_time = params.get("begin_time", None)
-            end_time = params.get("end_time", None)
-            equip_no = params.get("equip_no", None)
-            product_no = params.get("product_no", None)
-            try:
-                page = int(params.get("page", 1))
-                page_size = int(params.get("page_size", 10))
-            except Exception as e:
-                return Response("page和page_size必须是int", status=400)
-            operation_user = params.get("operation_user", None)
-            filter_dict = {}
-            if begin_time:
-                filter_dict['begin_time__gte'] = begin_time
-            if end_time:
-                filter_dict['end_time__lte'] = end_time
-            if equip_no:
-                filter_dict['equip_no'] = equip_no
-            if product_no:
-                filter_dict['product_no'] = product_no
-            if operation_user:
-                filter_dict['operation_user'] = operation_user
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data_list = serializer.data
+                data_list.append({'version': 'v2'})
+                return self.get_paginated_response(data_list)
 
-            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
-            counts = tf_queryset.count()
-            tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
-            for tf_obj in tf_queryset:
-                production_details = {}
-                # TODO 中间表
-                irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
-                                                                计划号=tf_obj['plan_classes_uid'],
-                                                                配方号=tf_obj['product_no'],
-                                                                车次号=tf_obj['actual_trains']).order_by('存盘时间').last()
-                if irb_obj:
-                    production_details['控制方式'] = irb_obj.控制方式  # 本远控
-                    production_details['作业方式'] = irb_obj.作业方式  # 手自动
-                    production_details['总重量'] = irb_obj.总重量 / 100
-                    production_details['排胶时间'] = irb_obj.排胶时间
-                    production_details['排胶温度'] = irb_obj.排胶温度
-                    production_details['排胶能量'] = irb_obj.排胶能量
-                    production_details['员工代号'] = irb_obj.员工代号
-                    production_details['存盘时间'] = irb_obj.存盘时间
-                    production_details['间隔时间'] = irb_obj.间隔时间
-                    production_details['密炼时间'] = datetime.datetime.strptime(irb_obj.存盘时间, "%Y-%m-%d %X") - tf_obj[
-                        'begin_time']  # 暂时由存盘时间代替 后期需要确实是否是存盘时间-开始时间
-                    tf_obj['production_details'] = production_details
-                else:
-                    tf_obj['production_details'] = None
-                ps_obj = PlanStatus.objects.filter(equip_no=tf_obj['equip_no'],
-                                                   plan_classes_uid=tf_obj['plan_classes_uid'],
-                                                   product_no=tf_obj['product_no'],
-                                                   actual_trains=tf_obj['actual_trains']).order_by(
-                    'product_time').last()
-                if ps_obj:
-                    tf_obj['status'] = ps_obj.status
-                else:
-                    tf_obj['status'] = None
-            tf_queryset = list(tf_queryset)
-            tf_queryset.append({'version': 'v1'})
-            return Response({'count': counts, 'results': tf_queryset})
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
 
 
 @method_decorator([api_recorder], name="dispatch")

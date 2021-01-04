@@ -81,7 +81,7 @@ def main():
     os.system('python manage.py migrate')
 
     print('创建超级管理员...')
-    User.objects.create_superuser('18888888888', '123456@qq.com', '123456')
+    User.objects.create_superuser('mes', '123456@qq.com', '123456')
     add_condition_action()
 
 
