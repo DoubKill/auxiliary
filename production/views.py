@@ -818,7 +818,8 @@ class EquipStatusPlanList(APIView):
         # 计划数据，根据设备机台号和班次分组，
         plan_set = ProductClassesPlan.objects.filter(
             work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
-            product_day_plan__equip__equip_no__in=list(equip_nos)
+            product_day_plan__equip__equip_no__in=list(equip_nos),
+            delete_flag=False
         )
         plan_data = plan_set.values('work_schedule_plan__classes__global_name',
                                     'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
