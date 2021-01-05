@@ -111,6 +111,9 @@ def add_Z04_plan_status():
                                                                      datetime.timedelta(days=1)),
                                                                      order_status__in=["FINISHED", "UNFINISHED"])
     for order in order_set_status:
+        pcp_set = ProductClassesPlan.objects.filter(plan_classes_uid=order.order_name)
+        if not pcp_set.exists():
+            continue
         if PlanStatus.objects.filter(plan_classes_uid=order.order_name,
                                          product_no=order.recipe_name,
                                          equip_no=order.line_name,
@@ -132,19 +135,15 @@ def add_Z04_plan_status():
             operation_user="hf",
             product_time=datetime.datetime.now()
         )
-        try:
-            ProductClassesPlan.objects.filter(plan_classes_uid=order.order_name).update(status=status)
-        except Exception as e:
-            logger.error(e)
+        pcp_set.update(status=status, plan_trains=order.batches_set)
 
 
 def update_Z04_plan_status():
     run_status = "运行中"
-    plan_set = PlanStatus.objects.filter(equip_no="Z04", status="已下达", product_time__gte=(datetime.datetime.now() -
-                                                                     datetime.timedelta(days=1)))
+    plan_set = PlanStatus.objects.filter(equip_no="Z04", status="已下达", product_time__isnull=True)
     for plan in plan_set:
-        if I_ORDER_STATE_V.objects.using("H-Z04").filter(order_name=plan.plan_classes_uid, recipe_name=plan.product_no,
-                                                      line_name="Z04", status="PRODUCTION").exists():
+        if I_ORDER_STATE_V.objects.using("H-Z04").filter(order_name=plan.plan_classes_uid, recipe=plan.product_no,
+                                                      line_name="Z04", order_status="PRODUCTION").exists():
             plan.status = run_status
             plan.save()
             try:
@@ -167,7 +166,7 @@ def hf_trains_up():
     tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
     if tf:
         batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
-                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name"
+                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name",
                   "batr_batch_weight", "batr_start_date", "batr_end_date", "batr_quality", "batr_total_spec_energy", "batr_tot_integr_energy",
                   "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature")
     else:
@@ -190,10 +189,12 @@ def hf_trains_up():
                                                                                             "batr_user_name")
     temp1 = None
     for temp in batch_set:
-        try:
-            plan  = ProductClassesPlan.objects.get(plan_classes_uid=temp.get("batr_order_number"))
-        except Exception as e:
+        pcp_set = ProductClassesPlan.objects.filter(plan_classes_uid=temp.get("batr_order_number"))
+        if not pcp_set.exists():
             continue
+        if TrainsFeedbacks.objects.filter(plan_classes_uid=temp.get("batr_order_number"), actual_trains=temp.get('batr_batch_number')):
+            continue
+        plan = pcp_set.last()
         try:
             plan_weight = plan.weight if plan.weight else 23000
             class_name = plan.work_schedule_plan.classes.global_name
@@ -238,7 +239,7 @@ def consume_data_up():
     ep = ExpendMaterial.objects.filter(equip_no="Z04").order_by("product_time").last()
     if ep:
         consume_set = MaterialsConsumption.objects.using("H-Z04").filter(maco_end_date__gt=ep.product_time).values(
-            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date", "maco_recipe_code"
+            "maco_date", "maco_order_number", "maco_mat_code", "maco_consumed_quantity", "maco_end_date", "maco_recipe_code",
             "insert_user", "maco_set_quantity", "maco_batch_number")
     else:
         consume_set = MaterialsConsumption.objects.using("H-Z04").filter().values(
@@ -246,17 +247,21 @@ def consume_data_up():
             "maco_recipe_code", "insert_user", "maco_set_quantity", "maco_batch_number"
         )
     for temp in consume_set:
-        try:
-            ProductClassesPlan.objects.get(plan_classes_uid=temp.get("maco_order_number"))
-        except:
+        if not ProductClassesPlan.objects.filter(plan_classes_uid=temp.get("maco_order_number")).exists():
+            continue
+        if ExpendMaterial.objects.filter(plan_classes_uid=temp.get("maco_order_number"), trains=temp.get('maco_batch_number'),
+                                         material_no=temp.get("maco_mat_code")):
             continue
         try:
             material_name = temp.get("maco_mat_code")
             if not material_name:
                 continue
             material = Material.objects.filter(material_name=material_name).last()
-            material_no = material.material_no
-            material_type = material.material_type.global_name
+            if material:
+                material_no = material.material_no
+                material_type = material.material_type.global_name
+            else:
+                continue
             consume = dict(
                 plan_classes_uid=temp.get("maco_order_number"),
                 equip_no ="Z04",
