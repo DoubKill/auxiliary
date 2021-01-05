@@ -337,6 +337,8 @@ class TankMaterialVIew(APIView):
             material = Material.objects.filter(material_no=item['material_no']).first()
             if not material:
                 material = Material.objects.filter(material_name=item['material_name']).last()
+            if not material:
+                continue
             item['id'] = material.id
             item['material_name'] = material.material_name
             data.append(item)
