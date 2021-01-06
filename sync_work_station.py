@@ -86,6 +86,7 @@ class MesUpClient(object):
                 else:
                     logger.error(ret.text)
 
+
 def one_instance(func):
     '''
     如果已经有实例在跑则退出

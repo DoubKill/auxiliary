@@ -123,12 +123,11 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                                              recipe_version=precept).weight
 
             try:
-                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
-                    stage_product_batch_no= product_no,
+                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(defaults={"batching_weight": recipe_weight},
+                    stage_product_batch_no=product_no,
                     used_type=4,
                     equip=equip,
                     precept=precept,
-                    batching_weight=recipe_weight,
                     stage=stage,
                 )
             except Exception as e:
