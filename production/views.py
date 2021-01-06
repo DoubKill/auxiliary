@@ -978,7 +978,7 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         elif version == "v2":
             return WeighInformationSerializer2
         else:
-            return WeighInformationSerializer1
+            return WeighInformationSerializer2
 
     def get_queryset(self):
         version = self.request.version
@@ -1009,10 +1009,10 @@ class WeighInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         else:
             try:
                 tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-                irw_queryset = IfupReportWeightBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
-                                                                      计划号=tfb_obk.plan_classes_uid,
-                                                                      配方号=tfb_obk.product_no,
-                                                                      车次号=tfb_obk.actual_trains)
+                irw_queryset = ExpendMaterial.objects.filter(equip_no=tfb_obk.equip_no,
+                                                             plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                             product_no=tfb_obk.product_no,
+                                                             trains=tfb_obk.actual_trains, delete_flag=False)
             except:
                 raise ValidationError('车次产出反馈或车次报表材料重量没有数据')
         return irw_queryset
@@ -1038,7 +1038,7 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         elif version == "v2":
             return MixerInformationSerializer2
         else:
-            return MixerInformationSerializer1
+            return MixerInformationSerializer2
 
     def get_queryset(self):
         version = self.request.version
@@ -1070,12 +1070,13 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         else:
             try:
                 tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-                irm_queryset = IfupReportMixBackups.objects.filter(机台号=strtoint(tfb_obk.equip_no),
-                                                                   计划号=tfb_obk.plan_classes_uid,
-                                                                   配方号=tfb_obk.product_no,
-                                                                   密炼车次=tfb_obk.actual_trains)
+                irm_queryset = ProcessFeedback.objects.filter(plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                              equip_no=tfb_obk.equip_no,
+                                                              product_no=tfb_obk.product_no,
+                                                              current_trains=tfb_obk.actual_trains
+                                                              )
             except:
-                raise ValidationError('车次产出反馈或车次报表步序表没有数据')
+                raise ValidationError('车次产出反馈或胶料配料标准步序详情没有数据')
         return irm_queryset
 
 
