@@ -818,10 +818,7 @@ class IssuedPlan(APIView):
                 except Exception as e:
                     raise ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
             host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))/111
-            if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
-                                                         pori_recipe_code=recipe_name,
-                                                         pori_recipe_version=hf_recipe_version,
-                                                         pori_pror_status__in=[0, 1, 2, 4, None]).exists():
+            if ProdOrdersImp.objects.using(hf_db).all().order_by("pori_id").last().pori_pror_status in [1, 2]:
                 raise ValidationError("当前机台有计划正在执行，禁止下达新计划")
             try:
                 I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
