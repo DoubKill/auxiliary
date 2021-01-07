@@ -108,14 +108,20 @@ def send_to_yikong_update():
     if not plan:
         pass
     else:
-        test_dict = OrderedDict()
-        test_dict['updatestate'] = plan.setno
-        test_dict['planid'] = plan.planid
-        test_dict['no'] = 4
-        try:
-            WebService.issue(test_dict, 'updatetrains', equip_no="4")
-        except Exception as e:
-            logger.error(f"Z04超时链接|{e}")
+        pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan.order_name)
+        plan_trains = pcp.plan_trains
+        if plan_trains != plan.setno:
+            test_dict = OrderedDict()
+            test_dict['updatestate'] = plan.setno
+            test_dict['planid'] = plan.planid
+            test_dict['no'] = 4
+            try:
+                WebService.issue(test_dict, 'updatetrains', equip_no="4")
+            except Exception as e:
+                logger.error(f"Z04超时链接|{e}")
+            else:
+                pcp.plan_trains = plan.setno
+                pcp.save()
 
 
 def send_again_yikong_again():
