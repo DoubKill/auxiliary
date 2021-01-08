@@ -203,7 +203,7 @@ def hf_trains_up():
                 interval_time = (temp.get("batr_start_date") - temp1.get("batr_end_date")).total_seconds()
             else:
                 interval_time = 15
-            consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
+            consume_time = (temp.get("batr_start_date") - temp.get("batr_end_date")).total_seconds()
             train = dict(
                 plan_classes_uid = temp.get("batr_order_number"),
                 plan_trains =temp.get("batr_batch_quantity_set"),
