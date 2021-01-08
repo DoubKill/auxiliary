@@ -289,7 +289,7 @@ class IssuedPlan(APIView):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                                          equip__equip_no=equip_no,
+                                                                                          equip__equip_no__icontains=equip_no,
                                                                                           batching_type=1,
                                                                                           used_type=4).first()
             if not actual_product_batching:
@@ -383,7 +383,7 @@ class IssuedPlan(APIView):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                                          equip__equip_no=equip_no,
+                                                                                          equip__equip_no__icontains=equip_no,
                                                                                           batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
@@ -489,7 +489,7 @@ class IssuedPlan(APIView):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                                          equip__equip_no=equip_no,
+                                                                                          equip__equip_no__icontains=equip_no,
                                                                                           batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
@@ -629,7 +629,7 @@ class IssuedPlan(APIView):
         if product_batching.batching_type == 2:
             actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
                                                                                           stage_product_batch_no=product_batching.stage_product_batch_no,
-                                                                                          equip__equip_no=equip_no,
+                                                                                          equip__equip_no__icontains=equip_no,
                                                                                           batching_type=1).first()
             if not actual_product_batching:
                 raise ValidationError("当前计划未关联机台配方，请关联后重试")
