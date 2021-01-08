@@ -262,7 +262,8 @@ def consume_data_up():
                 material_no = material.material_no
                 material_type = material.material_type.global_name
             else:
-                continue
+                material_no = material_name
+                material_type = "胶料"
             consume = dict(
                 plan_classes_uid=temp.get("maco_order_number"),
                 equip_no ="Z04",
