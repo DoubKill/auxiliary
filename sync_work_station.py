@@ -188,7 +188,6 @@ def hf_trains_up():
                                                                                             "batr_drop_cycle_time",
                                                                                             "batr_transition_temperature",
                                                                                             "batr_user_name")
-    temp1 = None
     for temp in batch_set:
         pcp_set = ProductClassesPlan.objects.filter(plan_classes_uid=temp.get("batr_order_number"))
         if not pcp_set.exists():
@@ -199,8 +198,9 @@ def hf_trains_up():
         try:
             plan_weight = plan.weight if plan.weight else 23000
             class_name = plan.work_schedule_plan.classes.global_name
+            temp1 = TrainsFeedbacks.objects.filter(equip_no=plan.equip.equip_no).order_by("id").last()
             if temp1:
-                interval_time = (temp.get("batr_start_date") - temp1.get("batr_end_date")).total_seconds()
+                interval_time = (temp.get("batr_start_date") - temp1.end_time).total_seconds()
             else:
                 interval_time = 15
             consume_time = (temp.get("batr_start_date") - temp.get("batr_end_date")).total_seconds()
@@ -227,7 +227,6 @@ def hf_trains_up():
                 mixer_time=int(temp.get("batr_mixing_time")),
                 consum_time=int(consume_time),
             )
-            temp1 = temp
             TrainsFeedbacks.objects.create(**train)
         except Exception as e:
             print(e)
