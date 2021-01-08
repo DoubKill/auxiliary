@@ -169,7 +169,7 @@ def hf_trains_up():
         batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
                   "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name",
                   "batr_batch_weight", "batr_start_date", "batr_end_date", "batr_quality", "batr_total_spec_energy", "batr_tot_integr_energy",
-                  "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature")
+                  "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature").order_by("batr_id")
     else:
         batch_set = BatchReport.objects.using("H-Z04").filter().values("batr_batch_quantity_set",
                                                                                             "batr_batch_number",
@@ -187,12 +187,10 @@ def hf_trains_up():
                                                                                             "batr_mixing_time",
                                                                                             "batr_drop_cycle_time",
                                                                                             "batr_transition_temperature",
-                                                                                            "batr_user_name")
+                                                                                            "batr_user_name").order_by("batr_id")
     for temp in batch_set:
         pcp_set = ProductClassesPlan.objects.filter(plan_classes_uid=temp.get("batr_order_number"))
         if not pcp_set.exists():
-            continue
-        if TrainsFeedbacks.objects.filter(plan_classes_uid=temp.get("batr_order_number"), actual_trains=temp.get('batr_batch_number')):
             continue
         plan = pcp_set.last()
         try:
@@ -203,10 +201,10 @@ def hf_trains_up():
                 interval_time = (temp.get("batr_start_date") - temp1.end_time).total_seconds()
             else:
                 interval_time = 15
-            consume_time = (temp.get("batr_start_date") - temp.get("batr_end_date")).total_seconds()
+            consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
             train = dict(
                 plan_classes_uid = temp.get("batr_order_number"),
-                plan_trains =temp.get("batr_batch_quantity_set"),
+                plan_trains = temp.get("batr_batch_quantity_set"),
                 actual_trains = temp.get("batr_batch_number"),
                 bath_no = 1,
                 equip_no = "Z04",
