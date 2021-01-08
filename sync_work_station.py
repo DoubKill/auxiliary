@@ -116,7 +116,7 @@ def add_Z04_plan_status():
         if not pcp_set.exists():
             continue
         if PlanStatus.objects.filter(plan_classes_uid=order.order_name,
-                                         product_no=order.recipe_name,
+                                         product_no=order.recipe,
                                          equip_no=order.line_name,
                                          status__in=["完成", "停止"]).exists():
             continue
@@ -130,7 +130,7 @@ def add_Z04_plan_status():
 
         PlanStatus.objects.create(
             plan_classes_uid=order.order_name,
-            product_no=order.recipe_name,
+            product_no=order.recipe,
             equip_no=order.line_name,
             status=status,
             operation_user="hf",
