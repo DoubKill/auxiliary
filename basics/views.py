@@ -191,7 +191,7 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
             data = queryset.filter(use_flag=1, category__equip_type__global_name='密炼设备'
                                    ).values('id', 'equip_no', 'equip_name', 'category__category_name')
             for x in data:
-                x["version"] = VERSION_EQUIP[x['equip_no']]
+                x["version"] = VERSION_EQUIP.get(x['equip_no'])
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)

@@ -217,6 +217,8 @@ class ProductDayPlanSerializer(BaseModelSerializer):
             detail['equip'] = instance.equip
             detail['product_batching'] = product_batching
             detail['status'] = '等待'
+            # 不能依赖前端给你传的数据
+            detail['weight'] = product_batching.batching_weight
 
             pcp_obj = ProductClassesPlan.objects.create(**detail, created_user=self.context['request'].user)
             # 创建计划状态
