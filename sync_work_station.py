@@ -210,7 +210,7 @@ def hf_trains_up():
                 equip_no = "Z04",
                 product_no = temp.get("batr_recipe_code"),
                 plan_weight=plan_weight,
-                actual_weight = temp.get("batr_batch_weight", 230)*100,
+                actual_weight = temp.get("batr_batch_weight")*100 if temp.get("batr_batch_weight") else 23000,
                 begin_time = temp.get("batr_start_date"),
                 end_time = temp.get("batr_end_date"),
                 operation_user = temp.get("batr_user_name"),
