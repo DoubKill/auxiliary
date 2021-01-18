@@ -93,7 +93,7 @@ class ProductDayPlanDown(BaseDownloader):
     type = 13
     upload_fields = (
         'id', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'plan_schedule__plan_schedule_no',
-        'delete_flag', 'created_date',)
+        'delete_flag', 'created_date')
     model = ProductDayPlan
 
 
