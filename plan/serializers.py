@@ -602,7 +602,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         if pdp_obj:
             attrs['product_day_plan'] = pdp_obj
         else:
-            attrs['product_day_plan'] = ProductDayPlan.objects.create(equip=pdp_dict['equip'], product_batching=pb_obj,
+            attrs['product_day_plan'] = ProductDayPlan.objects.create(equip=equip, product_batching=pb_obj,
                                                                       plan_schedule=plan_schedule)
         attrs['work_schedule_plan'] = work_schedule_plan
         attrs['equip'] = equip

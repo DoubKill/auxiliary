@@ -195,7 +195,7 @@ class ProductProcess(AbstractEntity):
     temp_use_flag = models.BooleanField(help_text='三区水温启用/停用，（true:启用,false:停用）', default=True)
     use_flag = models.BooleanField(help_text='配方启用/弃用，（true:启用,false:弃用）', default=True)
     batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
-    sp_num = models.PositiveSmallIntegerField(help_text='收皮', default=0)
+    sp_num = models.DecimalField(help_text='收皮', default=0, decimal_places=1, max_digits=3)
 
     class Meta:
         db_table = 'product_process'

@@ -341,7 +341,7 @@ class IfupReportMixBackups(models.Model):
         db_table = 'ifup_report_mix_backups'
 
 
-class IfupReportCurveBackups(models.Model):  # TODO 既然是车次报表怎么能没车次呢
+class IfupReportCurveBackups(models.Model):
     """车次报表工艺曲线数据表"""
     序号 = models.BigAutoField(primary_key=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
