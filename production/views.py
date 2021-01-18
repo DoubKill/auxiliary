@@ -1172,7 +1172,6 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
             for tf_obj in tf_queryset:
                 production_details = {}
-                # TODO 中间表
                 irb_obj = IfupReportBasisBackups.objects.filter(机台号=strtoint(tf_obj['equip_no']),
                                                                 计划号=tf_obj['plan_classes_uid'],
                                                                 配方号=tf_obj['product_no'],
