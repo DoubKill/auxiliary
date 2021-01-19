@@ -280,7 +280,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
         validated_data['last_updated_user'] = self.context['request'].user
-        instance = super().update(instance, validated_data)
+        # instance = super().update(instance, validated_data)
 
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
@@ -301,8 +301,8 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
             instance.batching_weight = batching_weight
             instance.manual_material_weight = manual_material_weight
             instance.auto_material_weight = auto_material_weight
-            instance.save()
-
+            # instance.save()
+            instance = super().update(instance, validated_data)
         # 修改步序
         if processes:
             s = ProductProcessCreateSerializer(instance=instance.processes, data=processes)
