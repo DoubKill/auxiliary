@@ -1,6 +1,5 @@
 import json
 
-from django.db.models import Prefetch
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import model_to_dict
@@ -42,7 +41,7 @@ def material_in_post_save(sender, instance=None, created=False, update_fields=No
         ExpendMaterial.objects.filter(material_no=instance.material_no).update(
             material_type=instance.material_type.global_name,
             material_name=instance.material_name)
-        MaterialTankStatus.objects.filter(material_no=instance.material_no).update(
+        MaterialTankStatus.objects.filter(material_name=instance.material_name).update(
             material_type=instance.material_type.global_name,
             material_name=instance.material_name)
 
