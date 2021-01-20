@@ -201,8 +201,8 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                     equip_no="Z04",
                     status = "运行中",
                     rpm = temp_list[rpm_index],
-                    energy = temp_list[energy_index],
-                    power = temp_list[power_index],
+                    energy = temp_list[energy_index]*1000,   # hf单位kj/kg   国自j
+                    power = temp_list[power_index]*1000,     # hf单位kw      国自w
                     pressure = temp_list[pressure_index] if pressure_index else 0,
                     temperature = temp_list[temperature_index],
                     product_time = start_time + datetime.timedelta(seconds=1*num),
@@ -215,8 +215,7 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
 #Z04 数据需单独上传
 @atomic()
 def hf_trains_up():
-    # tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
-    tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time")[5000]
+    tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
     if tf:
         batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
                   "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name", "batr_measured_data", "batr_id", "batr_station_ident",
