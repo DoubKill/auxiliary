@@ -87,9 +87,9 @@ if __name__ == '__main__':
                  'ret': []
                  }
             )
-        response_triple = (
-            json.dumps(ret_data).encode("utf-8"),
-            200,
-            {'content-type': ('Content-Type', 'application/json'), 'vary': ('Vary', 'Accept'), 'allow': ('Allow', 'GET, HEAD, OPTIONS')}
-        )
-        cache.set("1d1947aa64c62ccba4b27ada9b0e9cba", response_triple, 600)
+    response_triple = (
+        json.dumps(ret_data).encode("utf-8"),
+        200,
+        {'content-type': ('Content-Type', 'application/json'), 'vary': ('Vary', 'Accept'), 'allow': ('Allow', 'GET, HEAD, OPTIONS')}
+    )
+    cache.set("1d1947aa64c62ccba4b27ada9b0e9cba", response_triple, 600)

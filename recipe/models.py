@@ -237,3 +237,14 @@ class ProductProcessDetail(AbstractEntity):
     class Meta:
         db_table = 'product_process_detail'
         verbose_name_plural = verbose_name = '胶料配料标准步序详情'
+
+
+class RecipeUpdateHistory(AbstractEntity):
+    product_no = models.CharField(max_length=64, help_text='胶料配方编码')
+    equip_no = models.CharField(max_length=64, help_text='机台号')
+    recipe_detail = models.TextField(max_length=1024, help_text='整个机台配方详情')
+    username = models.CharField(max_length=16, help_text='用户名称')
+
+    class Meta:
+        db_table = 'recipe_update_history'
+        verbose_name_plural = verbose_name = '配方详情历史记录'

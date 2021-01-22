@@ -97,7 +97,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     dev_type_name = serializers.CharField(source='dev_type__category_name', default=None, read_only=True)
     equip_no = serializers.CharField(source='equip__equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip__equip_name', default=None, read_only=True)
-    sp_num = serializers.IntegerField(source='processes__sp_num', read_only=True, default=None)
+    sp_num = serializers.DecimalField(source='processes__sp_num', read_only=True, default=None, max_digits=3, decimal_places=1)
     dev_type = serializers.IntegerField(source='dev_type_id', read_only=True, default=None)
     category__category_name = serializers.CharField(source='equip__category__category_name',
                                                     default=None, read_only=True)
@@ -280,7 +280,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
         validated_data['last_updated_user'] = self.context['request'].user
-        instance = super().update(instance, validated_data)
+        # instance = super().update(instance, validated_data)
 
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
@@ -301,8 +301,8 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
             instance.batching_weight = batching_weight
             instance.manual_material_weight = manual_material_weight
             instance.auto_material_weight = auto_material_weight
-            instance.save()
-
+            # instance.save()
+            instance = super().update(instance, validated_data)
         # 修改步序
         if processes:
             s = ProductProcessCreateSerializer(instance=instance.processes, data=processes)

@@ -9,6 +9,7 @@ import os
 import time
 import socket
 import functools
+import zipfile
 
 import django
 import logging
@@ -21,17 +22,15 @@ django.setup()
 
 from django.db.transaction import atomic
 from recipe.models import Material
-from system.models import SystemConfig, ChildSystemInfo
+from system.models import SystemConfig, ChildSystemInfo, User
 from mes.conf import MES_PORT
 from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption
 from plan.models import ProductClassesPlan
 from production import models as pd
 from production import serializers as sz
-from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
-    IfupReportCurveBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
+from production.models import EquipStatus, TrainsFeedbacks, PlanStatus, ExpendMaterial
 
 logger = logging.getLogger('sync_log')
-# 该字典存储中间表与群控model及更新数据的映射关系
 
 
 class MesUpClient(object):
@@ -161,33 +160,88 @@ def plan_status_monitor():
     update_Z04_plan_status()
 
 
+def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
+    model_data_list = []
+    with zipfile.ZipFile(file_name) as z:
+        file_name_dict= z.NameToInfo
+        file_name = None
+        for k, v in file_name_dict.items():
+            if k.endswith(".RPT"):
+                file_name = k
+        with z.open(file_name) as f:
+            data = f.readlines()[1:]
+            header_count = data[0].decode('utf8').split(";").__len__()
+            if header_count == 38:
+                # 数据取值方式1  字段排列方式1
+                rpm_index = 2
+                energy_index = 5
+                power_index = 15
+                pressure_index = 0
+                temperature_index = 4
+            elif header_count == 48:
+                # 数据取值方式2  字段排列方式2
+                rpm_index = 23
+                energy_index = 10
+                power_index = 24
+                pressure_index = 2
+                temperature_index = 5
+            actual = data[1::2]
+            for x in actual:
+                num = actual.index(x)
+                temp_list = x.decode('utf8').split(";")
+                if mixer == "Mixer1":
+                    mixer_id = 1
+                elif mixer == "Mixer2":
+                    mixer_id =2
+                else:
+                    continue
+                temp_model_dict = dict(
+                    plan_classes_uid=plan_uid,
+                    current_trains=trains,
+                    equip_no="Z04",
+                    status = "运行中",
+                    rpm = temp_list[rpm_index],
+                    energy = temp_list[energy_index]*1000,   # hf单位kj/kg   国自j
+                    power = temp_list[power_index]*1000,     # hf单位kw      国自w
+                    pressure = temp_list[pressure_index] if pressure_index else 0,
+                    temperature = temp_list[temperature_index],
+                    product_time = start_time + datetime.timedelta(seconds=1*num),
+                    delete_user = User.objects.get(id=mixer_id)
+                )
+                model_data_list.append(EquipStatus(**temp_model_dict))
+    return  model_data_list
+
+
 #Z04 数据需单独上传
 @atomic()
 def hf_trains_up():
     tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
     if tf:
         batch_set = BatchReport.objects.using("H-Z04").filter(batr_end_date__gt=tf.product_time).values("batr_batch_quantity_set", "batr_batch_number",
-                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name",
+                  "batr_recipe_code", "batr_recipe_version", "batr_order_number", "batr_user_name", "batr_measured_data", "batr_id", "batr_station_ident",
                   "batr_batch_weight", "batr_start_date", "batr_end_date", "batr_quality", "batr_total_spec_energy", "batr_tot_integr_energy",
                   "batr_total_revolutions", "batr_cycle_time", "batr_mixing_time", "batr_drop_cycle_time", "batr_transition_temperature").order_by("batr_id")
     else:
         batch_set = BatchReport.objects.using("H-Z04").filter().values("batr_batch_quantity_set",
-                                                                                            "batr_batch_number",
-                                                                                            "batr_recipe_code",
-                                                                                            "batr_order_number",
-                                                                                            "batr_recipe_version",
-                                                                                            "batr_batch_weight",
-                                                                                            "batr_start_date",
-                                                                                            "batr_end_date",
-                                                                                            "batr_quality",
-                                                                                            "batr_total_spec_energy",
-                                                                                            "batr_tot_integr_energy",
-                                                                                            "batr_total_revolutions",
-                                                                                            "batr_cycle_time",
-                                                                                            "batr_mixing_time",
-                                                                                            "batr_drop_cycle_time",
-                                                                                            "batr_transition_temperature",
-                                                                                            "batr_user_name").order_by("batr_id")
+                                                                        "batr_batch_number",
+                                                                        "batr_recipe_code",
+                                                                        "batr_order_number",
+                                                                        "batr_recipe_version",
+                                                                        "batr_batch_weight",
+                                                                        "batr_start_date",
+                                                                        "batr_end_date",
+                                                                        "batr_quality",
+                                                                        "batr_total_spec_energy",
+                                                                        "batr_tot_integr_energy",
+                                                                        "batr_total_revolutions",
+                                                                        "batr_cycle_time",
+                                                                        "batr_mixing_time",
+                                                                        "batr_drop_cycle_time",
+                                                                        "batr_transition_temperature",
+                                                                        "batr_user_name",
+                                                                        "batr_measured_data",
+                                                                        "batr_id",
+                                                                        "batr_station_ident").order_by("batr_id")
     for temp in batch_set:
         pcp_set = ProductClassesPlan.objects.filter(plan_classes_uid=temp.get("batr_order_number"))
         if not pcp_set.exists():
@@ -213,7 +267,7 @@ def hf_trains_up():
                 actual_weight = temp.get("batr_batch_weight")*100 if temp.get("batr_batch_weight") else 23000,
                 begin_time = temp.get("batr_start_date"),
                 end_time = temp.get("batr_end_date"),
-                operation_user = temp.get("batr_user_name"),
+                operation_user = temp.get("batr_station_ident"),
                 classes = class_name,
                 product_time = temp.get("batr_end_date"),
                 control_mode="远控",
@@ -230,6 +284,20 @@ def hf_trains_up():
             print(e)
             logger.error(f"Z04车次报表上行失败:{e}")
             continue
+        mixer_data = temp.get("batr_measured_data")
+        if isinstance(mixer_data, bytes):
+            mode = "wb"
+        elif isinstance(mixer_data, str):
+            mode = "w"
+        else:
+            continue
+        with open('temp.ZIP', mode) as f:
+            f.write(mixer_data)
+        try:
+            equip_status_list = mixer_analysis(temp.get("batr_start_date"), temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_station_ident"), file_name="temp.ZIP")
+            EquipStatus.objects.bulk_create(equip_status_list)
+        except zipfile.BadZipFile:
+            pass
 
 
 @atomic()
