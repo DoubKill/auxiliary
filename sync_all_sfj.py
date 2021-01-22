@@ -9,7 +9,6 @@ import django
 import datetime
 import logging
 
-from django.db.models import F
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
@@ -204,6 +203,10 @@ def sync_recipe(db):
                                                 stage_product_batch_no=recipe_name,
                                                 equip__equip_no=db)
         if not pb_set.exists():
+            try:
+                stage = GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次')
+            except GlobalCode.DoesNotExist:
+                continue
             pb = ProductBatching.objects.create(
                 factory=factory,
                 site=GlobalCode.objects.get(global_name=product_info[0]),
@@ -211,7 +214,7 @@ def sync_recipe(db):
                                                                product_no=product_info[2])[0],
                 stage_product_batch_no=recipe_name,
                 dev_type=equip.category,
-                stage=GlobalCode.objects.get(global_name=product_info[1], global_type__type_name='胶料段次'),
+                stage=stage,
                 equip=equip,
                 versions=product_info[3].strip()
             )
@@ -274,18 +277,21 @@ def sync_product_feedback(db):
             current_trains=x.get("current_trains",1),
             product_time=x.get("product_time")
         ))
-    EquipStatus.objects.bulk_create(equip_list)
+    step= 1000
+    equip_gun = (equip_list[x*step: (x+1)*step] for x in range(equip_list.__len__()//step + 1))
+    for g in equip_gun:
+        EquipStatus.objects.bulk_create(g)
     total_equip.delete()
     al = AlarmLog.objects.filter(equip_no=db).order_by("product_time").last()
     if al:
         product_time = al.product_time
         sfj_al_set = SfjAlarmLog.objects.using(db).filter(latesttime__gt=product_time).values("content", "latesttime")
-        sfj_list = [AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in sfj_al_set]
+        sfj_list = (AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in sfj_al_set)
         AlarmLog.objects.bulk_create(sfj_list)
     else:
         sfj_al_set = SfjAlarmLog.objects.using(db).filter().values("content", "latesttime")
-        sfj_list = [AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in
-                    sfj_al_set]
+        sfj_list = (AlarmLog(equip_no=db, content=x.get("content", ""), product_time=x.get("latesttime")) for x in
+                    sfj_al_set)
         AlarmLog.objects.bulk_create(sfj_list)
 
 
@@ -299,10 +305,9 @@ if __name__ == '__main__':
             try:
                 sync_recipe(db)
             except Exception as e:
-                print(e)
-                logger.error(e)
-            try:
-                sync_product_feedback(db)
-            except Exception as e:
-                print(e)
-                logger.error(e)
+                logger.error(db, e)
+        try:
+            sync_product_feedback(db)
+        except Exception as e:
+            logger.error(e)
+            print(e)

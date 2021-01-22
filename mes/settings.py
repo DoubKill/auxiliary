@@ -257,6 +257,22 @@ DATABASES = {
         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.10.120.47'),  # HOST
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
     },
+    # 'test': {
+    #         'ENGINE': 'django.db.backends.sqlite3',
+    #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    #     },
+    'Z01': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME': 'GZSFJ',
+            'HOST': '10.4.23.61',
+            'PORT': '1433',
+            'USER': 'sa',
+            'PASSWORD': '123',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'MARS_Connection': True,
+                },
+            },
     'Z02': {
             'ENGINE': 'sql_server.pyodbc',
             'NAME': 'GZSFJ',

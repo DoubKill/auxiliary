@@ -1,3 +1,5 @@
+import json
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import model_to_dict
@@ -6,7 +8,8 @@ from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductBatchingClassesPlan
 from production.models import ExpendMaterial, MaterialTankStatus
 from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, ProductBatchingDetail, ProductProcess, \
-    ProductProcessDetail
+    ProductProcessDetail, RecipeUpdateHistory
+from recipe.serializers import ProductBatchingRetrieveSerializer
 from system.models import DataChangeLog
 
 
@@ -38,7 +41,7 @@ def material_in_post_save(sender, instance=None, created=False, update_fields=No
         ExpendMaterial.objects.filter(material_no=instance.material_no).update(
             material_type=instance.material_type.global_name,
             material_name=instance.material_name)
-        MaterialTankStatus.objects.filter(material_no=instance.material_no).update(
+        MaterialTankStatus.objects.filter(material_name=instance.material_name).update(
             material_type=instance.material_type.global_name,
             material_name=instance.material_name)
 
@@ -81,3 +84,15 @@ def plan_in_post_save(sender, instance=None, created=False, update_fields=None, 
 @receiver(post_save, sender=ProductBatchingClassesPlan)
 def class_plan_in_post_save(sender, instance=None, created=False, update_fields=None, **kwargs):
     inner(sender, instance, created)
+
+
+@receiver(post_save, sender=ProductBatching)
+def update_product_batching(sender, instance=None, created=False, **kwargs):
+    if not created:
+        data = ProductBatchingRetrieveSerializer(instance).data
+        RecipeUpdateHistory.objects.create(
+            product_no=instance.stage_product_batch_no,
+            equip_no=instance.equip.equip_no,
+            recipe_detail=json.loads(json.dumps(data)),
+            username=instance.last_updated_user.username
+        )

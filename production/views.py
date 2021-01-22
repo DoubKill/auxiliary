@@ -1094,10 +1094,23 @@ class CurveInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         feed_back_id = self.request.query_params.get('feed_back_id')
         try:
             tfb_obk = TrainsFeedbacks.objects.get(id=feed_back_id)
-            irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
-                                                      plan_classes_uid=tfb_obk.plan_classes_uid,
-                                                      product_time__gte=tfb_obk.begin_time,
-                                                      product_time__lte=tfb_obk.end_time).order_by('product_time')
+            if tfb_obk.equip_no == "Z04":
+                mixer = tfb_obk.operation_user
+                if mixer == "Mixer1":
+                    mixer_id = 1
+                elif mixer == "Mixer2":
+                    mixer_id = 2
+                else:
+                    mixer_id = 2
+                irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
+                                                          plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                          current_trains=tfb_obk.actual_trains,
+                                                          delete_user_id=mixer_id).order_by('product_time')
+            else:
+                irc_queryset = EquipStatus.objects.filter(equip_no=tfb_obk.equip_no,
+                                                          plan_classes_uid=tfb_obk.plan_classes_uid,
+                                                          product_time__gte=tfb_obk.begin_time,
+                                                          product_time__lte=tfb_obk.end_time).order_by('product_time')
         except:
             raise ValidationError('车次产出反馈或车次报表工艺曲线数据表没有数据')
 
