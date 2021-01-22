@@ -301,6 +301,8 @@ def hf_trains_up():
             EquipStatus.objects.bulk_create(equip_status_list)
         except zipfile.BadZipFile:
             pass
+        except Exception as e:
+            logger.error(e)
 
 
 @atomic()
