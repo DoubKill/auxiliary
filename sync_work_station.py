@@ -10,6 +10,7 @@ import time
 import socket
 import functools
 import zipfile
+import decimal
 
 import django
 import logging
@@ -162,6 +163,8 @@ def plan_status_monitor():
 
 def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
     model_data_list = []
+    user_1 = User.objects.get(id=1)
+    user_2 = User.objects.get(id=2)
     with zipfile.ZipFile(file_name) as z:
         file_name_dict= z.NameToInfo
         file_name = None
@@ -190,9 +193,9 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                 num = actual.index(x)
                 temp_list = x.decode('utf8').split(";")
                 if mixer == "Mixer1":
-                    mixer_id = 1
+                    user = user_1
                 elif mixer == "Mixer2":
-                    mixer_id =2
+                    user = user_2
                 else:
                     continue
                 temp_model_dict = dict(
@@ -201,12 +204,12 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                     equip_no="Z04",
                     status = "运行中",
                     rpm = temp_list[rpm_index],
-                    energy = temp_list[energy_index]*1000,   # hf单位kj/kg   国自j
-                    power = temp_list[power_index]*1000,     # hf单位kw      国自w
+                    energy = int(float(temp_list[energy_index])*1000),  # hf单位kj/kg   国自j
+                    power = int(float(temp_list[power_index])*100),    # hf单位kw      国自w
                     pressure = temp_list[pressure_index] if pressure_index else 0,
                     temperature = temp_list[temperature_index],
                     product_time = start_time + datetime.timedelta(seconds=1*num),
-                    delete_user = User.objects.get(id=mixer_id)
+                    delete_user = user
                 )
                 model_data_list.append(EquipStatus(**temp_model_dict))
     return  model_data_list
