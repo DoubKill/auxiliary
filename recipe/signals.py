@@ -88,11 +88,14 @@ def class_plan_in_post_save(sender, instance=None, created=False, update_fields=
 
 @receiver(post_save, sender=ProductBatching)
 def update_product_batching(sender, instance=None, created=False, **kwargs):
-    if not created:
-        data = ProductBatchingRetrieveSerializer(instance).data
-        RecipeUpdateHistory.objects.create(
-            product_no=instance.stage_product_batch_no,
-            equip_no=instance.equip.equip_no,
-            recipe_detail=json.loads(json.dumps(data)),
-            username=instance.last_updated_user.username
-        )
+    try:
+        if not created:
+            data = ProductBatchingRetrieveSerializer(instance).data
+            RecipeUpdateHistory.objects.create(
+                product_no=instance.stage_product_batch_no,
+                equip_no=instance.equip.equip_no,
+                recipe_detail=json.loads(json.dumps(data)),
+                username=instance.last_updated_user.username
+            )
+    except Exception:
+        pass
