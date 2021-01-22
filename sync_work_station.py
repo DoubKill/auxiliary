@@ -279,7 +279,7 @@ def hf_trains_up():
                 mixer_time=int(temp.get("batr_mixing_time")),
                 consum_time=int(consume_time),
             )
-            TrainsFeedbacks.objects.using('test').create(**train)
+            TrainsFeedbacks.objects.create(**train)
         except Exception as e:
             print(e)
             logger.error(f"Z04车次报表上行失败:{e}")
@@ -295,7 +295,7 @@ def hf_trains_up():
             f.write(mixer_data)
         try:
             equip_status_list = mixer_analysis(temp.get("batr_start_date"), temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_station_ident"), file_name="temp.ZIP")
-            EquipStatus.objects.using('test').bulk_create(equip_status_list)
+            EquipStatus.objects.bulk_create(equip_status_list)
         except zipfile.BadZipFile:
             pass
 

@@ -97,7 +97,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     dev_type_name = serializers.CharField(source='dev_type__category_name', default=None, read_only=True)
     equip_no = serializers.CharField(source='equip__equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip__equip_name', default=None, read_only=True)
-    sp_num = serializers.IntegerField(source='processes__sp_num', read_only=True, default=None)
+    sp_num = serializers.DecimalField(source='processes__sp_num', read_only=True, default=None, max_digits=3, decimal_places=1)
     dev_type = serializers.IntegerField(source='dev_type_id', read_only=True, default=None)
     category__category_name = serializers.CharField(source='equip__category__category_name',
                                                     default=None, read_only=True)

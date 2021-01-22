@@ -522,7 +522,7 @@ class IssuedPlan(APIView):
         data["side_temp"] = actual_product_process.cb_temp
         data["temp_on_off"] = 0 if actual_product_process.temp_use_flag else 1
         data["sp_num"] = int(actual_product_process.sp_num)
-        if int(equip_no) in [8]:
+        if int(equip_no) in [1, 8]:
             data["sp_num"] = actual_product_process.sp_num
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
         data["recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)

@@ -249,22 +249,30 @@ LOGGING = {
 
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-    #     'NAME': os.getenv('SFJ_DATABASE_NAME', 'AJLJ'),  # 数据库名称
-    #     'USER': os.getenv('SFJ_DATABASE_USERNAME', 'mes'),  # 用户名
-    #     'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes@2020'),  # 密码
-    #     'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.10.54'),  # HOST
-    #     'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
-    # },
     'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': os.getenv('SFJ_DATABASE_NAME', 'common'),  # 数据库名称
+        'USER': os.getenv('SFJ_DATABASE_USERNAME', 'root'),  # 用户名
+        'PASSWORD': os.getenv('SFJ_DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.10.120.47'),  # HOST
+        'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '3306'),  # 端口
+    },
+    # 'test': {
+    #         'ENGINE': 'django.db.backends.sqlite3',
+    #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    #     },
+    'Z01': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME': 'GZSFJ',
+            'HOST': '10.4.23.61',
+            'PORT': '1433',
+            'USER': 'sa',
+            'PASSWORD': '123',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'MARS_Connection': True,
+                },
             },
-    'test': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        },
     'Z02': {
             'ENGINE': 'sql_server.pyodbc',
             'NAME': 'GZSFJ',
