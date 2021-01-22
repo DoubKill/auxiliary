@@ -355,25 +355,25 @@ def consume_data_up():
 @one_instance
 def run():
     while True:
-        # try:
-        #     plan_status_monitor()
-        # except Exception as e:
-        #     logger.error(f"计划状态同步异常:{e}")
-        # try:
-        #     MesUpClient.sync()
-        # except Exception as e:
-        #     logger.error(f"群控至MES上行异常:{e}")
-        # try:
-        hf_trains_up()
-        # except Exception as e:
-        #     print(e)
-        #     logger.error(e)
-        # try:
-        #     consume_data_up()
-        # except Exception as e:
-        #     print(e)
-        #     logger.error(e)
-        # time.sleep(5)
+        try:
+            plan_status_monitor()
+        except Exception as e:
+            logger.error(f"计划状态同步异常:{e}")
+        try:
+            MesUpClient.sync()
+        except Exception as e:
+            logger.error(f"群控至MES上行异常:{e}")
+        try:
+            hf_trains_up()
+        except Exception as e:
+            print(e)
+            logger.error(e)
+        try:
+            consume_data_up()
+        except Exception as e:
+            print(e)
+            logger.error(e)
+        time.sleep(5)
 
 if __name__ == "__main__":
     run()
