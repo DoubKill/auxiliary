@@ -6,13 +6,13 @@ import time
 
 import django
 
-from work_station.models import I_ORDER_STATE_V
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 from collections import OrderedDict
 from production.utils import strtoint
-
+from work_station.models import I_ORDER_STATE_V
 from mes.common_code import WebService
 from plan.models import ProductClassesPlan
 from production.models import PlanStatus, TrainsFeedbacks
@@ -42,7 +42,7 @@ def one_instance(func):
 
 def send_to_yikong_run():
     """下达计划"""
-    plan_obj = I_ORDER_STATE_V.objects.filter(order_status="PRODUCTION").order_by("order_start_date").last()
+    plan_obj = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_status="PRODUCTION").order_by("order_start_date").last()
     if plan_obj:
         if plan_obj.order_status == "PRODUCTION":
             plan_id = plan_obj.order_name
@@ -90,7 +90,7 @@ def send_to_yikong_run():
 
 def send_to_yikong_stop():
     """计划停止"""
-    plan_obj = I_ORDER_STATE_V.objects.filter(order_status="UNFINISHED").order_by("order_start_date").last()
+    plan_obj = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_status="UNFINISHED").order_by("order_start_date").last()
     if plan_obj:
         test_dict = OrderedDict()
         test_dict['stopstate'] = '停止'
@@ -104,7 +104,7 @@ def send_to_yikong_stop():
 
 def send_to_yikong_update():
     """更新车次"""
-    plan = I_ORDER_STATE_V.objects.filter(order_status="PRODUCTION").order_by("order_start_date").last()
+    plan = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_status="PRODUCTION").order_by("order_start_date").last()
     if not plan:
         pass
     else:
