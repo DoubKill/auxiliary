@@ -86,7 +86,7 @@ def class_plan_in_post_save(sender, instance=None, created=False, update_fields=
     inner(sender, instance, created)
 
 
-@receiver(post_save, sender=ProductBatching)
+# @receiver(post_save, sender=ProductBatching)
 def update_product_batching(sender, instance=None, created=False, **kwargs):
     if not created:
         data = ProductBatchingRetrieveSerializer(instance).data
