@@ -110,50 +110,50 @@ def send_to_yikong_update():
     else:
         pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan.order_name)
         plan_trains = pcp.plan_trains
-        if plan_trains != plan.setno:
+        if plan_trains != plan.batches_set:
             test_dict = OrderedDict()
-            test_dict['updatestate'] = plan.setno
-            test_dict['planid'] = plan.planid
+            test_dict['updatestate'] = plan.batches_set
+            test_dict['planid'] = plan.order_name
             test_dict['no'] = 4
             try:
                 WebService.issue(test_dict, 'updatetrains', equip_no="4")
             except Exception as e:
                 logger.error(f"Z04超时链接|{e}")
             else:
-                pcp.plan_trains = plan.setno
+                pcp.plan_trains = plan.batches_set
                 pcp.save()
 
 
-def send_again_yikong_again():
-    """配方重传"""
-    model_list = 'IfdownShengchanjihua'
-    ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    for ext_str in ext_str_list:
-        model_name = getattr(md, model_list + str(ext_str))
-        scjh_set = model_name.objects.filter(recstatus__in=["配方需重传", "配方车次需更新"])
-        if not scjh_set:
-            pass
-        else:
-            for scjh_obj in scjh_set:
-                test_dict = OrderedDict()  # 传给易控组态的数据
-                test_dict['planid'] = scjh_obj.planid
-                pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=scjh_obj.planid).first()
-                weight = pcp_obj.product_day_plan.product_batching.batching_weight
-                if weight:
-                    test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
-                else:
-                    test_dict['weight'] = 0
-                sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
-                if sp_number:
-                    test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
-                else:
-                    test_dict['sp_number'] = 0
-                # test_dict['runstate'] = "运行中"  # '运行中'
-                test_dict['no'] = ext_str
-                try:
-                    WebService.issue(test_dict, 'planAgain', equip_no=ext_str)
-                except Exception as e:
-                    logger.error(f"{ext_str}超时链接|{e}")
+# def send_again_yikong_again():
+#     """配方重传"""
+#     model_list = 'IfdownShengchanjihua'
+#     ext_str_list = [6, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+#     for ext_str in ext_str_list:
+#         model_name = getattr(md, model_list + str(ext_str))
+#         scjh_set = model_name.objects.filter(recstatus__in=["配方需重传", "配方车次需更新"])
+#         if not scjh_set:
+#             pass
+#         else:
+#             for scjh_obj in scjh_set:
+#                 test_dict = OrderedDict()  # 传给易控组态的数据
+#                 test_dict['planid'] = scjh_obj.planid
+#                 pcp_obj = ProductClassesPlan.objects.filter(plan_classes_uid=scjh_obj.planid).first()
+#                 weight = pcp_obj.product_day_plan.product_batching.batching_weight
+#                 if weight:
+#                     test_dict['weight'] = pcp_obj.product_day_plan.product_batching.batching_weight
+#                 else:
+#                     test_dict['weight'] = 0
+#                 sp_number = pcp_obj.product_day_plan.product_batching.processes.sp_num
+#                 if sp_number:
+#                     test_dict['sp_number'] = pcp_obj.product_day_plan.product_batching.processes.sp_num
+#                 else:
+#                     test_dict['sp_number'] = 0
+#                 # test_dict['runstate'] = "运行中"  # '运行中'
+#                 test_dict['no'] = ext_str
+#                 try:
+#                     WebService.issue(test_dict, 'planAgain', equip_no=ext_str)
+#                 except Exception as e:
+#                     logger.error(f"{ext_str}超时链接|{e}")
 
 @one_instance
 def run():
@@ -166,6 +166,7 @@ def run():
                 fun()
             except Exception as e:
                 logger.error(f"{fun.__doc__}|{e}")
+                # print(f"{fun.__doc__}|{e}")
 
         time.sleep(5)  # 目前设为10秒一次 因为向收皮机发送请求设置timeout是3秒
 
