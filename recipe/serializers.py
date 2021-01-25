@@ -97,7 +97,8 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     dev_type_name = serializers.CharField(source='dev_type__category_name', default=None, read_only=True)
     equip_no = serializers.CharField(source='equip__equip_no', default=None, read_only=True)
     equip_name = serializers.CharField(source='equip__equip_name', default=None, read_only=True)
-    sp_num = serializers.DecimalField(source='processes__sp_num', read_only=True, default=None, max_digits=3, decimal_places=1)
+    sp_num = serializers.DecimalField(source='processes__sp_num', read_only=True, default=None, max_digits=3,
+                                      decimal_places=1)
     dev_type = serializers.IntegerField(source='dev_type_id', read_only=True, default=None)
     category__category_name = serializers.CharField(source='equip__category__category_name',
                                                     default=None, read_only=True)
@@ -285,7 +286,10 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details is not None:
-            instance.batching_details.filter().update(delete_flag=True)
+            # instance.batching_details.filter().update(delete_flag=True)
+            for detail in instance.batching_details.all():
+                detail.delete_flag = True
+                detail.save()
             batching_detail_list = [None] * len(batching_details)
             for i, detail in enumerate(batching_details):
                 actual_weight = detail.get('actual_weight', 0)
