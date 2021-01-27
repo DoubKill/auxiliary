@@ -248,7 +248,7 @@ class StopPlan(APIView):
         return Response({'_': '修改成功'}, status=200)
 
 
-# @method_decorator([api_recorder], name="dispatch")
+@method_decorator([api_recorder], name="dispatch")
 class IssuedPlan(APIView):
     """下达计划"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
