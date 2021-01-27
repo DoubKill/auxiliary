@@ -925,6 +925,7 @@ class PlanReceive(CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class HfRecipeList(APIView):
 
     def get(self, request):
