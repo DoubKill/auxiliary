@@ -248,7 +248,7 @@ class StopPlan(APIView):
         return Response({'_': '修改成功'}, status=200)
 
 
-# @method_decorator([api_recorder], name="dispatch")
+@method_decorator([api_recorder], name="dispatch")
 class IssuedPlan(APIView):
     """下达计划"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -925,9 +925,12 @@ class PlanReceive(CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+@method_decorator([api_recorder], name="dispatch")
 class HfRecipeList(APIView):
 
     def get(self, request):
-        recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
-
+        try:
+            recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
+        except Exception as e:
+            raise ValidationError(f"HF数据库连接异常,详情: {e}")
         return Response({"results": recipe_set})
