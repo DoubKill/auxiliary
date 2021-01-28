@@ -929,6 +929,8 @@ class PlanReceive(CreateAPIView):
 class HfRecipeList(APIView):
 
     def get(self, request):
-        recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
-
+        try:
+            recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
+        except Exception as e:
+            raise ValidationError(f"HF数据库连接异常,详情: {e}")
         return Response({"results": recipe_set})
