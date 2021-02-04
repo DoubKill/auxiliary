@@ -65,7 +65,7 @@ class ProductBatchingDown(BaseDownloader):
         'manual_material_weight', 'auto_material_weight', 'volume', 'production_time_interval', 'equip__equip_no',
         'batching_type', 'delete_flag', 'created_date')
     model = ProductBatching
-    filter_dict = {"batching_type": 1, "used_type": 4}
+    filter_dict = {"batching_type": 1}
 
 
 class MaterialDown(BaseDownloader):
@@ -83,8 +83,8 @@ class ProductBatchingDetailDown(BaseDownloader):
     upload_fields = (
         'id', 'product_batching__stage_product_batch_no', 'sn', 'material__material_no', 'actual_weight',
         'standard_error',
-        'auto_flag', 'type', 'delete_flag', 'created_date')
-    filter_dict = {"product_batching__batching_type": 1, "product_batching__used_type": 4}
+        'auto_flag', 'type', 'delete_flag', 'created_date','product_batching__equip__equip_no','product_batching__used_type')
+    filter_dict = {"product_batching__batching_type": 1}
     model = ProductBatchingDetail
 
 
