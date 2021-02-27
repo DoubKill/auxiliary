@@ -103,7 +103,8 @@ class WebService(object):
         }
 
         child_system = ChildSystemInfo.objects.filter(system_name=f"{equip_name}{equip_no}").first()
-        recv_ip = child_system.link_address
+        # recv_ip = child_system.link_address
+        recv_ip = "10.20.180.143"
         # recv_ip = "10.4.14.52"
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)

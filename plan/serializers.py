@@ -581,7 +581,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("相关表数据错误")
 
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
-            stage_product_batch_no=product_batching, delete_flag=False).last()
+            stage_product_batch_no=product_batching, delete_flag=False, batching_type=1).last()
         # 暂时将batching_type=2去掉 把first改为last
         # 原因：mes配方下达batching_type=2 计划是和这个关联
         # 但是如果在下发计划之前复制了配方batching_type是1，这个时候下发计划应该是和复制之后的配方关联 下面也是

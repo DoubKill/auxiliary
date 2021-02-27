@@ -2,13 +2,14 @@ import datetime
 import json
 import re
 
+import requests
 from django.db import connection
 from django.db.models import Sum, Max, F, Value, CharField
 from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ from rest_framework_extensions.cache.decorators import cache_response
 
 from basics.models import PlanSchedule, Equip
 from mes.common_code import CommonDeleteMixin, WebService
-from mes.conf import EQUIP_LIST, VERSION_EQUIP
+from mes.conf import EQUIP_LIST, VERSION_EQUIP, protocol
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
 from plan.models import ProductClassesPlan
@@ -27,7 +28,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback, AlarmLog
+    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1371,3 +1372,203 @@ class TankWeighSyncView(APIView):
                 raise ValidationError(f"上行同步罐称量信息失败，详情{e}")
 
         return Response({"message": "ok"})
+
+
+class FeedBack:
+
+    @atomic()
+    def feed_record(self, base_trains, pcp_obj):
+        plan_trains = pcp_obj.plan_trains
+        create_list = []
+        equip_no = pcp_obj.equip.equip_no
+        plan_classes_uid = pcp_obj.plan_classes_uid
+        product_no = pcp_obj.product_batching.stage_product_batch_no
+        production_factory_date = pcp_obj.work_schedule_plan.plan_schedule.day_time
+        production_classes = batch_classes = pcp_obj.work_schedule_plan.classes.global_name
+        batch_group = production_group = pcp_obj.work_schedule_plan.group.global_name
+
+        for x in range(base_trains, plan_trains + 1):
+            data = dict(
+                trains=plan_trains,
+                equip_no=equip_no,
+                plan_classes_uid=plan_classes_uid,
+                product_no=product_no,
+                production_factory_date=production_factory_date,
+                production_classes=production_classes,
+                batch_classes=batch_classes,
+                batch_group=batch_group,
+                production_group=production_group,
+                feed_uid=plan_classes_uid + str(x)
+            )
+            create_list.append(FeedingMaterialLog(**data))
+        FeedingMaterialLog.objects.bulk_create(create_list)
+
+
+
+class MaterialReleaseView(FeedBack, APIView):
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        plan_classes_uid = data.get("plan_no")
+        feed_trains = data.get("feed_trains")
+        base_train_dict = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
+            base_train=Max("trains"))
+        pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan_classes_uid)
+        if not pcp:
+            raise ValidationError("未找到该条密炼计划")
+        base_train = base_train_dict.get("base_train")
+        if not base_train:
+            base_train = 0
+        if pcp.plan_trains > base_train:
+            self.feed_record(base_train, pcp)
+        fml_set = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=feed_trains)
+        fml = fml_set.last()
+        if not fml:
+            return Response({"status": False})
+        time_now = datetime.datetime.now()
+        materials = data.get("materials")
+
+        map_set = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
+                                                 feed_log__feed_begin_time__isnull=False)\
+                                                .values("material_name", "bra_code")
+        map_dict = {}
+        for _ in map_set:
+            map_dict.update(**{_.get("material_name"):_.get("bra_code")})
+        for material in materials:
+            default = dict(
+                plan_weight=material.get("plan_weight"),
+                actual_weight=material.get("actual_weight"),
+                bra_code=map_dict.get(material.get("material_name")),
+                weight_time=datetime.datetime.now()  # 目前没有各个物料称重时间
+            )
+            kwargs = dict(
+                material_no=material.get("material_no"),
+                material_name=material.get("material_name"),
+                feed_log=fml
+            )
+            LoadMaterialLog.objects.update_or_create(defaults=default, **kwargs)
+        actual_material_list = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
+                                                              feed_log__trains=feed_trains).values_list('material_name', flat=True)
+        material_list = pcp.product_batching.batching_details.all().values_list("material__material_name")
+        if set(actual_material_list) - set(material_list):
+            error_message = f"投料缺少{','.join(list(set(actual_material_list) - set(material_list)))}"
+        elif set(material_list) - set(actual_material_list):
+            error_message = f"未知投料{','.join(list(set(material_list)- set(actual_material_list)))}"
+        else:
+            error_message = None
+        # try:
+        #     ret = requests.get(f"{protocol}://10.4.10.54/api/v1/basics/current_class/",  timeout=3)
+        # except requests.exceptions.ConnectTimeout:
+        #     fml_set.update(judge_reason="与mes网络连接异常直接放行",
+        #                    feed_begin_time=time_now - datetime.timedelta(seconds=3),
+        #                    feed_end_time=time_now)
+        #     return Response({"status": True})
+        if error_message:
+            fml_set.update(failed_flag=2, judge_reason=error_message)
+            return Response({"status": False})
+        else:
+            fml_set.update(feed_begin_time=time_now - datetime.timedelta(seconds=5), feed_end_time=time_now)
+            return Response({"status": True})
+
+
+class CurrentWeighView(FeedBack, APIView):
+
+
+    def post(self, request, *args, **kwargs):
+        """{"bra_code": "条形码",
+            "plan_classes_uid": "计划编号",
+            "material_no": "物料编码",
+            "material_name": "物料名称",
+            "trains": "车次（暂无参考价值）",
+            "equip_no": "Z08"}"""
+        data = request.data
+        equip_no = data.get("equip_no", "Z08")
+        plan_no = data.get("plan_classes_uid")
+        material_no = material_name = data.get("material_name")
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
+        # 用于更新车次
+        feed_log = {}
+        #TODO
+        try:
+            status, text = WebService.issue(data, 'weight_back', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("称量反馈异常")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
+        if not status:
+            raise ValidationError(f"称量信息未反馈")
+        import xmltodict
+        weigh_back = xmltodict.parse(text)
+        weigh_back = weigh_back.get('s:Envelope').get('s:Body').get('weight_backResponse').get('weight_backResult')
+        weigh_back = json.loads(weigh_back)
+        # 获取计划车次用于判断是否需要更新投料履历
+        plan_trains = weigh_back.get("plan_trains")
+        feed_trains = weigh_back.get("feed_trains")
+        product_no = weigh_back.get("product_no")
+        bra_code = data.get("bra_code")
+        materials = weigh_back.get("materials")
+        plan_classes_uid = weigh_back.get("plan_no")
+        # 先注释按实际投料的记
+        # if plan_classes_uid != plan_no:
+        #     raise ValidationError("投料计划与密炼计划不一致！")
+        base_train_dict = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(base_train=Max("trains"))
+        base_train = base_train_dict.get("base_train")
+        if not base_train:
+            base_train = 0
+        pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan_classes_uid)
+        if pcp.plan_trains > base_train:
+            self.feed_record(base_train, pcp)
+        fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
+        look_up = dict(
+            feed_log=fml,
+            material_no=material_no,
+            material_name=material_name,
+        )
+        LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code} ,**look_up)
+        for material in materials:
+            default = dict(
+                plan_weight=material.get("plan_weight"),
+                actual_weight=material.get("actual_weight"),
+            )
+            kwargs = dict(
+                material_no=material.get("material_no"),
+                material_name=material.get("material_name"),
+                feed_log=fml
+            )
+            ## 称量时间目前没办法各个物料之间做区分记录
+            # try:
+            #     if not LoadMaterialLog.objects.get(**kwargs).weight_time:
+            #         default.update(weight_time=datetime.datetime.now())
+            # except:
+            #     pass
+            LoadMaterialLog.objects.update_or_create(defaults=default, **kwargs)
+        return Response(weigh_back)
+
+
+
+class ForceFeedView(APIView):
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get(self, request):
+        equip_no = request.query_params.get("equip_no")
+        plan_no = request.query_params.get("plan_no")
+        if "0" in equip_no:
+            ext_str = equip_no[-1]
+        else:
+            ext_str = equip_no[1:]
+        try:
+            status, text = WebService.issue(request.query_params, 'force_feed', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            # raise ValidationError("称量反馈异常")
+            return Response({"success": False, "message": f"{equip_no} 称量反馈异常", "data": {}})
+        except:
+            return Response({"success": False, "message": f"{equip_no} 网络连接异常", "data": {}})
+            # raise ValidationError(f"{equip_no} 网络连接异常")
+        if not status:
+            return Response({"success": False, "message": f"{equip_no} 称量信息未反馈", "data": {}})
+            # raise ValidationError(f"称量信息未反馈")
+        return Response({"success": True, "message": "强制进料成功", "data": {}})
