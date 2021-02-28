@@ -361,6 +361,7 @@ class IfupReportCurveBackups(models.Model):
 
 
 class v_ASRS_STORE_MESVIEW(models.Model):
+    """"""
     库房编号 = models.CharField(max_length=20, blank=True, null=True)
     库房名称 = models.CharField(max_length=20, blank=True, null=True)
     订单号 = models.CharField(max_length=50, blank=True, null=True)
@@ -388,3 +389,49 @@ class AlarmLog(AbstractEntity):
         db_table = 'alarm_log'
         verbose_name_plural = verbose_name = '报警日志'
         indexes = [models.Index(fields=['equip_no']), models.Index(fields=['product_time'])]
+
+
+class FeedingMaterialLog(models.Model):
+    STATUS_CHOICE = (
+        (1, '正常'),
+        (2, '异常')
+    )
+    feed_uid = models.CharField(max_length=64, help_text='进料uid')
+    equip_no = models.CharField(max_length=64, help_text='设备编号')
+    plan_classes_uid = models.CharField(verbose_name='班次计划唯一码', help_text='班次计划唯一码', max_length=64)
+    trains = models.IntegerField(help_text='车次')
+    product_no = models.CharField(max_length=64, help_text='胶料名称')
+    production_factory_date = models.DateField(max_length=64, help_text='工厂时间')
+    production_classes = models.CharField(max_length=64, help_text='生产班次')
+    production_group = models.CharField(max_length=64, help_text='生产班组')
+    batch_time = models.DateTimeField(help_text='投入时间', null=True)
+    batch_classes = models.CharField(max_length=64, help_text='投入班次', null=True)
+    batch_group = models.CharField(max_length=64, help_text='投入班组', null=True)
+    feedback_time = models.DateTimeField(help_text='重量反馈时间', null=True)
+    feed_begin_time = models.DateTimeField(help_text='进料开始时间', null=True) #q
+    feed_end_time = models.DateTimeField(help_text='进料结束时间', null=True)
+    failed_flag = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, default=1)
+    judge_reason = models.CharField(max_length=255, help_text='防错结果', blank=True, null=True)
+
+    class Meta:
+        db_table = 'feed_material_log'
+        verbose_name_plural = verbose_name = '进料履历'
+
+
+class LoadMaterialLog(models.Model):
+    STATUS_CHOICE = (
+        (1, '正常'),
+        (2, '异常')
+    )
+    feed_log = models.ForeignKey(FeedingMaterialLog, on_delete=models.CASCADE)
+    material_no = models.CharField(max_length=64, help_text='物料编码')
+    material_name = models.CharField(max_length=64, help_text='物料名称')
+    plan_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='计划重量', default=0)
+    actual_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='实际重量', default=0)
+    bra_code = models.CharField(max_length=64, help_text='条形码', blank=True, null=True)
+    weight_time = models.DateTimeField(help_text='上料时间', null=True)
+    status = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, null=True)
+
+    class Meta:
+        db_table = 'load_material_log'
+        verbose_name_plural = verbose_name = '上料履历'
