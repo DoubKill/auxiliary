@@ -1389,7 +1389,7 @@ class FeedBack:
 
         for x in range(base_trains, plan_trains + 1):
             data = dict(
-                trains=plan_trains,
+                trains=x,
                 equip_no=equip_no,
                 plan_classes_uid=plan_classes_uid,
                 product_no=product_no,
@@ -1418,7 +1418,7 @@ class MaterialReleaseView(FeedBack, APIView):
             raise ValidationError("未找到该条密炼计划")
         base_train = base_train_dict.get("base_train")
         if not base_train:
-            base_train = 0
+            base_train = 1
         if pcp.plan_trains > base_train:
             self.feed_record(base_train, pcp)
         fml_set = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=feed_trains)
@@ -1483,7 +1483,8 @@ class CurrentWeighView(FeedBack, APIView):
             "equip_no": "Z08"}"""
         data = request.data
         equip_no = data.get("equip_no", "Z08")
-        plan_no = data.get("plan_classes_uid")
+        plan_classes_uid = data.get("plan_classes_uid")
+        bra_code = data.get("bra_code")
         material_no = material_name = data.get("material_name")
         if "0" in equip_no:
             ext_str = equip_no[-1]
@@ -1508,26 +1509,32 @@ class CurrentWeighView(FeedBack, APIView):
         plan_trains = weigh_back.get("plan_trains")
         feed_trains = weigh_back.get("feed_trains")
         product_no = weigh_back.get("product_no")
-        bra_code = data.get("bra_code")
         materials = weigh_back.get("materials")
         plan_classes_uid = weigh_back.get("plan_no")
+
+        base_train_dict = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
+            base_train=Max("trains"))
+        base_train = base_train_dict.get("base_train")
+        if not base_train:
+            base_train = 1
+        try:
+            pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan_classes_uid)
+        except:
+            raise ValidationError(f"没有{plan_classes_uid}这条计划")
+        if pcp.plan_trains > base_train:
+            self.feed_record(base_train, pcp)
         # 先注释按实际投料的记
         # if plan_classes_uid != plan_no:
         #     raise ValidationError("投料计划与密炼计划不一致！")
-        base_train_dict = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(base_train=Max("trains"))
-        base_train = base_train_dict.get("base_train")
-        if not base_train:
-            base_train = 0
-        pcp = ProductClassesPlan.objects.get(plan_classes_uid=plan_classes_uid)
-        if pcp.plan_trains > base_train:
-            self.feed_record(base_train, pcp)
+
+
         fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
         look_up = dict(
             feed_log=fml,
             material_no=material_no,
             material_name=material_name,
         )
-        LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code} ,**look_up)
+        LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code}, **look_up)
         for material in materials:
             default = dict(
                 plan_weight=material.get("plan_weight"),
@@ -1551,7 +1558,7 @@ class CurrentWeighView(FeedBack, APIView):
 
 class ForceFeedView(APIView):
 
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request):
         equip_no = request.query_params.get("equip_no")

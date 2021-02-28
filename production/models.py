@@ -410,7 +410,7 @@ class FeedingMaterialLog(models.Model):
     feed_begin_time = models.DateTimeField(help_text='进料开始时间', null=True) #q
     feed_end_time = models.DateTimeField(help_text='进料结束时间', null=True)
     failed_flag = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, default=1)
-    judge_reason = models.CharField(max_length=64, help_text='防错结果', blank=True, null=True)
+    judge_reason = models.CharField(max_length=255, help_text='防错结果', blank=True, null=True)
 
     class Meta:
         db_table = 'feed_material_log'

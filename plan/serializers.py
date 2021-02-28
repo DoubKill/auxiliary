@@ -123,7 +123,8 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                                                              recipe_version=precept).weight
 
             try:
-                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(defaults={"batching_weight": recipe_weight},
+                product_batching, _ = ProductBatching.objects.exclude(used_type=6).get_or_create(
+                    defaults={"batching_weight": recipe_weight},
                     stage_product_batch_no=product_no,
                     used_type=4,
                     equip=equip,
@@ -136,8 +137,8 @@ class ProductDayPlanSerializer(BaseModelSerializer):
         else:
             try:
                 product_batching = ProductBatching.objects.exclude(used_type=6).get(
-                        stage_product_batch_no=product_no,
-                        equip=equip)
+                    stage_product_batch_no=product_no,
+                    equip=equip)
             except Exception as e:
                 print(e)
                 raise serializers.ValidationError("胶料信息异常,详情:{}".format(e))
@@ -492,7 +493,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                     hf_recipe_version = int(instance.product_batching.precept)
                 except:
                     raise serializers.ValidationError("ZO4机台配方的版本/方案异常，请检查是否为标准数字")
-            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))//111
+            host_id = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S')) // 111
             if ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
                                                          pori_order_number=instance.plan_classes_uid,
                                                          pori_recipe_code=recipe_name,
@@ -503,9 +504,9 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no')
 
                 ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
-                                                            pori_order_number=instance.plan_classes_uid,
-                                                            pori_recipe_code=recipe_name,
-                                                            pori_recipe_version=hf_recipe_version).delete()
+                                                          pori_order_number=instance.plan_classes_uid,
+                                                          pori_recipe_code=recipe_name,
+                                                          pori_recipe_version=hf_recipe_version).delete()
                 ProdOrdersImp.objects.using(hf_db).create(
                     pori_line_name='Z04',
                     pori_order_number=instance.plan_classes_uid,
@@ -522,9 +523,9 @@ class UpdateTrainsSerializer(BaseModelSerializer):
                 raise serializers.ValidationError(f"{lt.lgtb_sql_errormessage}||{lt.lgtb_pks_errormessage}")
             else:
                 plan_status = ProdOrdersImp.objects.using(hf_db).filter(pori_line_name='Z04',
-                                                                          pori_order_number=instance.plan_classes_uid,
-                                                                          pori_recipe_code=recipe_name,
-                                                                          pori_recipe_version=hf_recipe_version).order_by(
+                                                                        pori_order_number=instance.plan_classes_uid,
+                                                                        pori_recipe_code=recipe_name,
+                                                                        pori_recipe_version=hf_recipe_version).order_by(
                     "pori_id").last().pori_status
                 if plan_status < 0:
                     lt = LogTable.objects.using(hf_db).filter(lgtb_host_id=host_id).order_by("lgtb_id").last()
@@ -544,6 +545,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
 class ProductDayPlanSyncInterface(serializers.ModelSerializer):
     product_batching = serializers.CharField(source='product_batching.stage_product_batch_no')
     plan_schedule = serializers.CharField(source='plan_schedule.plan_schedule_no')
+    equip = serializers.CharField(source='equip.equip_no')
 
     class Meta:
         model = ProductDayPlan
@@ -581,7 +583,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("相关表数据错误")
 
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
-            stage_product_batch_no=product_batching, delete_flag=False, batching_type=1).last()
+            stage_product_batch_no=product_batching, delete_flag=False).last()
         # 暂时将batching_type=2去掉 把first改为last
         # 原因：mes配方下达batching_type=2 计划是和这个关联
         # 但是如果在下发计划之前复制了配方batching_type是1，这个时候下发计划应该是和复制之后的配方关联 下面也是
@@ -596,8 +598,8 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         if not pb_obj:
             raise serializers.ValidationError(
                 '该胶料配料标准{}在MES或上辅机没有'.format(pdp_dict['product_batching']['stage_product_batch_no']))
-
-        pdp_obj = ProductDayPlan.objects.filter(equip=pdp_dict['equip'], product_batching=pb_obj,
+        # 校验胶料日计划设备
+        pdp_obj = ProductDayPlan.objects.filter(equip=equip, product_batching=pb_obj,
                                                 plan_schedule=plan_schedule).first()
         if pdp_obj:
             attrs['product_day_plan'] = pdp_obj
@@ -608,7 +610,10 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         attrs['equip'] = equip
         attrs['status'] = '等待'
         # 因为计划里的时间重量都是通过配方a算出来的  下发给上辅机 上辅机复制配方a为配方b 这个时候计划是需要跟配方b关联的 计划的时间重量就要重新计算
-        attrs['time'] = attrs['plan_trains'] * product_batching.production_time_interval
+        if product_batching.production_time_interval:
+            attrs['time'] = attrs['plan_trains'] * product_batching.production_time_interval
+        else:
+            attrs['time'] = None
         attrs['weight'] = attrs['plan_trains'] * product_batching.batching_weight
         return attrs
 
