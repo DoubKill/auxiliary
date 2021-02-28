@@ -86,16 +86,20 @@ def class_plan_in_post_save(sender, instance=None, created=False, update_fields=
     inner(sender, instance, created)
 
 
-# @receiver(post_save, sender=ProductBatching)
+@receiver(post_save, sender=ProductBatching)
 def update_product_batching(sender, instance=None, created=False, **kwargs):
     try:
         if not created:
+            if instance.last_updated_user is None:
+                user = "mes"
+            else:
+                user = instance.last_updated_user.username
             data = ProductBatchingRetrieveSerializer(instance).data
             RecipeUpdateHistory.objects.create(
                 product_no=instance.stage_product_batch_no,
                 equip_no=instance.equip.equip_no,
                 recipe_detail=json.loads(json.dumps(data)),
-                username=instance.last_updated_user.username
+                username=user
             )
     except Exception:
         pass

@@ -5,7 +5,8 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
-    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport, PalletDetailViewSet, TankWeighSyncView, AlarmLogList
+    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport, PalletDetailViewSet, TankWeighSyncView, AlarmLogList, \
+    MaterialReleaseView, CurrentWeighView, ForceFeedView
 
 router = DefaultRouter()
 
@@ -69,4 +70,10 @@ urlpatterns = [
     path('equip-status-plan-list/', EquipStatusPlanList.as_view()),  # 主页面展示
     path('equip-detailed-list/', EquipDetailedList.as_view()),  # 主页面详情展示
     path('tank-weigh-sync/', TankWeighSyncView.as_view()),  # 物料罐及称量信息同步
+    # 生产环节 投料防错 群控起到一个中间人的作用用于处理及转发对比结果
+    ## 面向上辅机
+    path('material_release/', MaterialReleaseView.as_view()), # 查询mes条码并检测判断对应物料及其重量反馈上辅机输送带是否放行
+    ## 面向mes
+    path('current_weigh/', CurrentWeighView.as_view()),
+    path('force_feed/', ForceFeedView.as_view()),
 ]

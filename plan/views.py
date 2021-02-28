@@ -931,6 +931,8 @@ class HfRecipeList(APIView):
     def get(self, request):
         try:
             recipe_set = I_RECIPES_V.objects.using("H-Z04").filter(recipe_blocked='no').values("recipe_number", "recipe_code", "recipe_version", "recipe_blocked", "recipe_type")
+            ret = list(recipe_set)
         except Exception as e:
             raise ValidationError(f"HF数据库连接异常,详情: {e}")
-        return Response({"results": recipe_set})
+        else:
+            return Response({"results": ret})
