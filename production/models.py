@@ -430,7 +430,7 @@ class LoadMaterialLog(models.Model):
     actual_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='实际重量', default=0)
     bra_code = models.CharField(max_length=64, help_text='条形码', blank=True, null=True)
     weight_time = models.DateTimeField(help_text='上料时间', null=True)
-    status = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, default=1)
+    status = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, null=True)
 
     class Meta:
         db_table = 'load_material_log'

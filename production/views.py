@@ -1483,6 +1483,7 @@ class CurrentWeighView(FeedBack, APIView):
             "equip_no": "Z08"}"""
         data = request.data
         equip_no = data.get("equip_no", "Z08")
+        material_status = data.get("status")
         plan_classes_uid = data.get("plan_classes_uid")
         bra_code = data.get("bra_code")
         material_no = material_name = data.get("material_name")
@@ -1534,7 +1535,7 @@ class CurrentWeighView(FeedBack, APIView):
             material_no=material_no,
             material_name=material_name,
         )
-        LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code}, **look_up)
+        LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code, "status": material_status}, **look_up)
         for material in materials:
             default = dict(
                 plan_weight=material.get("plan_weight"),
