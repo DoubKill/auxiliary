@@ -1438,12 +1438,12 @@ class MaterialReleaseView(FeedBack, APIView):
             default = dict(
                 plan_weight=material.get("plan_weight"),
                 actual_weight=material.get("actual_weight"),
-                bra_code=map_dict.get(material.get("material_name")),
+                bra_code=map_dict.get(material.get("material_name").strip()),
                 weight_time=datetime.datetime.now()  # 目前没有各个物料称重时间
             )
             kwargs = dict(
-                material_no=material.get("material_name"),
-                material_name=material.get("material_name"),
+                material_no=material.get("material_name").strip(),
+                material_name=material.get("material_name").strip(),
                 feed_log=fml
             )
             LoadMaterialLog.objects.update_or_create(defaults=default, **kwargs)
@@ -1532,8 +1532,8 @@ class CurrentWeighView(FeedBack, APIView):
         fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
         look_up = dict(
             feed_log=fml,
-            material_no=material_no,
-            material_name=material_name,
+            material_no=material_no.strip(),
+            material_name=material_name.strip(),
         )
         LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code, "status": material_status}, **look_up)
         for material in materials:
@@ -1542,8 +1542,8 @@ class CurrentWeighView(FeedBack, APIView):
                 actual_weight=material.get("actual_weight"),
             )
             kwargs = dict(
-                material_no=material.get("material_name"),
-                material_name=material.get("material_name"),
+                material_no=material.get("material_name").strip(),
+                material_name=material.get("material_name").strip(),
                 feed_log=fml
             )
             ## 称量时间目前没办法各个物料之间做区分记录
