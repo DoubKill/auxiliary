@@ -583,21 +583,22 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("相关表数据错误")
 
         product_batching = ProductBatching.objects.exclude(used_type=6).filter(
-            stage_product_batch_no=product_batching, delete_flag=False).last()
+            stage_product_batch_no=product_batching, delete_flag=False, batching_type=1, equip=equip).last()
+        # 下面的三个注释就不要看了  群控这边直接计划关联机台配方 没有机台配方就报错
         # 暂时将batching_type=2去掉 把first改为last
         # 原因：mes配方下达batching_type=2 计划是和这个关联
         # 但是如果在下发计划之前复制了配方batching_type是1，这个时候下发计划应该是和复制之后的配方关联 下面也是
         if not product_batching:
-            raise serializers.ValidationError('该胶料配料标准{}在MES或上辅机没有'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('{}在群控上没有对应的机台配方'.format(attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
         pb_obj = ProductBatching.objects.exclude(used_type=6).filter(
             stage_product_batch_no=pdp_dict['product_batching']['stage_product_batch_no'],
-            delete_flag=False).last()
+            delete_flag=False, batching_type=1, equip=equip).last()
         if not pb_obj:
             raise serializers.ValidationError(
-                '该胶料配料标准{}在MES或上辅机没有'.format(pdp_dict['product_batching']['stage_product_batch_no']))
+                '{}在群控上没有同名的机台配方'.format(pdp_dict['product_batching']['stage_product_batch_no']))
         # 校验胶料日计划设备
         pdp_obj = ProductDayPlan.objects.filter(equip=equip, product_batching=pb_obj,
                                                 plan_schedule=plan_schedule).first()

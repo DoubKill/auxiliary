@@ -465,5 +465,5 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 # mes同步端口
-# MES_URL = os.environ.get('MES_URL', 'http://10.4.10.54:80/')
-MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')
+MES_URL = os.environ.get('MES_URL', 'http://10.4.10.54:80/')
+# MES_URL = os.environ.get('MES_URL', 'http://127.0.0.1:8000/')
