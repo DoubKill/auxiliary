@@ -1442,7 +1442,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 weight_time=datetime.datetime.now()  # 目前没有各个物料称重时间
             )
             kwargs = dict(
-                material_no=material.get("material_no"),
+                material_no=material.get("material_name"),
                 material_name=material.get("material_name"),
                 feed_log=fml
             )
@@ -1542,7 +1542,7 @@ class CurrentWeighView(FeedBack, APIView):
                 actual_weight=material.get("actual_weight"),
             )
             kwargs = dict(
-                material_no=material.get("material_no"),
+                material_no=material.get("material_name"),
                 material_name=material.get("material_name"),
                 feed_log=fml
             )
