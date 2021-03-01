@@ -108,7 +108,7 @@ class WebService(object):
         url = cls.url.format(recv_ip)
         headers['SOAPAction'] = headers['SOAPAction'].format(category)
         body = cls.trans_dict_to_xml(data, category)
-        rep = cls.client(method, url, headers=headers, data=body, timeout=10)
+        rep = cls.client(method, url, headers=headers, data=body, timeout=5)
         # print(rep.text)
         if rep.status_code < 300:
             if "已存在" in rep.text:
