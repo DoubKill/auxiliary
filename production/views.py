@@ -1462,13 +1462,13 @@ class MaterialReleaseView(FeedBack, APIView):
             fml_set.update(judge_reason="与mes网络连接异常直接放行",
                            feed_begin_time=time_now - datetime.timedelta(seconds=3),
                            feed_end_time=time_now)
-            return Response({"status": True})
+            return Response("成功")
         if error_message:
             fml_set.update(failed_flag=2, judge_reason=error_message)
-            return Response({"status": False})
+            return Response("失败")
         else:
             fml_set.update(feed_begin_time=time_now - datetime.timedelta(seconds=5), feed_end_time=time_now)
-            return Response({"status": True})
+            return Response("成功")
 
 
 class CurrentWeighView(FeedBack, APIView):
