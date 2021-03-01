@@ -1331,7 +1331,7 @@ class MaterialExport(mixins.CreateModelMixin,
         # return Response({"count": count, "results": rep_list})
         return gen_material_export_file_response("results", rep_list)
 
-
+@method_decorator([api_recorder], name="dispatch")
 class TankWeighSyncView(APIView):
 
     @atomic()
@@ -1404,7 +1404,7 @@ class FeedBack:
         FeedingMaterialLog.objects.bulk_create(create_list)
 
 
-
+@method_decorator([api_recorder], name="dispatch")
 class MaterialReleaseView(FeedBack, APIView):
 
     def post(self, request, *args, **kwargs):
@@ -1456,13 +1456,13 @@ class MaterialReleaseView(FeedBack, APIView):
             error_message = f"未知投料{','.join(list(set(material_list)- set(actual_material_list)))}"
         else:
             error_message = None
-        try:
-            ret = requests.get(f"{protocol}://10.4.10.54/api/v1/basics/current_class/",  timeout=3)
-        except requests.exceptions.ConnectTimeout:
-            fml_set.update(judge_reason="与mes网络连接异常直接放行",
-                           feed_begin_time=time_now - datetime.timedelta(seconds=3),
-                           feed_end_time=time_now)
-            return Response("success")
+        # try:
+        #     ret = requests.get(f"{protocol}://10.4.10.54/api/v1/basics/current_class/",  timeout=3)
+        # except requests.exceptions.ConnectTimeout:
+        #     fml_set.update(judge_reason="与mes网络连接异常直接放行",
+        #                    feed_begin_time=time_now - datetime.timedelta(seconds=3),
+        #                    feed_end_time=time_now)
+        #     return Response("success")
         if error_message:
             fml_set.update(failed_flag=2, judge_reason=error_message)
             return Response("failed")
@@ -1470,7 +1470,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml_set.update(feed_begin_time=time_now - datetime.timedelta(seconds=5), feed_end_time=time_now)
             return Response("success")
 
-
+@method_decorator([api_recorder], name="dispatch")
 class CurrentWeighView(FeedBack, APIView):
 
 
@@ -1556,7 +1556,7 @@ class CurrentWeighView(FeedBack, APIView):
         return Response(weigh_back)
 
 
-
+@method_decorator([api_recorder], name="dispatch")
 class ForceFeedView(APIView):
 
     # permission_classes = (IsAuthenticatedOrReadOnly,)
