@@ -353,6 +353,18 @@ DATABASES = {
                 'MARS_Connection': True,
                 },
             },
+    'Z11': {
+            'ENGINE': 'sql_server.pyodbc',
+            'NAME': 'GZSFJ',
+            'HOST': '10.4.23.71',
+            'PORT': '1433',
+            'USER': 'sa',
+            'PASSWORD': '123',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'MARS_Connection': True,
+                },
+            },
 }
 
 CACHES = {
