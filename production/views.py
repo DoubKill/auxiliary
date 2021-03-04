@@ -1427,13 +1427,13 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response({"status": False})
         time_now = datetime.datetime.now()
         materials = data.get("materials")
-
-        map_set = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
-                                                 feed_log__feed_begin_time__isnull=False)\
-                                                .values("material_name", "bra_code")
+        # 每个原材料寻诈最新有效的条码
         map_dict = {}
-        for _ in map_set:
-            map_dict.update(**{_.get("material_name"):_.get("bra_code")})
+        for x in materials:
+            temp = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
+                                                  material_name=x.get("material_name")).order_by('id').last()
+            if temp:
+                map_dict.update(**{x.get("material_name"): temp.bra_code})
         for material in materials:
             default = dict(
                 plan_weight=material.get("plan_weight"),
@@ -1449,7 +1449,7 @@ class MaterialReleaseView(FeedBack, APIView):
             LoadMaterialLog.objects.update_or_create(defaults=default, **kwargs)
         actual_material_list = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
                                                               feed_log__trains=feed_trains).values_list('material_name', flat=True)
-        material_list = pcp.product_batching.batching_details.all().values_list("material__material_name")
+        material_list = pcp.product_batching.batching_details.all().filter(delete_flag=False).values_list("material__material_name", flat=True)
         if set(actual_material_list) - set(material_list):
             error_message = f"投料缺少{','.join(list(set(actual_material_list) - set(material_list)))}"
         elif set(material_list) - set(actual_material_list):
