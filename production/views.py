@@ -38,7 +38,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
 from production.utils import strtoint, gen_material_export_file_response
 import logging
 
-logger = logging.getLogger('sync_log')
+logger = logging.getLogger('api_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1439,7 +1439,8 @@ class MaterialReleaseView(FeedBack, APIView):
                 plan_weight=material.get("plan_weight"),
                 actual_weight=material.get("actual_weight"),
                 bra_code=map_dict.get(material.get("material_name").strip()),
-                weight_time=datetime.datetime.now()  # 目前没有各个物料称重时间
+                weight_time=datetime.datetime.now(),  # 目前没有各个物料称重时间,
+                status=1
             )
             kwargs = dict(
                 material_no=material.get("material_name").strip(),
