@@ -240,8 +240,8 @@ def step_back(plan_no, actual_trains, product_no):
         if temp.get("stre_data_name") == "Time":
             step_dict[temp.get('stre_step_number')]["time"] = temp.get('value')
             # if temp.get('stre_transition_connect') == "AND":
-            step_dict[temp.get('stre_step_number')]['condition'] = temp.get('stre_transition_condition')
-            step_dict[temp.get('stre_step_number')]['action'] = temp.get('stre_transition_connect')
+            step_dict[temp.get('stre_step_number')]['condition'] = temp.get('stre_transition_connect')
+            step_dict[temp.get('stre_step_number')]['action'] = temp.get('stre_transition_condition')
         elif temp.get("stre_data_name") == "spec. Energy":
             step_dict[temp.get('stre_step_number')]["energy"] = temp.get('value') * 1000
         elif temp.get("stre_data_name") == "Temperature":
