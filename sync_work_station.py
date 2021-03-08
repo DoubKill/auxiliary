@@ -21,15 +21,16 @@ import requests
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from django.db.models import Max
 from django.db.transaction import atomic
 from recipe.models import Material
 from system.models import SystemConfig, ChildSystemInfo, User
 from mes.conf import MES_PORT
-from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption
+from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption, StepReport
 from plan.models import ProductClassesPlan
 from production import models as pd
 from production import serializers as sz
-from production.models import EquipStatus, TrainsFeedbacks, PlanStatus, ExpendMaterial
+from production.models import EquipStatus, TrainsFeedbacks, PlanStatus, ExpendMaterial, ProcessFeedback
 
 logger = logging.getLogger('sync_log')
 
@@ -136,7 +137,14 @@ def add_Z04_plan_status():
             operation_user="hf",
             product_time=datetime.datetime.now()
         )
-        pcp_set.update(status=status, plan_trains=order.batches_set)
+        try:
+            pcp = ProductClassesPlan.objects.get(plan_classes_uid=order.order_name)
+        except Exception as e:
+            logger.error(f"4号机同步异常: {e}")
+        else:
+            pcp.status = status
+            pcp.plan_trains = order.batches_set
+            pcp.save()
 
 
 def update_Z04_plan_status():
@@ -215,6 +223,39 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
     return  model_data_list
 
 
+# @atomic()
+def step_back(plan_no, actual_trains, product_no):
+    "步序反馈"
+    sync_set = StepReport.objects.using("H-Z04").filter(stre_line_name='Z04', stre_order_number=plan_no,
+                                                        stre_batch_number=actual_trains).filter(
+        stre_data_name__in=["Time", "spec. Energy", "Temperature", "Rotations", "Ram Pressure"]
+    ).order_by("stre_batch_number", "insert_date").values('stre_step_number',
+                                                          'stre_data_name', 'stre_transition_connect',
+                                                          'stre_transition_condition').annotate(
+        value=Max("stre_act_value"), product_time=Max("insert_date"))
+    step_dict = {x: {"power": 0, "sn": x, "plan_classes_uid": plan_no,
+                     "equip_no": "Z04", "product_no": product_no, "current_trains": actual_trains
+                     } for x in range(1, 13)}
+    for temp in sync_set:
+        if temp.get("stre_data_name") == "Time":
+            step_dict[temp.get('stre_step_number')]["time"] = temp.get('value')
+            # if temp.get('stre_transition_connect') == "AND":
+            step_dict[temp.get('stre_step_number')]['condition'] = temp.get('stre_transition_condition')
+            step_dict[temp.get('stre_step_number')]['action'] = temp.get('stre_transition_connect')
+        elif temp.get("stre_data_name") == "spec. Energy":
+            step_dict[temp.get('stre_step_number')]["energy"] = temp.get('value') * 1000
+        elif temp.get("stre_data_name") == "Temperature":
+            step_dict[temp.get('stre_step_number')]["temperature"] = temp.get('value')
+        elif temp.get("stre_data_name") == "Rotations":
+            step_dict[temp.get('stre_step_number')]["rpm"] = temp.get('value')
+        elif temp.get("stre_data_name") == "Ram Pressure":
+            step_dict[temp.get('stre_step_number')]["pressure"] = temp.get('value')
+        step_dict[temp.get('stre_step_number')]["product_time"] = temp.get('product_time')
+    data_list = [ProcessFeedback(**x) for x in step_dict.values() if x.get("time")]
+    ProcessFeedback.objects.bulk_create(data_list)
+
+
+
 #Z04 数据需单独上传
 @atomic()
 def hf_trains_up():
@@ -290,6 +331,11 @@ def hf_trains_up():
             print(e)
             logger.error(f"Z04车次报表上行失败:{e}")
             continue
+        try:
+            step_back(temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_recipe_code"))
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04步序报表上行失败:{e}")
         mixer_data = temp.get("batr_measured_data")
         if isinstance(mixer_data, bytes):
             mode = "wb"
