@@ -1025,6 +1025,7 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     """密炼信息"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = [DjangoFilterBackend, OrderingFilter]
+    pagination_class = SinglePageNumberPagination
 
     # 根据不同版本。返回不同数据
     def get_serializer_class(self):

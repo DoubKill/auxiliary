@@ -189,13 +189,19 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                 power_index = 15
                 pressure_index = 0
                 temperature_index = 4
+                # Drop door [°C] | 8
             elif header_count == 48:
                 # 数据取值方式2  字段排列方式2
                 rpm_index = 23
                 energy_index = 10
                 power_index = 24
                 pressure_index = 2
-                temperature_index = 5
+                temperature_index = 9
+                # 字段名 | 取值索引
+                # Temp - Dropdoor [°C] | 9
+                # Drop door [°C] | 16
+                # Temp - Highest [°C] | 8
+
             actual = data[1::2]
             for x in actual:
                 num = actual.index(x)
@@ -224,10 +230,14 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
 
 
 # @atomic()
-def step_back(plan_no, actual_trains, product_no):
+def step_back(plan_no, actual_trains, product_no, mixer):
     "步序反馈"
+    if mixer == "Mixer1":
+        step = 2
+    else:
+        step = 1
     sync_set = StepReport.objects.using("H-Z04").filter(stre_line_name='Z04', stre_order_number=plan_no,
-                                                        stre_batch_number=actual_trains).filter(
+                                                        stre_batch_number=actual_trains, stre_feeding_step=step).filter(
         stre_data_name__in=["Time", "spec. Energy", "Temperature", "Rotations", "Ram Pressure"]
     ).order_by("stre_batch_number", "insert_date").values('stre_step_number',
                                                           'stre_data_name', 'stre_transition_connect',
@@ -332,7 +342,7 @@ def hf_trains_up():
             logger.error(f"Z04车次报表上行失败:{e}")
             continue
         try:
-            step_back(temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_recipe_code"))
+            step_back(temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_recipe_code"), temp.get("batr_station_ident"))
         except Exception as e:
             print(e)
             logger.error(f"Z04步序报表上行失败:{e}")

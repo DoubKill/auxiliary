@@ -180,7 +180,7 @@ class ProcessFeedback(AbstractEntity):
     """步序反馈表"""
     sn = models.PositiveIntegerField(help_text='序号/步骤号')
     condition = models.CharField(max_length=20, help_text='条件', blank=True, null=True)
-    time = models.PositiveIntegerField(help_text='时间(分钟)', default=0)
+    time = models.PositiveIntegerField(help_text='时间(秒)', default=0)
     temperature = models.PositiveIntegerField(help_text='温度', default=0)
     power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=5)
     energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=5)
