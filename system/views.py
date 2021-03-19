@@ -3,7 +3,7 @@ import re
 
 import requests
 import xlrd
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, AnonymousUser
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -294,8 +294,44 @@ class ChildSystemInfoViewSet(CommonDeleteMixin, ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ("system_type",)
 
+class PermissionTreeMinxin():
 
-class LoginView(ObtainJSONWebToken):
+    @property
+    def tree(self):
+        permissions = self.permissions
+        permission_list = []
+        for p in permissions:
+            if p.split(".")[0] not in ["contenttypes", "sessions", "work_station", "admin"]:
+                permission_list.append(p)
+        # 生成菜单管理树
+        permissions_set = set([_.split(".")[0] for _ in permission_list])
+        permissions_tree = {__: {} for __ in permissions_set}
+        for x in permission_list:
+            first_key = x.split(".")[0]
+            second_key = x.split(".")[-1].split("_")[-1]
+            op_value = x.split(".")[-1].split("_")[0]
+            op_list = permissions_tree.get(first_key, {}).get(second_key)
+            if op_list:
+                permissions_tree[first_key][second_key].append(op_value)
+            else:
+                permissions_tree[first_key][second_key] = [op_value]
+        if permissions_tree.get("auth"):
+            auth = permissions_tree.pop("auth")
+            # 合并auth与system
+            if permissions_tree.get("system"):
+                permissions_tree["system"].update(**auth)
+            else:
+                permissions_tree["system"] = auth
+        if permissions_tree.get("recipe", {}).get("material"):
+            # 当有配方原材料的时候需要往生产里迁移映射关系
+            if not permissions_tree.get("production"):
+                permissions_tree["production"] = {}
+            material = permissions_tree["recipe"].pop("material")
+            permissions_tree["production"].update(material=material)
+        return permissions_tree
+
+
+class LoginView(PermissionTreeMinxin, ObtainJSONWebToken):
     """
     post
         获取权限列表
@@ -323,40 +359,24 @@ class LoginView(ObtainJSONWebToken):
             # 获取该用户所有权限
             permissions = list(user.get_all_permissions())
             # 除去前端不涉及模块
-            permission_list = []
-            for p in permissions:
-                if p.split(".")[0] not in ["contenttypes", "sessions", "work_station", "admin"]:
-                    permission_list.append(p)
-            # 生成菜单管理树
-            permissions_set = set([_.split(".")[0] for _ in permission_list])
-            permissions_tree = {__: {} for __ in permissions_set}
-            for x in permission_list:
-                first_key = x.split(".")[0]
-                second_key = x.split(".")[-1].split("_")[-1]
-                op_value = x.split(".")[-1].split("_")[0]
-                op_list = permissions_tree.get(first_key, {}).get(second_key)
-                if op_list:
-                    permissions_tree[first_key][second_key].append(op_value)
-                else:
-                    permissions_tree[first_key][second_key] = [op_value]
-            if permissions_tree.get("auth"):
-                auth = permissions_tree.pop("auth")
-                # 合并auth与system
-                if permissions_tree.get("system"):
-                    permissions_tree["system"].update(**auth)
-                else:
-                    permissions_tree["system"] = auth
-            if permissions_tree.get("recipe", {}).get("material"):
-                # 当有配方原材料的时候需要往生产里迁移映射关系
-                if not permissions_tree.get("production"):
-                    permissions_tree["production"] = {}
-                material = permissions_tree["recipe"].pop("material")
-                permissions_tree["production"].update(material=material)
-            return Response({"results": permissions_tree,
+            self.permissions = permissions
+            return Response({"results": self.tree,
                              "username": user.username,
                              "token": token})
         # 返回异常信息
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class OwnerPermission(PermissionTreeMinxin, APIView):
+
+    def get(self, request):
+        user = request.user
+        if isinstance(user, AnonymousUser):
+            raise ValidationError("请先登录")
+        self.permissions = list(user.get_all_permissions())
+        # 除去前端不涉及模块
+        return Response({"results": self.tree, "username": user.username,})
 
 
 import datetime

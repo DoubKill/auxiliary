@@ -335,7 +335,7 @@ class IssuedPlan(APIView):
             data = {
                 "id": pbd.id,
                 "mname": pbd.material.material_name,
-                "set_weight": pbd.actual_weight,
+                "set_weight": round(pbd.actual_weight,2),
                 "error_allow": pbd.standard_error,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "act_code": 1 if pbd.auto_flag else 0,  # ?
@@ -352,7 +352,7 @@ class IssuedPlan(APIView):
             data = {
                 "id": pbd.id,
                 "mname": pbd.material.material_name,
-                "set_weight": pbd.actual_weight,
+                "set_weight": round(pbd.actual_weight,2),
                 "error_allow": pbd.standard_error,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "act_code": 1 if pbd.auto_flag else 0,  # ?
@@ -369,7 +369,7 @@ class IssuedPlan(APIView):
             data = {
                 "id": pbd.id,
                 "mname": pbd.material.material_name,
-                "set_weight": pbd.actual_weight,
+                "set_weight": round(pbd.actual_weight,2),
                 "error_allow": pbd.standard_error,
                 "recipe_name": product_batching.stage_product_batch_no,
                 "act_code": 1 if pbd.auto_flag else 0,  # ?
@@ -557,7 +557,7 @@ class IssuedPlan(APIView):
             data["id"] = pbd.id
             data["matname"] = "卸料" if tank_no == "卸料" else "炭黑罐" + tank_no
             data["matcode"] = pbd.material.material_name
-            data["set_weight"] = pbd.actual_weight
+            data["set_weight"] = round(pbd.actual_weight,2)
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
             data["act_code"] = pbd.sn
@@ -593,7 +593,7 @@ class IssuedPlan(APIView):
             data["id"] = pbd.id
             data["matname"] = "卸料" if tank_no == "卸料" else "油料罐" + tank_no
             data["matcode"] = pbd.material.material_name
-            data["set_weight"] = pbd.actual_weight
+            data["set_weight"] = round(pbd.actual_weight,2)
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
             data["act_code"] = pbd.sn
@@ -609,7 +609,7 @@ class IssuedPlan(APIView):
             data = OrderedDict()
             data["id"] = pbd.id
             data["matname"] = pbd.material.material_name
-            data["set_weight"] = pbd.actual_weight
+            data["set_weight"] = round(pbd.actual_weight,2)
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
             data["act_code"] = pbd.sn

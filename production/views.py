@@ -38,7 +38,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
 from production.utils import strtoint, gen_material_export_file_response
 import logging
 
-logger = logging.getLogger('sync_log')
+logger = logging.getLogger('api_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1025,6 +1025,7 @@ class MixerInformationList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     """密炼信息"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = [DjangoFilterBackend, OrderingFilter]
+    pagination_class = SinglePageNumberPagination
 
     # 根据不同版本。返回不同数据
     def get_serializer_class(self):
@@ -1331,7 +1332,7 @@ class MaterialExport(mixins.CreateModelMixin,
         # return Response({"count": count, "results": rep_list})
         return gen_material_export_file_response("results", rep_list)
 
-
+@method_decorator([api_recorder], name="dispatch")
 class TankWeighSyncView(APIView):
 
     @atomic()
@@ -1404,7 +1405,7 @@ class FeedBack:
         FeedingMaterialLog.objects.bulk_create(create_list)
 
 
-
+@method_decorator([api_recorder], name="dispatch")
 class MaterialReleaseView(FeedBack, APIView):
 
     def post(self, request, *args, **kwargs):
@@ -1427,50 +1428,51 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response({"status": False})
         time_now = datetime.datetime.now()
         materials = data.get("materials")
-
-        map_set = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
-                                                 feed_log__feed_begin_time__isnull=False)\
-                                                .values("material_name", "bra_code")
+        # 每个原材料寻诈最新有效的条码
         map_dict = {}
-        for _ in map_set:
-            map_dict.update(**{_.get("material_name"):_.get("bra_code")})
+        for x in materials:
+            temp = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
+                                                  material_name=x.get("material_name")).order_by('id').last()
+            if temp:
+                map_dict.update(**{x.get("material_name"): temp.bra_code})
         for material in materials:
             default = dict(
                 plan_weight=material.get("plan_weight"),
                 actual_weight=material.get("actual_weight"),
-                bra_code=map_dict.get(material.get("material_name")),
-                weight_time=datetime.datetime.now()  # 目前没有各个物料称重时间
+                bra_code=map_dict.get(material.get("material_name").strip()),
+                weight_time=datetime.datetime.now(),  # 目前没有各个物料称重时间,
+                status=1
             )
             kwargs = dict(
-                material_no=material.get("material_no"),
-                material_name=material.get("material_name"),
+                material_no=material.get("material_name").strip(),
+                material_name=material.get("material_name").strip(),
                 feed_log=fml
             )
             LoadMaterialLog.objects.update_or_create(defaults=default, **kwargs)
         actual_material_list = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid,
                                                               feed_log__trains=feed_trains).values_list('material_name', flat=True)
-        material_list = pcp.product_batching.batching_details.all().values_list("material__material_name")
+        material_list = pcp.product_batching.batching_details.all().filter(delete_flag=False).values_list("material__material_name", flat=True)
         if set(actual_material_list) - set(material_list):
             error_message = f"投料缺少{','.join(list(set(actual_material_list) - set(material_list)))}"
         elif set(material_list) - set(actual_material_list):
             error_message = f"未知投料{','.join(list(set(material_list)- set(actual_material_list)))}"
         else:
             error_message = None
-        try:
-            ret = requests.get(f"{protocol}://10.4.10.54/api/v1/basics/current_class/",  timeout=3)
-        except requests.exceptions.ConnectTimeout:
-            fml_set.update(judge_reason="与mes网络连接异常直接放行",
-                           feed_begin_time=time_now - datetime.timedelta(seconds=3),
-                           feed_end_time=time_now)
-            return Response({"status": True})
+        # try:
+        #     ret = requests.get(f"{protocol}://10.4.10.54/api/v1/basics/current_class/",  timeout=3)
+        # except requests.exceptions.ConnectTimeout:
+        #     fml_set.update(judge_reason="与mes网络连接异常直接放行",
+        #                    feed_begin_time=time_now - datetime.timedelta(seconds=3),
+        #                    feed_end_time=time_now)
+        #     return Response("success")
         if error_message:
             fml_set.update(failed_flag=2, judge_reason=error_message)
-            return Response({"status": False})
+            return Response("failed")
         else:
             fml_set.update(feed_begin_time=time_now - datetime.timedelta(seconds=5), feed_end_time=time_now)
-            return Response({"status": True})
+            return Response("success")
 
-
+@method_decorator([api_recorder], name="dispatch")
 class CurrentWeighView(FeedBack, APIView):
 
 
@@ -1532,8 +1534,8 @@ class CurrentWeighView(FeedBack, APIView):
         fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
         look_up = dict(
             feed_log=fml,
-            material_no=material_no,
-            material_name=material_name,
+            material_no=material_no.strip(),
+            material_name=material_name.strip(),
         )
         LoadMaterialLog.objects.update_or_create(defaults={"bra_code": bra_code, "status": material_status}, **look_up)
         for material in materials:
@@ -1542,8 +1544,8 @@ class CurrentWeighView(FeedBack, APIView):
                 actual_weight=material.get("actual_weight"),
             )
             kwargs = dict(
-                material_no=material.get("material_no"),
-                material_name=material.get("material_name"),
+                material_no=material.get("material_name").strip(),
+                material_name=material.get("material_name").strip(),
                 feed_log=fml
             )
             ## 称量时间目前没办法各个物料之间做区分记录
@@ -1556,7 +1558,7 @@ class CurrentWeighView(FeedBack, APIView):
         return Response(weigh_back)
 
 
-
+@method_decorator([api_recorder], name="dispatch")
 class ForceFeedView(APIView):
 
     # permission_classes = (IsAuthenticatedOrReadOnly,)

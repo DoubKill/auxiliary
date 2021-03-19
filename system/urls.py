@@ -4,7 +4,7 @@ from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token
 
 from system.views import UserViewSet, UserGroupsViewSet, GroupExtensionViewSet, SectionViewSet, PermissionViewSet, \
     GroupAddUserViewSet, SystemConfigViewSet, ChildSystemInfoViewSet, LoginView, Synchronization, UpdatePassWord, \
-    InterfaceOperationLogView, Manualsync, SaveInternetTime
+    InterfaceOperationLogView, Manualsync, SaveInternetTime, OwnerPermission
 
 # app_name = 'system'
 router = DefaultRouter()
@@ -26,6 +26,7 @@ router.register(r"child-systems", ChildSystemInfoViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('login/', LoginView.as_view()),
+    path('owner-permission/', OwnerPermission.as_view()),
     path('group_add_user/<pk>/', GroupAddUserViewSet.as_view()),
     path('api-token-auth/', obtain_jwt_token),
     path('api-token-refresh/', refresh_jwt_token),

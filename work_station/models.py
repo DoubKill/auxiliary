@@ -399,3 +399,45 @@ class I_RECIPE_COMPONENTS_V(models.Model):
     class Meta:
         managed = False
         db_table = 'i_recipe_components_v'
+
+
+class StepReport(models.Model):
+    """步序报表"""
+
+    stre_id = models.IntegerField(primary_key=True)
+    stre_line_name = models.CharField(max_length=30)
+    stre_order_number = models.CharField(max_length=30)
+    stre_recipe_code = models.CharField(max_length=30)
+    stre_recipe_version = models.IntegerField()
+    stre_batch_id = models.IntegerField()
+    stre_batch_start_date = models.DateTimeField()
+    stre_batch_customer_name = models.CharField(max_length=240)
+    stre_batch_number = models.IntegerField()
+    stre_step_id = models.IntegerField()
+    stre_step_number = models.IntegerField()
+    stre_step_start_date = models.DateTimeField()
+    stre_ram_position = models.IntegerField()
+    stre_feeding_door_position = models.IntegerField()
+    stre_drop_door_position = models.IntegerField()
+    stre_duration = models.IntegerField()
+    stre_feeding_step = models.IntegerField()
+    stre_user_name = models.CharField(max_length=240)
+    stre_step_event = models.IntegerField()
+    stre_operator_instruction = models.TextField(max_length=1000)
+    stre_act_value = models.DecimalField(max_digits=12, decimal_places=6)
+    stre_set_value = models.DecimalField(max_digits=12, decimal_places=6)
+    stre_data_name = models.CharField(max_length=240)
+    stre_data_unit = models.CharField(max_length=30)
+    stre_is_transition = models.IntegerField()
+    stre_transition_connect = models.CharField(max_length=30)
+    stre_transition_condition = models.CharField(max_length=30)
+    stre_data_act_min = models.DecimalField(max_digits=12, decimal_places=6)
+    stre_data_act_max = models.DecimalField(max_digits=12, decimal_places=6)
+    stre_data_act_avg = models.DecimalField(max_digits=12, decimal_places=6)
+    insert_user = models.CharField(max_length=30)
+    insert_date = models.DateTimeField()
+    update_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'step_report'
