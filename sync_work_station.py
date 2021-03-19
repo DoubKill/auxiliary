@@ -21,15 +21,16 @@ import requests
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
+from django.db.models import Max
 from django.db.transaction import atomic
 from recipe.models import Material
 from system.models import SystemConfig, ChildSystemInfo, User
 from mes.conf import MES_PORT
-from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption
+from work_station.models import I_ORDER_STATE_V, BatchReport, MaterialsConsumption, StepReport
 from plan.models import ProductClassesPlan
 from production import models as pd
 from production import serializers as sz
-from production.models import EquipStatus, TrainsFeedbacks, PlanStatus, ExpendMaterial
+from production.models import EquipStatus, TrainsFeedbacks, PlanStatus, ExpendMaterial, ProcessFeedback
 
 logger = logging.getLogger('sync_log')
 
@@ -136,7 +137,14 @@ def add_Z04_plan_status():
             operation_user="hf",
             product_time=datetime.datetime.now()
         )
-        pcp_set.update(status=status, plan_trains=order.batches_set)
+        try:
+            pcp = ProductClassesPlan.objects.get(plan_classes_uid=order.order_name)
+        except Exception as e:
+            logger.error(f"4号机同步异常: {e}")
+        else:
+            pcp.status = status
+            pcp.plan_trains = order.batches_set
+            pcp.save()
 
 
 def update_Z04_plan_status():
@@ -181,13 +189,19 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                 power_index = 15
                 pressure_index = 0
                 temperature_index = 4
+                # Drop door [°C] | 8
             elif header_count == 48:
                 # 数据取值方式2  字段排列方式2
                 rpm_index = 23
                 energy_index = 10
                 power_index = 24
                 pressure_index = 2
-                temperature_index = 5
+                temperature_index = 9
+                # 字段名 | 取值索引
+                # Temp - Dropdoor [°C] | 9
+                # Drop door [°C] | 16
+                # Temp - Highest [°C] | 8
+
             actual = data[1::2]
             for x in actual:
                 num = actual.index(x)
@@ -213,6 +227,43 @@ def mixer_analysis(start_time, plan_uid, trains, mixer, file_name="temp.ZIP"):
                 )
                 model_data_list.append(EquipStatus(**temp_model_dict))
     return  model_data_list
+
+
+# @atomic()
+def step_back(plan_no, actual_trains, product_no, mixer):
+    "步序反馈"
+    if mixer == "Mixer1":
+        step = 2
+    else:
+        step = 1
+    sync_set = StepReport.objects.using("H-Z04").filter(stre_line_name='Z04', stre_order_number=plan_no,
+                                                        stre_batch_number=actual_trains, stre_feeding_step=step).filter(
+        stre_data_name__in=["Time", "spec. Energy", "Temperature", "Rotations", "Ram Pressure"]
+    ).order_by("stre_batch_number", "insert_date").values('stre_step_number',
+                                                          'stre_data_name', 'stre_transition_connect',
+                                                          'stre_transition_condition').annotate(
+        value=Max("stre_act_value"), product_time=Max("insert_date"))
+    step_dict = {x: {"power": 0, "sn": x, "plan_classes_uid": plan_no,
+                     "equip_no": "Z04", "product_no": product_no, "current_trains": actual_trains
+                     } for x in range(1, 13)}
+    for temp in sync_set:
+        if temp.get("stre_data_name") == "Time":
+            step_dict[temp.get('stre_step_number')]["time"] = temp.get('value')
+            # if temp.get('stre_transition_connect') == "AND":
+            step_dict[temp.get('stre_step_number')]['condition'] = temp.get('stre_transition_connect')
+            step_dict[temp.get('stre_step_number')]['action'] = temp.get('stre_transition_condition')
+        elif temp.get("stre_data_name") == "spec. Energy":
+            step_dict[temp.get('stre_step_number')]["energy"] = temp.get('value') * 1000
+        elif temp.get("stre_data_name") == "Temperature":
+            step_dict[temp.get('stre_step_number')]["temperature"] = temp.get('value')
+        elif temp.get("stre_data_name") == "Rotations":
+            step_dict[temp.get('stre_step_number')]["rpm"] = temp.get('value')
+        elif temp.get("stre_data_name") == "Ram Pressure":
+            step_dict[temp.get('stre_step_number')]["pressure"] = temp.get('value')
+        step_dict[temp.get('stre_step_number')]["product_time"] = temp.get('product_time')
+    data_list = [ProcessFeedback(**x) for x in step_dict.values() if x.get("time")]
+    ProcessFeedback.objects.bulk_create(data_list)
+
 
 
 #Z04 数据需单独上传
@@ -290,6 +341,11 @@ def hf_trains_up():
             print(e)
             logger.error(f"Z04车次报表上行失败:{e}")
             continue
+        try:
+            step_back(temp.get("batr_order_number"), temp.get("batr_batch_number"), temp.get("batr_recipe_code"), temp.get("batr_station_ident"))
+        except Exception as e:
+            print(e)
+            logger.error(f"Z04步序报表上行失败:{e}")
         mixer_data = temp.get("batr_measured_data")
         if isinstance(mixer_data, bytes):
             mode = "wb"

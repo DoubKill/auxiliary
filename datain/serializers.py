@@ -344,14 +344,16 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
     dev_type = serializers.CharField()
     stage = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     batching_details = ProductBatchingDetailSerializer2(many=True)
+    weight_details = serializers.ListField(write_only=True)
 
     def validate(self, attrs):
+        weight_details = attrs.pop('weight_details', None)
         stage_product_batch_no = attrs['stage_product_batch_no']
         dev_type = attrs.get('dev_type')
         if ProductBatching.objects.exclude(used_type=6).filter(stage_product_batch_no=stage_product_batch_no,
                                                                dev_type__category_no=dev_type,
                                                                batching_type=2):
-            raise serializers.ValidationError('上辅机已存在相同机型配方， 请修改后重试！')
+            raise serializers.ValidationError('上辅机群控系统已存在相同机型配方， 请勿重复操作！')
         try:
             dev_type = EquipCategoryAttribute.objects.get(category_no=dev_type)
             factory = attrs.get('factory')
@@ -376,6 +378,23 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('上辅机胶料代码{}不存在'.format(attrs['product_info']))
         except Exception as e:
             raise e
+        material_type = GlobalCode.objects.filter(global_type__type_name='原材料类别',
+                                                  global_name='料包').first()
+        if material_type:
+            for weight_detail in weight_details:
+                try:
+                    m, _ = Material.objects.get_or_create(
+                        material_no=weight_detail['material'],
+                        material_name=weight_detail['material'],
+                        material_type=material_type)
+                    attrs['batching_details'].append({'material': m,
+                                                      'actual_weight': weight_detail['actual_weight'],
+                                                      'standard_error': 0,
+                                                      'type': 1,
+                                                      'auto_flag': 0
+                                                      })
+                except Exception as e:
+                    raise e
         attrs['dev_type'] = dev_type
         attrs['factory'] = factory
         attrs['site'] = site
@@ -390,6 +409,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
         batching_detail_list = [None] * len(batching_details)
         for i, detail in enumerate(batching_details):
+            detail['sn'] = i + 1
             detail['product_batching'] = instance
             batching_detail_list[i] = ProductBatchingDetail(**detail)
         ProductBatchingDetail.objects.bulk_create(batching_detail_list)
@@ -400,7 +420,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         fields = ('created_date', 'factory', 'site', 'product_info',
                   'dev_type', 'stage', 'equip', 'used_time', 'precept', 'stage_product_batch_no',
                   'versions', 'used_type', 'batching_weight', 'manual_material_weight',
-                  'auto_material_weight', 'production_time_interval', 'batching_details')
+                  'auto_material_weight', 'production_time_interval', 'batching_details', 'weight_details')
 
 
 class MaterialAttributeReceiveSerializer(serializers.ModelSerializer):
