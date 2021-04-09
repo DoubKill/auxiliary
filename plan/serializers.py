@@ -589,7 +589,11 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         # 原因：mes配方下达batching_type=2 计划是和这个关联
         # 但是如果在下发计划之前复制了配方batching_type是1，这个时候下发计划应该是和复制之后的配方关联 下面也是
         if not product_batching:
-            raise serializers.ValidationError('{}在群控上没有对应的机台配方'.format(attrs.get('product_batching')))
+            raise serializers.ValidationError('上辅机群控系统暂无{}机台配方：{}，请新建后重试！'.format(equip.equip_no,
+                                                                                  attrs.get('product_batching')))
+        if product_batching.used_type != 4:
+            raise serializers.ValidationError('上辅机群控系统{}机台配方{}尚未启用，请修改后重试！'.format(equip.equip_no,
+                                                                                    attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
         pdp_dict = attrs.get('product_day_plan')
