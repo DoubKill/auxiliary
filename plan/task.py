@@ -50,13 +50,14 @@ class BaseDownloader(object):
             try:
                 res = self.request(data)
                 logger.info(res)
-                DataSynchronization.objects.get_or_create(type=self.type, obj_id=data['id'])
+                DataSynchronization.objects.create(type=self.type, obj_id=data['id'])
             except Exception as e:
                 logger.error('同步{}失败,  id:{},  data:{}, message:{}'.format(self.__doc__, data['id'], data, e))
                 continue
 
 
 class ProductBatchingDown(BaseDownloader):
+    """配方"""
     path = "api/v1/plan/product-batching-receive/"
     type = 11
     upload_fields = (
@@ -69,6 +70,7 @@ class ProductBatchingDown(BaseDownloader):
 
 
 class MaterialDown(BaseDownloader):
+    """原材料"""
     path = "api/v1/plan/material-receive/"
     type = 9
     upload_fields = (
@@ -78,6 +80,7 @@ class MaterialDown(BaseDownloader):
 
 
 class ProductBatchingDetailDown(BaseDownloader):
+    """配方详情"""
     path = "api/v1/plan/product-batching-detail-receive/"
     type = 12
     upload_fields = (
@@ -89,6 +92,7 @@ class ProductBatchingDetailDown(BaseDownloader):
 
 
 class ProductDayPlanDown(BaseDownloader):
+    """日计划"""
     path = "api/v1/plan/product-day-plan-receive/"
     type = 13
     upload_fields = (
@@ -98,6 +102,7 @@ class ProductDayPlanDown(BaseDownloader):
 
 
 class ProductClassesPlanDown(BaseDownloader):
+    """班次日计划"""
     path = "api/v1/plan/product-classes-plan-receive/"
     type = 14
     upload_fields = (
