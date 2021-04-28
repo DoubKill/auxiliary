@@ -846,12 +846,12 @@ class EquipStatusPlanList(APIView):
         actual_data = {item['equip_no'] + item['classes']: item for item in actual_data}
 
         # 机台反馈数据
-        equip_status_data = EquipStatus.objects.filter(
+        equip_status_data = TrainsFeedbacks.objects.filter(
             created_date__date=datetime.datetime.now().date()
         ).values('equip_no').annotate(ret=Max(Concat(F('equip_no'), Value(","),
                                                      F('created_date'), Value(","),
-                                                     F('current_trains'), Value(','),
-                                                     F('status')), output_field=CharField()))
+                                                     F('actual_trains'), Value(','),
+                                                     Value('运行中')), output_field=CharField()))
         equip_status_data = {item['equip_no']: item for item in equip_status_data}
 
         ret_data = {item: [] for item in equip_nos}
@@ -1499,6 +1499,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.failed_flag = 2
             fml.save()
             return Response('failed')
+
 
 
 @method_decorator([api_recorder], name="dispatch")
