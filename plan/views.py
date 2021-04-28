@@ -407,8 +407,8 @@ class IssuedPlan(APIView):
                 "set_ener": ppd.energy,
                 "set_power": ppd.power,
                 "act_code": ppd.action.action,
-                "set_pres": int(ppd.rpm) if ppd.rpm else 0,
-                "set_rota": ppd.pressure if ppd.pressure else 0.0,
+                "set_pres": ppd.pressure if ppd.pressure else 0.0,
+                "set_rota": int(ppd.rpm) if ppd.rpm else 0,
                 "recipe_name": actual_product_batching.stage_product_batch_no,
                 "recstatus": "等待",
                 "sn": ppd.sn
