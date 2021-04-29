@@ -296,6 +296,7 @@ def run():
         # temp = current_time - target_time
         # if temp > datetime.timedelta(minutes=1):
         #     break
+        time.sleep(5)
 
 
 if __name__ == "__main__":
