@@ -18,7 +18,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 from work_station import models as md
 from plan.models import ProductClassesPlan
-from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, IfupReportMixBackups, PlanStatus, ExpendMaterial
+from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
+    IfupReportMixBackups, PlanStatus, ExpendMaterial, IfupReportCurveBackups
 from work_station.models import IfupReportMix, IfupReportBasis, IfupMachineStatus
 
 logger = logging.getLogger('sync_log')
@@ -194,7 +195,7 @@ def main():
                 }
                 sync_data_list.append(EquipStatus(**adapt_data))
             EquipStatus.objects.bulk_create(sync_data_list)
-            # IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
+            IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
         elif m == "IfupReportMix":
             """车次报表步序表"""
             IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
@@ -285,6 +286,7 @@ def run():
         try:
             main()
         except Exception as e:
+            print(e)
             logger.error(f"工作站至群控上行异常:{e}")
         try:
             plan_status_monitor()
