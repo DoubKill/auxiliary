@@ -264,7 +264,6 @@ class MaterialTankStatus(AbstractEntity):
 
 class IfupReportWeightBackups(models.Model):
     """车次报表材料重量表"""
-    id = models.BigAutoField(primary_key=True)
     序号 = models.BigIntegerField(null=True)
     车次号 = models.IntegerField(blank=True, null=True)
     物料名称 = models.CharField(max_length=19, blank=True, null=True)
@@ -286,7 +285,6 @@ class IfupReportWeightBackups(models.Model):
 
 class IfupReportBasisBackups(models.Model):
     """车次报表主信息"""
-    id = models.BigAutoField(primary_key=True)
     序号 = models.BigIntegerField(null=True)
     车次号 = models.IntegerField(blank=True, null=True)
     开始时间 = models.CharField(max_length=20, blank=True, null=True)
@@ -321,7 +319,6 @@ class IfupReportBasisBackups(models.Model):
 
 class IfupReportMixBackups(models.Model):
     """车次报表步序表"""
-    id = models.BigAutoField(primary_key=True)
     序号 = models.BigIntegerField(null=True)
     步骤号 = models.IntegerField(blank=True, null=True)
     条件 = models.CharField(max_length=20, blank=True, null=True)
@@ -346,7 +343,6 @@ class IfupReportMixBackups(models.Model):
 
 class IfupReportCurveBackups(models.Model):
     """车次报表工艺曲线数据表"""
-    id = models.BigAutoField(primary_key=True)
     序号 = models.BigIntegerField(null=True)
     计划号 = models.CharField(max_length=20, blank=True, null=True)
     配方号 = models.CharField(max_length=20, blank=True, null=True)
