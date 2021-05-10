@@ -526,6 +526,9 @@ class IssuedPlan(APIView):
         data["sp_num"] = int(actual_product_process.sp_num)
         if int(equip_no) in [1, 8]:
             data["sp_num"] = actual_product_process.sp_num
+        if int(equip_no) in [12,13,14,15]:
+            if data.get("max_temp") <=0:
+                raise ValidationError(f"Z{equip_no}# 元嘉上辅机进胶最高温度不能小于等于0")
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
         data["recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
         data["machineno"] = int(equip_no)
@@ -669,6 +672,10 @@ class IssuedPlan(APIView):
         for x in datas:
             index = datas.index(x)
             x["id"] = id_list[index]
+        # 12，13，14，15元嘉上辅机配方步序特殊需判断是否以配方结束结尾
+        if int(equip_no) in [12,13,14,15]:
+            if datas[-1].get("set_condition") != "配方结束":
+                raise ValidationError(f"Z{equip_no}#元嘉上辅机配方步序必须以配方结束结尾")
         return datas
 
     def _map_plan(self, params, pcp_obj, equip_no):
