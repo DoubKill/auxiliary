@@ -98,7 +98,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter
 
-    @atomic()
+    # @atomic()
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by(
