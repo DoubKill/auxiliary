@@ -50,7 +50,7 @@ class BaseDownloader(object):
             try:
                 res = self.request(data)
                 logger.info(res)
-                DataSynchronization.objects.get_or_create(type=self.type, obj_id=data['id'])
+                DataSynchronization.objects.create(type=self.type, obj_id=data['id'])
             except Exception as e:
                 logger.error('同步{}失败,  id:{},  data:{}, message:{}'.format(self.__doc__, data['id'], data, e))
                 continue
