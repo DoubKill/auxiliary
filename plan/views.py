@@ -98,7 +98,7 @@ class PalletFeedbackViewSet(mixins.ListModelMixin,
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PalletFeedbacksFilter
 
-    @atomic()
+    # @atomic()
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         plan_status = PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).order_by(
@@ -526,6 +526,9 @@ class IssuedPlan(APIView):
         data["sp_num"] = int(actual_product_process.sp_num)
         if int(equip_no) in [1, 8]:
             data["sp_num"] = actual_product_process.sp_num
+        if int(equip_no) in [12,13,14,15]:
+            if data.get("max_temp") <=0:
+                raise ValidationError(f"Z{equip_no}# 元嘉上辅机进胶最高温度不能小于等于0")
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
         data["recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
         data["machineno"] = int(equip_no)
@@ -669,6 +672,10 @@ class IssuedPlan(APIView):
         for x in datas:
             index = datas.index(x)
             x["id"] = id_list[index]
+        # 12，13，14，15元嘉上辅机配方步序特殊需判断是否以配方结束结尾
+        if int(equip_no) in [12,13,14,15]:
+            if datas[-1].get("set_condition") != "配方结束":
+                raise ValidationError(f"Z{equip_no}#元嘉上辅机配方步序必须以配方结束结尾")
         return datas
 
     def _map_plan(self, params, pcp_obj, equip_no):
@@ -711,8 +718,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方称量已存在于上辅机，请勿重复下达")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
         if not status:
             raise ValidationError(f"配方称量下达失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
@@ -721,8 +728,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方步序已存在于上辅机，请勿重复下达")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
         if not status:
             raise ValidationError(f"配方步序下达失败:{text}")
         plan = self._map_plan(params, pcp_obj, ext_str)
@@ -730,8 +737,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
         if not status:
             raise ValidationError(f"计划下达失败:{text}")
 
@@ -742,8 +749,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(recipe, 'recipe_con_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方不存在于上辅机，请检查上辅机")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
 
         if not status:
             raise ValidationError(f"主配方重传失败:{text}")
@@ -753,8 +760,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(weigh_data, 'recipe_weight_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方称量不存在于上辅机，请检查上辅机")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
         if not status:
             raise ValidationError(f"配方称量重传失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
@@ -763,8 +770,8 @@ class IssuedPlan(APIView):
             status, text = WebService.issue(mix_data, 'recipe_step_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方步序不存在于上辅机，请检查上辅机")
-        except:
-            raise ValidationError(f"{equip_no} 网络连接异常")
+        except Exception as e:
+            raise ValidationError(f"{equip_no} 网络连接异常: {e}")
         if not status:
             raise ValidationError(f"配方步序重传失败:{text}")
 

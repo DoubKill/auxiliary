@@ -8,3 +8,4 @@ logs
 *.DS_Store
 mes/settings.py
 __pycache__
+mes/local_settings.py

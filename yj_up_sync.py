@@ -19,7 +19,7 @@ django.setup()
 from work_station import models as md
 from plan.models import ProductClassesPlan
 from production.models import EquipStatus, TrainsFeedbacks, IfupReportWeightBackups, IfupReportBasisBackups, \
-    IfupReportMixBackups, PlanStatus, ExpendMaterial, IfupReportCurveBackups
+    IfupReportMixBackups, PlanStatus, ExpendMaterial, IfupReportCurveBackups, ProcessFeedback
 from work_station.models import IfupReportMix, IfupReportBasis, IfupMachineStatus
 
 logger = logging.getLogger('sync_log')
@@ -161,8 +161,12 @@ def main():
                 }
                 sync_data_list.append(TrainsFeedbacks(**adapt_data_trains))
                 current_trains = temp.车次号
+            backup_list = []
+            for back in temp_model_set.values():
+                back.pop("序号", None)
+                backup_list.append(IfupReportBasisBackups(**back))
             TrainsFeedbacks.objects.bulk_create(sync_data_list)
-            IfupReportBasisBackups.objects.bulk_create(list(temp_model_set))
+            IfupReportBasisBackups.objects.bulk_create(backup_list)
         elif m == "IfupReportCurve":
             """车次报表工艺曲线数据表"""
             sync_data_list = []
@@ -195,10 +199,52 @@ def main():
                 }
                 sync_data_list.append(EquipStatus(**adapt_data))
             EquipStatus.objects.bulk_create(sync_data_list)
-            IfupReportCurveBackups.objects.bulk_create(list(temp_model_set))
+            backup_list = []
+            for back in temp_model_set.values():
+                back.pop("序号", None)
+                backup_list.append(IfupReportCurveBackups(**back))
+            IfupReportCurveBackups.objects.bulk_create(backup_list)
         elif m == "IfupReportMix":
             """车次报表步序表"""
-            IfupReportMixBackups.objects.bulk_create(list(temp_model_set))
+            sync_data_list = []
+            for temp in temp_model_set:
+                uid = temp.计划号
+                equip_no = str(temp.机台号)
+                if len(equip_no) == 1:
+                    equip_no = "Z0" + equip_no
+                else:
+                    equip_no = "Z" + equip_no
+                end_time_str = temp.存盘时间
+                if len(end_time_str) == 15:
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+                elif len(end_time_str) == 19:
+                    # end_time = datetime.datetime.strptime(end_time_str, "%Y/%m/%d %H:%M:%S")
+                    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                else:
+                    continue
+                adapt_data = {
+                    "sn": temp.步骤号,
+                    "condition": temp.条件,
+                    "time": temp.时间,
+                    "temperature": temp.温度,
+                    "power": temp.功率,
+                    "energy": temp.能量,
+                    "action": temp.动作,
+                    "rpm":  temp.转速,
+                    "pressure": temp.压力,
+                    "plan_classes_uid": temp.计划号,
+                    "product_no": temp.配方号,
+                    "product_time": temp.存盘时间,
+                    "equip_no": temp.机台号,
+                    "current_trains": temp.密炼车次,
+                }
+                sync_data_list.append(ProcessFeedback(**adapt_data))
+            ProcessFeedback.objects.bulk_create(sync_data_list)
+            backup_list = []
+            for back in temp_model_set.values():
+                back.pop("序号", None)
+                backup_list.append(IfupReportMixBackups(**back))
+            IfupReportMixBackups.objects.bulk_create(backup_list)
         elif m == "IfupReportWeight":
             """车次报表材料重量表"""
             sync_data_list = []
@@ -233,7 +279,11 @@ def main():
                 }
                 sync_data_list.append(ExpendMaterial(**adapt_data))
             ExpendMaterial.objects.bulk_create(sync_data_list)
-            IfupReportWeightBackups.objects.bulk_create(list(temp_model_set))
+            backup_list = []
+            for back in temp_model_set.values():
+                back.pop("序号", None)
+                backup_list.append(IfupReportWeightBackups(**back))
+            IfupReportWeightBackups.objects.bulk_create(backup_list)
         else:
             # 该分支正常情况执行，若执行需告警
             logger.error("出现未知同步表，请立即检查")
