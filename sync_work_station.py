@@ -10,7 +10,6 @@ import time
 import socket
 import functools
 import zipfile
-import decimal
 
 import django
 import logging
@@ -22,7 +21,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mes.settings")
 django.setup()
 
 from django.db.models import Max
-from django.db.transaction import atomic
 from recipe.models import Material
 from system.models import SystemConfig, ChildSystemInfo, User
 from mes.conf import MES_PORT
@@ -267,7 +265,7 @@ def step_back(plan_no, actual_trains, product_no, mixer):
 
 
 #Z04 数据需单独上传
-@atomic()
+# @atomic()
 def hf_trains_up():
     tf = TrainsFeedbacks.objects.filter(equip_no="Z04").order_by("product_time").last()
     if tf:
@@ -364,7 +362,6 @@ def hf_trains_up():
             logger.error(e)
 
 
-@atomic()
 def consume_data_up():
     ep = ExpendMaterial.objects.filter(equip_no="Z04").order_by("product_time").last()
     if ep:
@@ -435,6 +432,7 @@ def run():
             print(e)
             logger.error(e)
         time.sleep(5)
+
 
 if __name__ == "__main__":
     run()
