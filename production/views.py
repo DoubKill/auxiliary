@@ -1478,10 +1478,10 @@ class MaterialReleaseView(FeedBack, APIView):
                 material_name=item.get('material_name')).order_by('id').last()
             if last_load_log:
                 # 判断当前车次是否进了该物料
-                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml,
-                                                            material_name=item.get('material_name')).first()
+                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1,
+                                                            material_name=item.get('material_name')).last()
                 if not m_load_log:
-                    # 判断上一车该物料剩余是够足够一车, 不够提示扫码
+                    # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
                     single_tank_material = LoadTankMaterialLog.objects.using('mes').get(bra_code=last_load_log.bra_code)
                     if single_tank_material.adjust_left_weight < item.get('plan_weight'):
                         success = False
@@ -1505,7 +1505,6 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该车次无正常进料
                 success = False
                 error_message += "物料：{}条码信息未找到，".format(item.get('material_name'))
-
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1514,47 +1513,42 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.save()
             # 扣重
             for item in materials:
-                # 获取上一车同物料数量信息,0-plan_weight之间表示新进了物料
-                fml_old = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid,
-                                                            trains=feed_trains - 1).first() if feed_trains != 1 else fml
-                # 上一次或者当前车该物料上料信息
-                single_material = LoadMaterialLog.objects.filter(feed_log=fml_old,
-                                                                 material_name=item.get('material_name'),
-                                                                 status=1).first()
-                # 条码对应料框物料信息(上一车或当前车)
-                load_tank = LoadTankMaterialLog.objects.using('mes').get(bra_code=single_material.bra_code)
-                # 上一车剩余数量或者当前新车剩余量
-                adjust_left_weight = load_tank.adjust_left_weight if feed_trains != 1 else 100000
-                if adjust_left_weight >= item.get('plan_weight'):
+                material_name = item.get('material_name')
+                # 该计划料框表中物料使用情况
+                used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
+                                                                                     plan_classes_uid=plan_classes_uid,
+                                                                                     material_name=material_name)
+                # 该计划 物料最新使用记录
+                load_tank = used_material_info.last()
+                # 该计划 物料未使用完记录
+                last_material = used_material_info.first()
+                # 同物料单条未用完记录, 直接扣重
+                if used_material_info.count() == 1:
                     load_tank.actual_weight = load_tank.actual_weight + item.get('actual_weight')
                     load_tank.adjust_left_weight = load_tank.adjust_left_weight - item.get('actual_weight')
                     load_tank.real_weight = load_tank.real_weight - item.get('actual_weight')
                     load_tank.save()
+                # 同物料多条未用完记录, 复合扣重
                 else:
-                    last_material = LoadMaterialLog.objects.filter(feed_log=fml,
-                                                                   material_name=item.get('material_name'),
-                                                                   status=1).first()
-                    # 新条码扣重
-                    new_material = LoadTankMaterialLog.objects.using('mes').get(bra_code=last_material.bra_code)
-                    new_material.actual_weight = new_material.actual_weight + item.get(
-                        'actual_weight') - load_tank.adjust_left_weight
-                    new_material.adjust_left_weight = new_material.adjust_left_weight - item.get(
-                        'actual_weight') + load_tank.adjust_left_weight
-                    new_material.real_weight = new_material.real_weight - item.get(
-                        'actual_weight') + load_tank.adjust_left_weight
+                    load_tank.actual_weight = load_tank.actual_weight + item.get('actual_weight') - \
+                                              last_material.adjust_left_weight
+                    load_tank.adjust_left_weight = load_tank.adjust_left_weight - item.get('actual_weight') + \
+                                                   last_material.adjust_left_weight
+                    load_tank.real_weight = load_tank.real_weight - item.get('actual_weight') + \
+                                            last_material.adjust_left_weight
                     # 旧条码归零
-                    load_tank.adjust_left_weight = 0
-                    load_tank.real_weight = 0
-                    load_tank.actual_weight = load_tank.init_weight
-                    load_tank.useup_time = datetime.datetime.now()
+                    last_material.adjust_left_weight = 0
+                    last_material.real_weight = 0
+                    last_material.actual_weight = last_material.init_weight
+                    last_material.useup_time = datetime.datetime.now()
+                    last_material.save()
                     load_tank.save()
-                    new_material.save()
             return Response('success')
         else:
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response('failed')
+            return Response('failed:{}'.format(error_message))
 
 
 @method_decorator([api_recorder], name="dispatch")
