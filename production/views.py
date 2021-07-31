@@ -1471,7 +1471,7 @@ class MaterialReleaseView(FeedBack, APIView):
             standard_error = standard_material_errors[item.get('material_name')]
             if abs(item.get('plan_weight') - item.get('actual_weight')) > standard_error:
                 success = False
-                error_message += "物料：{}进料数量不在允许误差之内，".format(item.get('material_name'))
+                error_message += "物料：{}进料数量不在允许误差之内".format(item.get('material_name'))
                 break
             last_load_log = LoadMaterialLog.objects.filter(
                 feed_log__plan_classes_uid=plan_classes_uid, status=1,
@@ -1518,30 +1518,33 @@ class MaterialReleaseView(FeedBack, APIView):
                 used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
                                                                                      plan_classes_uid=plan_classes_uid,
                                                                                      material_name=material_name)
+                num = used_material_info.count()
                 # 该计划 物料最新使用记录
                 load_tank = used_material_info.last()
-                # 该计划 物料未使用完记录
-                last_material = used_material_info.first()
                 # 同物料单条未用完记录, 直接扣重
-                if used_material_info.count() == 1:
+                if num == 1:
                     load_tank.actual_weight = load_tank.actual_weight + item.get('actual_weight')
                     load_tank.adjust_left_weight = load_tank.adjust_left_weight - item.get('actual_weight')
                     load_tank.real_weight = load_tank.real_weight - item.get('actual_weight')
                     load_tank.save()
                 # 同物料多条未用完记录, 复合扣重
                 else:
-                    load_tank.actual_weight = load_tank.actual_weight + item.get('actual_weight') - \
-                                              last_material.adjust_left_weight
-                    load_tank.adjust_left_weight = load_tank.adjust_left_weight - item.get('actual_weight') + \
-                                                   last_material.adjust_left_weight
-                    load_tank.real_weight = load_tank.real_weight - item.get('actual_weight') + \
-                                            last_material.adjust_left_weight
+                    # 同名物料总重
+                    material_total_weight = used_material_info.aggregate(
+                        material_total_weight=Sum('real_weight'))['material_total_weight']
+                    # 除最新条码外之前条码总剩余量
+                    last_material_total_weight = used_material_info[0: num - 1].aggregate(
+                        last_material_total_weight=Sum('real_weight'))['last_material_total_weight']
+                    load_tank.adjust_left_weight = material_total_weight - item.get('actual_weight')
+                    load_tank.real_weight = material_total_weight - item.get('actual_weight')
+                    load_tank.actual_weight = item.get('actual_weight') - last_material_total_weight
                     # 旧条码归零
-                    last_material.adjust_left_weight = 0
-                    last_material.real_weight = 0
-                    last_material.actual_weight = last_material.init_weight
-                    last_material.useup_time = datetime.datetime.now()
-                    last_material.save()
+                    for last_material in used_material_info[0: num - 1]:
+                        last_material.adjust_left_weight = 0
+                        last_material.real_weight = 0
+                        last_material.actual_weight = last_material.init_weight
+                        last_material.useup_time = datetime.datetime.now()
+                        last_material.save()
                     load_tank.save()
             return Response('success')
         else:
