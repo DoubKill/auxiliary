@@ -83,7 +83,7 @@ class MesUpClient(object):
                 if ret.status_code <300:
                     temp.save()
                 else:
-                    logger.error(ret.text)
+                    logger.error('{}-{}'.format(model_name, ret.text))
 
 
 def one_instance(func):
