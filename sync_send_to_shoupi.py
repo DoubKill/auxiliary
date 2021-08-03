@@ -1,3 +1,8 @@
+"""
+    向戴工收皮系统发送计划数据、更新计划车次、更新计划状态
+"""
+
+
 import functools
 import logging
 import os

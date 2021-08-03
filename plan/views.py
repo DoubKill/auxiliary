@@ -945,3 +945,18 @@ class HfRecipeList(APIView):
             raise ValidationError(f"HF数据库连接异常,详情: {e}")
         else:
             return Response({"results": ret})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class LabelPlanInfo(APIView):
+    """根据计划编号，获取工厂日期和班组"""
+
+    def get(self, request):
+        plan_classes_uid = self.request.query_params.get('planid')
+        plan = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
+        if plan:
+            return Response({'factory_date': plan.work_schedule_plan.plan_schedule.day_time,
+                             'group': plan.work_schedule_plan.group.global_name})
+        else:
+            return Response({'factory_date': '',
+                             'group': ''})
