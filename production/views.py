@@ -1480,13 +1480,15 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 判断当前车次是否进了该物料
                 m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1,
                                                             material_name=item.get('material_name')).last()
+                # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
+                adjust_left_weight = LoadTankMaterialLog.objects.using('mes')\
+                    .filter(plan_classes_uid=plan_classes_uid, material_name=item.get('material_name'))\
+                    .aggregate(left_weight=Sum('real_weight'))['left_weight']
+                if adjust_left_weight < item.get('plan_weight'):
+                    success = False
+                    error_message += "物料：{}上一条码量已不够一车所需, 需扫码使用新料".format(item.get('material_name'))
+                    break
                 if not m_load_log:
-                    # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
-                    single_tank_material = LoadTankMaterialLog.objects.using('mes').get(bra_code=last_load_log.bra_code)
-                    if single_tank_material.adjust_left_weight < item.get('plan_weight'):
-                        success = False
-                        error_message += "物料：{}上一条码量已不够一车所需, 需扫码使用新料".format(item.get('material_name'))
-                        break
                     # 当前车次未进该物料, 新建该物料的上料记录
                     LoadMaterialLog.objects.create(feed_log=fml,
                                                    material_no=last_load_log.material_no,
