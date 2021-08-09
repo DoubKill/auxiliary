@@ -446,7 +446,7 @@ class UpdateTrainsSerializer(BaseModelSerializer):
         instance.save()
 
         equip_no = instance.product_day_plan.equip.equip_no
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
