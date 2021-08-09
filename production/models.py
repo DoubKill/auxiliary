@@ -455,3 +455,4 @@ class LoadTankMaterialLog(AbstractEntity):
     class Meta:
         db_table = 'load_tank_material_log'
         verbose_name_plural = verbose_name = '料框物料信息'
+        managed = False
