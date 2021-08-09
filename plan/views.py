@@ -206,7 +206,7 @@ class StopPlan(APIView):
         if not equip_no:
             raise ValidationError('机台号必传')
         version = VERSION_EQUIP[equip_no]
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
@@ -796,7 +796,7 @@ class IssuedPlan(APIView):
         if not ps_obj:
             return Response({'_': "计划状态变更没有数据"}, status=400)
         equip_no = ps_obj.equip_no
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
@@ -894,7 +894,7 @@ class IssuedPlan(APIView):
         if not equip_no:
             raise ValidationError('机台号必传')
         version = VERSION_EQUIP[equip_no]
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]

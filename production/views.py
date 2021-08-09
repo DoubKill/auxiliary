@@ -1573,7 +1573,7 @@ class CurrentWeighView(FeedBack, APIView):
         bra_code = data.get("bra_code")  # 条形码
         material_no = data.get("material_no")  # 条码代表的物料编号
         material_name = data.get("material_name")  # 条码代表的物料名称
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
@@ -1627,7 +1627,7 @@ class ForceFeedView(APIView):
     def get(self, request):
         equip_no = request.query_params.get("equip_no")
         plan_no = request.query_params.get("plan_no")
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
