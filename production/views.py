@@ -29,7 +29,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog
+    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1333,6 +1333,7 @@ class MaterialExport(mixins.CreateModelMixin,
         # return Response({"count": count, "results": rep_list})
         return gen_material_export_file_response("results", rep_list)
 
+
 @method_decorator([api_recorder], name="dispatch")
 class TankWeighSyncView(APIView):
 
@@ -1445,8 +1446,9 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response({"status": False})
 
         # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
-        recipe_material_names = set(pcp.product_batching.batching_details.filter(
-            delete_flag=False, type=1).values_list("material__material_name", flat=True))
+        recipe_info = pcp.product_batching.batching_details.filter(delete_flag=False, type=1) \
+            .values("material__material_name", 'standard_error')
+        recipe_material_names = set(recipe_info.values_list("material__material_name", flat=True))
         sfj_material_names = {item.get('material_name') for item in materials}
         same_values = set(recipe_material_names) & set(sfj_material_names)
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
@@ -1459,19 +1461,35 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.failed_flag = 2
             fml.save()
             return Response("failed")
-
+        # 获取所有物料允许的误差范围
+        standard_material_errors = {i['material__material_name']: float(i['standard_error']) for i in recipe_info}
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
         for item in materials:
+            # 物料对应允许误差值
+            standard_error = standard_material_errors[item.get('material_name')]
+            if abs(item.get('plan_weight') - item.get('actual_weight')) > standard_error:
+                success = False
+                error_message += "物料：{}进料数量不在允许误差之内".format(item.get('material_name'))
+                break
             last_load_log = LoadMaterialLog.objects.filter(
-                feed_log__plan_classes_uid=plan_classes_uid,
+                feed_log__plan_classes_uid=plan_classes_uid, status=1,
                 material_name=item.get('material_name')).order_by('id').last()
             if last_load_log:
-                if last_load_log.status == 2:  # 有扫描失败的条码
+                # 判断当前车次是否进了该物料
+                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1,
+                                                            material_name=item.get('material_name')).last()
+                # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
+                adjust_left_weight = LoadTankMaterialLog.objects.using('mes')\
+                    .filter(plan_classes_uid=plan_classes_uid, material_name=item.get('material_name'))\
+                    .aggregate(left_weight=Sum('real_weight'))['left_weight']
+                if adjust_left_weight < item.get('plan_weight'):
                     success = False
-                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, material_name=item.get('material_name')).first()
+                    error_message += "物料：{}上一条码量已不够一车所需, 需扫码使用新料".format(item.get('material_name'))
+                    break
                 if not m_load_log:
+                    # 当前车次未进该物料, 新建该物料的上料记录
                     LoadMaterialLog.objects.create(feed_log=fml,
                                                    material_no=last_load_log.material_no,
                                                    material_name=last_load_log.material_name,
@@ -1481,10 +1499,12 @@ class MaterialReleaseView(FeedBack, APIView):
                                                    actual_weight=item.get("actual_weight"),
                                                    )
                 else:
+                    # 更新物料记录
                     m_load_log.plan_weight = item.get("plan_weight")
                     m_load_log.actual_weight = item.get("actual_weight")
                     m_load_log.save()
             else:
+                # 该车次无正常进料
                 success = False
                 error_message += "物料：{}条码信息未找到，".format(item.get('material_name'))
         if success:
@@ -1493,13 +1513,47 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.feed_begin_time = time_now
             fml.feed_end_time = time_now
             fml.save()
+            # 扣重
+            for item in materials:
+                material_name = item.get('material_name')
+                # 该计划料框表中物料使用情况
+                used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
+                                                                                     plan_classes_uid=plan_classes_uid,
+                                                                                     material_name=material_name)
+                num = used_material_info.count()
+                # 该计划 物料最新使用记录
+                load_tank = used_material_info.last()
+                # 同物料单条未用完记录, 直接扣重
+                if num == 1:
+                    load_tank.actual_weight = load_tank.actual_weight + item.get('actual_weight')
+                    load_tank.adjust_left_weight = load_tank.adjust_left_weight - item.get('actual_weight')
+                    load_tank.real_weight = load_tank.real_weight - item.get('actual_weight')
+                    load_tank.save()
+                # 同物料多条未用完记录, 复合扣重
+                else:
+                    # 同名物料总重
+                    material_total_weight = used_material_info.aggregate(
+                        material_total_weight=Sum('real_weight'))['material_total_weight']
+                    # 除最新条码外之前条码总剩余量
+                    last_material_total_weight = used_material_info[0: num - 1].aggregate(
+                        last_material_total_weight=Sum('real_weight'))['last_material_total_weight']
+                    load_tank.adjust_left_weight = material_total_weight - item.get('actual_weight')
+                    load_tank.real_weight = material_total_weight - item.get('actual_weight')
+                    load_tank.actual_weight = item.get('actual_weight') - last_material_total_weight
+                    # 旧条码归零
+                    for last_material in used_material_info[0: num - 1]:
+                        last_material.adjust_left_weight = 0
+                        last_material.real_weight = 0
+                        last_material.actual_weight = last_material.init_weight
+                        last_material.useup_time = datetime.datetime.now()
+                        last_material.save()
+                    load_tank.save()
             return Response('success')
         else:
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response('failed')
-
+            return Response('failed:{}'.format(error_message))
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1514,7 +1568,7 @@ class CurrentWeighView(FeedBack, APIView):
             "status": 1,  1成功 C-1MB-C905-03  C-FM-C905-03-E580-硫磺
             "equip_no": "Z08"}"""
         data = request.data
-        equip_no = data.get("equip_no")   # 机台号
+        equip_no = data.get("equip_no")  # 机台号
         material_status = data.get("status")  # 条码状态，正常或者异常
         bra_code = data.get("bra_code")  # 条形码
         material_no = data.get("material_no")  # 条码代表的物料编号

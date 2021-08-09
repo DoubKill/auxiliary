@@ -435,3 +435,24 @@ class LoadMaterialLog(models.Model):
     class Meta:
         db_table = 'load_material_log'
         verbose_name_plural = verbose_name = '上料履历'
+
+
+class LoadTankMaterialLog(AbstractEntity):
+    plan_classes_uid = models.CharField(max_length=64, help_text='小料称量计划号')
+    scan_material = models.CharField(max_length=64, help_text='扫码物料名', default='')
+    material_no = models.CharField(max_length=64, help_text='原材料编码')
+    material_name = models.CharField(max_length=64, help_text='原材料名称')
+    bra_code = models.CharField(max_length=64, help_text='条形码')
+    unit = models.CharField(db_column='WeightUnit', max_length=64)
+    scan_time = models.DateTimeField(max_length=64, help_text='扫码时间')
+    useup_time = models.DateTimeField(max_length=64, help_text='用完时间')
+    init_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='初始重量', default=0)
+    # real_weight  修正剩余量后计算使用
+    real_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='真实计算重量', default=0)
+    actual_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='当前消耗重量', default=0)
+    adjust_left_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='调整剩余重量', default=0)
+
+    class Meta:
+        db_table = 'load_tank_material_log'
+        verbose_name_plural = verbose_name = '料框物料信息'
+        managed = False
