@@ -51,7 +51,7 @@ def update_plan_status(obj, status1, status2):
         equip_no = obj.equip_no
         product_no = obj.product_no
         plan_uid = obj.plan_classes_uid
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             en = equip_no[-1]
         else:
             en = equip_no[1:3]
@@ -69,7 +69,7 @@ def add_plan_status(obj, status):
         equip_no = obj.equip_no
         product_no = obj.product_no
         plan_uid = obj.plan_classes_uid
-        if "0" in equip_no:
+        if "0" in equip_no and not equip_no.endswith('0'):
             en = equip_no[-1]
         else:
             en = equip_no[1:3]
