@@ -1454,9 +1454,9 @@ class MaterialReleaseView(FeedBack, APIView):
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
             # 判定原因
             if set(recipe_material_names) - set(sfj_material_names):
-                error_message = f"投料缺少{','.join(list(set(recipe_material_names) - set(sfj_material_names))[0])}"
+                error_message = f"投料缺少{list(set(recipe_material_names) - set(sfj_material_names))[0]}"
             else:
-                error_message = f"未知投料{','.join(list(set(sfj_material_names) - set(recipe_material_names))[0])}"
+                error_message = f"未知投料{list(set(sfj_material_names) - set(recipe_material_names))[0]}"
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
