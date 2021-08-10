@@ -1461,18 +1461,10 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.failed_flag = 2
             fml.save()
             return Response("failed")
-        # 获取所有物料允许的误差范围
-        standard_material_errors = {i['material__material_name']: float(i['standard_error']) for i in recipe_info}
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
         for item in materials:
-            # 物料对应允许误差值
-            standard_error = standard_material_errors[item.get('material_name')]
-            if abs(float(item.get('plan_weight')) - float(item.get('actual_weight'))) > standard_error:
-                success = False
-                error_message += "物料：{}进料数量不在允许误差之内".format(item.get('material_name'))
-                break
             last_load_log = LoadMaterialLog.objects.filter(
                 feed_log__plan_classes_uid=plan_classes_uid, status=1,
                 material_name=item.get('material_name')).order_by('id').last()
