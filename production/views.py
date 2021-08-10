@@ -1460,7 +1460,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response("failed")
+            return Response(error_message[:4])
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
@@ -1478,7 +1478,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     .aggregate(left_weight=Sum('real_weight'))['left_weight']
                 if adjust_left_weight < float(item.get('plan_weight')):
                     success = False
-                    error_message += "物料：{}上一条码量已不够一车所需, 需扫码使用新料".format(item.get('material_name'))
+                    error_message += "需扫码使用新料:{}".format(item.get('material_name'))
                     break
                 if not m_load_log:
                     # 当前车次未进该物料, 新建该物料的上料记录
@@ -1498,7 +1498,7 @@ class MaterialReleaseView(FeedBack, APIView):
             else:
                 # 该车次无正常进料
                 success = False
-                error_message += "物料：{}条码信息未找到，".format(item.get('material_name'))
+                error_message += "条码信息未找到:{}".format(item.get('material_name'))
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1546,7 +1546,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response('failed:{}'.format(error_message))
+            return Response(error_message[:7])
 
 
 @method_decorator([api_recorder], name="dispatch")
