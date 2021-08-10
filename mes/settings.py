@@ -257,6 +257,14 @@ DATABASES = {
         'HOST': os.getenv('SFJ_DATABASE_HOSTNAME', '10.4.14.6'),  # HOST
         'PORT': os.getenv('SFJ_MONOCLE_API_PORT', '33306'),  # 端口
     },
+    'mes': {
+        'ENGINE': os.getenv('MES_ENGINE', 'django.db.backends.oracle'),  # 数据库引擎
+        'NAME': os.getenv('MES_DATABASE_NAME', 'xe'),  # 数据库名称 SID
+        'USER': os.getenv('MES_DATABASE_USERNAME', 'mes'),  # 用户名
+        'PASSWORD': os.getenv('MES_DATABASE_PASSWORD', 'mes'),  # 密码
+        'HOST': os.getenv('MES_DATABASE_HOSTNAME', '10.10.120.40'),  # HOST
+        'PORT': os.getenv('MES_MONOCLE_API_PORT', '1521'),  # 端口
+    },
     # 'default': {
     #         'ENGINE': 'django.db.backends.sqlite3',
     #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
