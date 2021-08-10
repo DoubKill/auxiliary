@@ -1454,13 +1454,13 @@ class MaterialReleaseView(FeedBack, APIView):
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
             # 判定原因
             if set(recipe_material_names) - set(sfj_material_names):
-                error_message = f"投料缺少{','.join(list(set(recipe_material_names) - set(sfj_material_names)))}"
+                error_message = f"投料缺少{','.join(list(set(recipe_material_names) - set(sfj_material_names))[0])}"
             else:
-                error_message = f"未知投料{','.join(list(set(sfj_material_names) - set(recipe_material_names)))}"
+                error_message = f"未知投料{','.join(list(set(sfj_material_names) - set(recipe_material_names))[0])}"
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response(error_message[:4])
+            return Response(error_message)
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
@@ -1546,7 +1546,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.save()
-            return Response(error_message[:7])
+            return Response(error_message)
 
 
 @method_decorator([api_recorder], name="dispatch")
