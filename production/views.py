@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+from decimal import Decimal
 
 import requests
 import xmltodict
@@ -1415,14 +1416,14 @@ class MaterialReleaseView(FeedBack, APIView):
                 'feed_trains': 8,
                 'materials': [
                     {
-                        'material_name': 'C-1MB-C905-03',
-                        'plan_weight': 111,
-                        'actual_weight': 111
+                        'material_name': 'C-1MB-C905-03      ',
+                        'plan_weight': '111',
+                        'actual_weight': '111'
                     },
                     {
-                        'material_name': 'C-FM-C905-03-E580-硫磺',
-                        'plan_weight': 111,
-                        'actual_weight': 111
+                        'material_name': 'C-FM-C905-03-E580-硫磺    ',
+                        'plan_weight': '111',
+                        'actual_weight': '111'
                     },
                 ]
                 }"""
@@ -1449,7 +1450,7 @@ class MaterialReleaseView(FeedBack, APIView):
         recipe_info = pcp.product_batching.batching_details.filter(delete_flag=False, type=1) \
             .values("material__material_name", 'standard_error')
         recipe_material_names = set(recipe_info.values_list("material__material_name", flat=True))
-        sfj_material_names = {item.get('material_name') for item in materials}
+        sfj_material_names = {item.get('material_name').strip() for item in materials}
         same_values = set(recipe_material_names) & set(sfj_material_names)
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
             # 判定原因
@@ -1465,20 +1466,21 @@ class MaterialReleaseView(FeedBack, APIView):
         success = True
         # 再判断配方的所有的物料条码是否正确
         for item in materials:
-            last_load_log = LoadMaterialLog.objects.filter(
-                feed_log__plan_classes_uid=plan_classes_uid, status=1,
-                material_name=item.get('material_name')).order_by('id').last()
+            material_name = item.get('material_name').strip()
+            plan_weight = Decimal(item.get("plan_weight"))
+            actual_weight = Decimal(item.get('actual_weight'))
+            last_load_log = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid, status=1,
+                                                           material_name=material_name).order_by('id').last()
             if last_load_log:
                 # 判断当前车次是否进了该物料
-                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1,
-                                                            material_name=item.get('material_name')).last()
+                m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1, material_name=material_name).last()
                 # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
-                adjust_left_weight = LoadTankMaterialLog.objects.using('mes')\
-                    .filter(plan_classes_uid=plan_classes_uid, material_name=item.get('material_name'))\
+                adjust_left_weight = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
+                                                                                     material_name=material_name)\
                     .aggregate(left_weight=Sum('real_weight'))['left_weight']
-                if adjust_left_weight < float(item.get('plan_weight')):
+                if adjust_left_weight < plan_weight:
                     success = False
-                    error_message += "需扫码使用新料:{}".format(item.get('material_name'))
+                    error_message += "需扫码使用新料:{}".format(material_name)
                     break
                 if not m_load_log:
                     # 当前车次未进该物料, 新建该物料的上料记录
@@ -1487,18 +1489,18 @@ class MaterialReleaseView(FeedBack, APIView):
                                                    material_name=last_load_log.material_name,
                                                    bra_code=last_load_log.bra_code,
                                                    status=last_load_log.status,
-                                                   plan_weight=item.get("plan_weight"),
-                                                   actual_weight=item.get("actual_weight"),
+                                                   plan_weight=plan_weight,
+                                                   actual_weight=actual_weight,
                                                    )
                 else:
                     # 更新物料记录
-                    m_load_log.plan_weight = item.get("plan_weight")
-                    m_load_log.actual_weight = item.get("actual_weight")
+                    m_load_log.plan_weight = plan_weight
+                    m_load_log.actual_weight = actual_weight
                     m_load_log.save()
             else:
                 # 该车次无正常进料
                 success = False
-                error_message += "条码信息未找到:{}".format(item.get('material_name'))
+                error_message += "条码信息未找到:{}".format(material_name)
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1507,8 +1509,8 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.save()
             # 扣重
             for item in materials:
-                material_name = item.get('material_name')
-                actual_weight = round(float(item.get('actual_weight')), 2)
+                material_name = item.get('material_name').strip()
+                actual_weight = Decimal(item.get('actual_weight'))
                 # 该计划料框表中物料使用情况
                 used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
                                                                                      plan_classes_uid=plan_classes_uid,
