@@ -25,7 +25,7 @@ from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP, protocol
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
-from plan.models import ProductClassesPlan
+from plan.models import ProductClassesPlan, WeightPackageLog
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
@@ -1431,6 +1431,20 @@ class MaterialReleaseView(FeedBack, APIView):
         plan_classes_uid = data.get("plan_no")  # 计划编号
         feed_trains = data.get("feed_trains")  # 当前请求的进料车次
         materials = data.get("materials")  # 原材料以及称量信息，传送带只反馈胶料称量的数据
+        # 处理数据
+        for item in materials:
+            material_name = item.get('material_name').strip()
+            if '细料' not in material_name and '硫磺' not in material_name:
+                plan_weight = Decimal(item.get("plan_weight"))
+                actual_weight = Decimal(item.get('actual_weight'))
+            else:
+                # 料包单重
+                material_code = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
+                                                                                material_name=material_name).first().bra_code
+                single_package_weight = WeightPackageLog.objects.using('mes').filter(bra_code=material_code).first().plan_weight
+                plan_weight = Decimal(item.get("plan_weight")) // single_package_weight if single_package_weight != 0 else 1
+                actual_weight = Decimal(item.get('actual_weight')) // single_package_weight if single_package_weight != 0 else 1
+            item.update({'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
             raise ValidationError("未找到该条密炼计划")
@@ -1466,9 +1480,9 @@ class MaterialReleaseView(FeedBack, APIView):
         success = True
         # 再判断配方的所有的物料条码是否正确
         for item in materials:
-            material_name = item.get('material_name').strip()
-            plan_weight = Decimal(item.get("plan_weight"))
-            actual_weight = Decimal(item.get('actual_weight'))
+            material_name = item.get('material_name')
+            plan_weight = item.get("plan_weight")
+            actual_weight = item.get('actual_weight')
             last_load_log = LoadMaterialLog.objects.filter(feed_log__plan_classes_uid=plan_classes_uid, status=1,
                                                            material_name=material_name).order_by('id').last()
             if last_load_log:
@@ -1476,6 +1490,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1, material_name=material_name).last()
                 # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
                 adjust_left_weight = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
+                                                                                     useup_time__year='1970',
                                                                                      material_name=material_name)\
                     .aggregate(left_weight=Sum('real_weight'))['left_weight']
                 if adjust_left_weight < plan_weight:
@@ -1509,8 +1524,8 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.save()
             # 扣重
             for item in materials:
-                material_name = item.get('material_name').strip()
-                actual_weight = Decimal(item.get('actual_weight'))
+                material_name = item.get('material_name')
+                actual_weight = item.get('actual_weight')
                 # 该计划料框表中物料使用情况
                 used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
                                                                                      plan_classes_uid=plan_classes_uid,
