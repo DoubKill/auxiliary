@@ -1431,20 +1431,6 @@ class MaterialReleaseView(FeedBack, APIView):
         plan_classes_uid = data.get("plan_no")  # 计划编号
         feed_trains = data.get("feed_trains")  # 当前请求的进料车次
         materials = data.get("materials")  # 原材料以及称量信息，传送带只反馈胶料称量的数据
-        # 处理数据
-        for item in materials:
-            material_name = item.get('material_name').strip()
-            if '细料' not in material_name and '硫磺' not in material_name:
-                plan_weight = Decimal(item.get("plan_weight"))
-                actual_weight = Decimal(item.get('actual_weight'))
-            else:
-                # 料包单重
-                material_code = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
-                                                                                material_name=material_name).first().bra_code
-                single_package_weight = WeightPackageLog.objects.using('mes').filter(bra_code=material_code).first().plan_weight
-                plan_weight = Decimal(item.get("plan_weight")) // single_package_weight if single_package_weight != 0 else 1
-                actual_weight = Decimal(item.get('actual_weight')) // single_package_weight if single_package_weight != 0 else 1
-            item.update({'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
             raise ValidationError("未找到该条密炼计划")
@@ -1476,6 +1462,28 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.failed_flag = 2
             fml.save()
             return Response(error_message)
+        # 处理数据
+        for item in materials:
+            material_name = item.get('material_name').strip()
+            if '细料' not in material_name and '硫磺' not in material_name:
+                plan_weight = Decimal(item.get("plan_weight"))
+                actual_weight = Decimal(item.get('actual_weight'))
+            else:
+                # 料包单重
+                material_exist = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
+                                                                                 material_name=material_name).first()
+                if material_exist:
+                    material_code = material_exist.bra_code
+                else:
+                    raise ValidationError('{} 未扫码'.format(material_name))
+                single_package_weight = WeightPackageLog.objects.using('mes').filter(
+                    bra_code=material_code).first().plan_weight
+                plan_weight = round(
+                    Decimal(item.get('plan_weight')) / single_package_weight) if single_package_weight != 0 else 1
+                actual_weight = round(
+                    Decimal(item.get('actual_weight')) / single_package_weight) if single_package_weight != 0 else 1
+            item.update(
+                {'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
