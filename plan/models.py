@@ -135,3 +135,42 @@ class MaterialRequisitionClasses(AbstractEntity):
     class Meta:
         db_table = 'material_requisition_classes'
         verbose_name_plural = verbose_name = '领料日班次计划'
+
+
+class WeightPackageLog(AbstractEntity):
+    PRINT_CHOICE = (
+        (0, ''),
+        (1, '点击打印'),
+        (2, '调用打印'),
+        (3, '打印成功')
+    )
+    equip_no = models.CharField(max_length=64, help_text='称量设备编号')
+    plan_weight_uid = models.CharField(max_length=64, help_text='小料称量计划号')
+    product_no = models.CharField(max_length=64, help_text='胶料名称-配方号')
+    material_name = models.CharField(max_length=64, help_text='物料打包名称', null=True)
+    material_no = models.CharField(max_length=64, help_text='物料打包编号', null=True)
+    plan_weight = models.DecimalField(decimal_places=3, max_digits=8, help_text='单重', default=0)
+    actual_weight = models.DecimalField(decimal_places=3, max_digits=8, help_text='实际重量', default=0)
+    bra_code = models.CharField(max_length=64, help_text='条形码')
+    status = models.CharField(help_text='打印状态', max_length=8, default='N')
+    batch_time = models.DateTimeField(max_length=10, help_text='配料日期')
+    batch_classes = models.CharField(max_length=8, help_text='配料班次')
+    batch_group = models.CharField(max_length=8, help_text='配料班组')
+    location_no = models.CharField(max_length=64, help_text='产线', null=True)
+    dev_type = models.CharField(max_length=64, help_text='机型名称')
+    begin_trains = models.IntegerField(help_text='开始包')
+    end_trains = models.IntegerField(help_text='结束包')
+    package_count = models.IntegerField(help_text='配置数量')
+    print_begin_trains = models.IntegerField(help_text='打印起始车次')
+    noprint_count = models.IntegerField(help_text='未打印数量')
+    package_fufil = models.IntegerField(help_text='配料完成数量')
+    package_plan_count = models.IntegerField(help_text='配料计划数量')
+    print_flag = models.IntegerField(help_text='打印交互', choices=PRINT_CHOICE)
+    print_count = models.IntegerField(help_text='打印数量', default=1)
+    expire_days = models.IntegerField(help_text='有效期')
+    record = models.IntegerField(help_text='plan表数据id', null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'weight_package_log'
+        verbose_name_plural = verbose_name = '称量打包履历'
