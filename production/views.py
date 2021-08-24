@@ -1692,7 +1692,7 @@ class HandleFeedView(APIView):
         else:
             ext_str = equip_no[1:]
         try:
-            status, text = WebService.issue({"feed_status": feed_status}, 'force_feed', equip_no=ext_str, equip_name="上辅机")
+            status, text = WebService.issue({"status": feed_status}, 'force_feed', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             return Response({"success": False, "message": f"{equip_no} 称量反馈异常", "data": {}})
         except:
