@@ -1479,7 +1479,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 if material_exist:
                     material_code = material_exist.bra_code
                 else:
-                    fml.judge_reason = 'f{material_name} 未扫码'
+                    fml.judge_reason = f'{material_name} 未扫码'
                     fml.failed_flag = 2
                     fml.add_feed_result = 1
                     fml.save()
@@ -1688,7 +1688,7 @@ class HandleFeedView(APIView):
             return Response({"success": False, "message": f"当前车次: {trains}已完成进料"})
         # 物料种类正确且数量充足, 可以进料
         try:
-            resp = requests.get(url='http://127.0.0.1:9000/' + 'api/v1/production/force_feed/', timeout=5,
+            resp = requests.get(url='http://127.0.0.1/' + 'api/v1/production/force_feed/', timeout=5,
                                 params={"feed_status": feed_status, "equip_no": equip_no})
             content = json.loads(resp.content.decode())
             if not content['success']:
