@@ -1549,7 +1549,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该计划料框表中物料使用情况
                 used_material_info = LoadTankMaterialLog.objects.using('mes').filter(useup_time__year='1970',
                                                                                      plan_classes_uid=plan_classes_uid,
-                                                                                     material_name=material_name)
+                                                                                     material_name=material_name).order_by('id')
                 num = used_material_info.count()
                 # 该计划 物料最新使用记录
                 load_tank = used_material_info.last()
