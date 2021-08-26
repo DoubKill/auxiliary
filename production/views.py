@@ -1661,7 +1661,7 @@ class HandleFeedView(APIView):
 
     def post(self, request, *args, **kwargs):
         plan_classes_uid = self.request.data.get('plan_classes_uid')
-        feed_status = self.request.data.get('handle_type', '正常')
+        feed_status = self.request.data.get('handle_type', '扫码')
         equip_no = self.request.data.get("equip_no")
         trains = self.request.data.get("trains")
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
