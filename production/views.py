@@ -1432,7 +1432,7 @@ class MaterialReleaseView(FeedBack, APIView):
         plan_classes_uid = data.get("plan_no")  # 计划编号
         feed_trains = data.get("feed_trains")  # 当前请求的进料车次
         materials = data.get("materials")  # 原材料以及称量信息，传送带只反馈胶料称量的数据
-        feed_status = data.get("feed_status")  # 进料表类型, 默认正常, 可选['处理', '强制']
+        feed_status = data.get("feed_status") + str(feed_trains)  # 进料表类型, 默认正常, 可选['处理', '强制']
         add_feed_result = 0
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
@@ -1509,6 +1509,8 @@ class MaterialReleaseView(FeedBack, APIView):
                                                                                      useup_time__year='1970',
                                                                                      material_name=material_name) \
                     .aggregate(left_weight=Sum('real_weight'))['left_weight']
+                if not adjust_left_weight:
+                    adjust_left_weight = 0
                 if adjust_left_weight < plan_weight:
                     success = False
                     error_message += "需扫码使用新料:{}".format(material_name)
