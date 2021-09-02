@@ -1671,14 +1671,14 @@ class HandleFeedView(APIView):
             raise ValidationError("未找到该条密炼计划")
         # 配方信息
         recipe_info = pcp.product_batching.batching_details.filter(delete_flag=False, type=1) \
-            .values("material__material_name", "actual_weight")
+            .values_list("material__material_name", flat=True)
         # 料框表信息
         load_info = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
                                                                     useup_time__year='1970') \
             .values('material_name').annotate(total_left=Sum('real_weight'), single_need=Avg('single_need'))
         # 物料种类不对
-        if len(recipe_info) != len(load_info):
-            return Response({"success": False, "message": "物料不足, 不可进料"})
+        if set(recipe_info) != set(load_info.values_list('material_name', flat=True)):
+            return Response({"success": False, "message": "物料种类不一致, 不可进料"})
         # 剩余量仍然不足
         quantity = [i for i in load_info if i['total_left'] < i['single_need']]
         if len(quantity) != 0:
