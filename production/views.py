@@ -1541,7 +1541,7 @@ class MaterialReleaseView(FeedBack, APIView):
             time_now = datetime.datetime.now()
             fml.feed_begin_time = time_now
             fml.feed_end_time = time_now
-            fml.feed_status = feed_status
+            fml.feed_status = feed_status if not fml.feed_status else fml.feed_status + '-' + feed_status
             fml.add_feed_result = add_feed_result
             fml.save()
             # 扣重
