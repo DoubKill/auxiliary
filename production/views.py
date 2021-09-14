@@ -812,81 +812,33 @@ class EquipStatusPlanList(APIView):
     """主页面展示"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
-    @cache_response(timeout=60 * 10, cache='default')
     def get(self, request, *args, **kwargs):
-
         equip_nos = Equip.objects.filter(use_flag=True, category__equip_type__global_name="密炼设备").order_by(
             'equip_no').values_list('equip_no', flat=True)
-
-        # 计划数据，根据设备机台号和班次分组，
-        plan_set = ProductClassesPlan.objects.filter(
-            work_schedule_plan__plan_schedule__day_time=datetime.datetime.now().date(),
-            product_day_plan__equip__equip_no__in=list(equip_nos),
-            delete_flag=False
-        )
-        plan_data = plan_set.values('work_schedule_plan__classes__global_name',
-                                    'product_day_plan__equip__equip_no').annotate(plan_num=Sum('plan_trains'))
-        plan_uid = plan_set.values_list("plan_classes_uid", flat=True)
-        plan_data = {
-            item['product_day_plan__equip__equip_no'] + item['work_schedule_plan__classes__global_name']: item
-            for item in plan_data}
-
-        # 先按照计划uid分组，取出最大的一条实际数据
-        max_ids = TrainsFeedbacks.objects.filter(
-            # created_date__date=datetime.datetime.now().date(),
-            plan_classes_uid__in=plan_uid
-        ).values('plan_classes_uid').annotate(max_id=Max('id')).values_list('max_id', flat=True)
-        # 实际数据，根据设备机台号和班次分组，
-        actual_data = TrainsFeedbacks.objects.filter(
-            id__in=max_ids).values('equip_no', 'classes').annotate(
-            actual_num=Sum('actual_trains'),
-            ret=Max(Concat(F('equip_no'), Value(","),
-                           F('created_date'), Value(","),
-                           F('product_no'), output_field=CharField()
-                           )))
-        actual_data = {item['equip_no'] + item['classes']: item for item in actual_data}
-
-        # 机台反馈数据
-        equip_status_data = TrainsFeedbacks.objects.filter(
-            created_date__date=datetime.datetime.now().date()
-        ).values('equip_no').annotate(ret=Max(Concat(F('equip_no'), Value(","),
-                                                     F('created_date'), Value(","),
-                                                     F('actual_trains'), Value(','),
-                                                     Value('运行中')), output_field=CharField()))
-        equip_status_data = {item['equip_no']: item for item in equip_status_data}
-
-        ret_data = {item: [] for item in equip_nos}
-
         class_dict = {'早班': 1, '中班': 2, '夜班': 3}
-        for key, value in plan_data.items():
-            class_name = value['work_schedule_plan__classes__global_name']
-            equip_no = value['product_day_plan__equip__equip_no']
-            classes_id = class_dict[class_name]
-            plan_num = value['plan_num']
-            if key in actual_data:
-                actual_ret = actual_data[key]['ret'].split(',')
-                actual_num = actual_data[key]['actual_num']
-                es_ret = None
-                if equip_no in equip_status_data:
-                    es_ret = equip_status_data[equip_no]['ret'].split(',')
-                ret_data[equip_no].append(
-                    {"classes_id": classes_id,
-                     "global_name": class_name,
-                     "plan_num": plan_num,
-                     "actual_num": actual_num,
-                     'ret': [actual_ret[2], es_ret[2], es_ret[3]] if es_ret else [actual_ret[2], '--', '--']
-                     }
-                )
+        ret = {}
+        for equip_no in equip_nos:
+            last_plan_status = PlanStatus.objects.filter(equip_no=equip_no,
+                                                         status='运行中').order_by('created_date').last()
+            if last_plan_status:
+                plan = ProductClassesPlan.objects.filter(plan_classes_uid=last_plan_status.plan_classes_uid).first()
+                last_trains_feedback = TrainsFeedbacks.objects.filter(plan_classes_uid=last_plan_status.plan_classes_uid
+                                                                      ).order_by('created_date').last()
+                actual_trains = last_trains_feedback.actual_trains if last_trains_feedback else 0
+                if plan:
+                    ret[equip_no] = [(
+                        {"classes_id": class_dict[plan.work_schedule_plan.classes.global_name],
+                         "global_name": plan.work_schedule_plan.classes.global_name,
+                         "plan_num": plan.plan_trains,
+                         "actual_num": actual_trains,
+                         'ret': [last_plan_status.product_no, actual_trains, '运行中']
+                         }
+                    )]
+                else:
+                    ret[equip_no] = []
             else:
-                ret_data[equip_no].append(
-                    {"classes_id": classes_id,
-                     "global_name": class_name,
-                     "plan_num": plan_num,
-                     "actual_num": 0,
-                     'ret': []
-                     }
-                )
-        return Response(ret_data)
+                ret[equip_no] = []
+        return Response(ret)
 
 
 @method_decorator([api_recorder], name="dispatch")
