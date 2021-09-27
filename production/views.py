@@ -1495,6 +1495,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.feed_end_time = time_now
             fml.feed_status = feed_status if not fml.feed_status else fml.feed_status + '-' + feed_status
             fml.add_feed_result = add_feed_result
+            fml.created_username = self.request.user.username
             fml.save()
             # 扣重
             for item in materials:
