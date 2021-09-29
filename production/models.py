@@ -412,8 +412,9 @@ class FeedingMaterialLog(models.Model):
     feed_end_time = models.DateTimeField(help_text='进料结束时间', null=True)
     failed_flag = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, default=1)
     judge_reason = models.CharField(max_length=255, help_text='防错结果', blank=True, null=True)
-    feed_status = models.CharField(max_length=8, help_text='进料类型: 正常;处理;强制;', blank=True, null=True)
+    feed_status = models.CharField(max_length=16, help_text='进料类型: 正常;处理;强制;', blank=True, null=True)
     add_feed_result = models.IntegerField(help_text='扫码补充物料后是否能进上辅机: 0 可进; 1 不可进;', blank=True, null=True)
+    created_username = models.CharField(max_length=64, help_text='投入操作人', null=True, blank=True)
 
     class Meta:
         db_table = 'feed_material_log'
@@ -454,6 +455,7 @@ class LoadTankMaterialLog(AbstractEntity):
     actual_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='当前消耗重量', default=0)
     adjust_left_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='调整剩余重量', default=0)
     single_need = models.DecimalField(decimal_places=2, max_digits=8, help_text='单车需要物料数量', null=True, blank=True)
+    variety = models.DecimalField(decimal_places=2, max_digits=8, help_text='物料修改变化量', null=True, blank=True, default=0)
 
     class Meta:
         db_table = 'load_tank_material_log'
