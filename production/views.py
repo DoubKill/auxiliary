@@ -11,6 +11,7 @@ from django.db.models.functions import Concat
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -25,6 +26,7 @@ from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP, protocol
 from mes.derorators import api_recorder
 from mes.paginations import SinglePageNumberPagination
+from mes.settings import MES_URL
 from plan.models import ProductClassesPlan, WeightPackageLog
 from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, QualityControlFilter, EquipStatusFilter, \
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
@@ -106,6 +108,16 @@ class PalletFeedbacksViewSet(mixins.CreateModelMixin,
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ('id',)
     filter_class = PalletFeedbacksFilter
+
+    @action(methods=['post'], detail=False, permission_classes=[], url_path='bind-rfid',
+            url_name='bind-rfid')
+    def bind_rfid(self, request):
+        try:
+            requests.post(MES_URL+'api/v1/production/pallet-feedbacks/bind-rfid/',
+                          json=request.data)
+        except Exception:
+            pass
+        return Response('ok')
 
 
 @method_decorator([api_recorder], name="dispatch")
