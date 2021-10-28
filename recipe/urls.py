@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from recipe.views import MaterialViewSet, ProductInfoViewSet, \
     ProductBatchingViewSet, MaterialAttributeViewSet, \
     ValidateProductVersionsView, ActionListView, ConditionListView, \
-    RecipeObsoleteAPiView, BatchingEquip, TankMaterialVIew, MaterialSupplierView
+    RecipeObsoleteAPiView, BatchingEquip, TankMaterialVIew, MaterialSupplierView, ProductBatchingIssue
 
 router = DefaultRouter()
 
@@ -29,4 +29,5 @@ urlpatterns = [
     path('validate-versions/', ValidateProductVersionsView.as_view()),  # 验证版本号，创建胶料工艺信息前调用
     path('tank_materials/', TankMaterialVIew.as_view()),
     path('material_suppliers/', MaterialSupplierView.as_view()),
+    path('product-batching-issue/', ProductBatchingIssue.as_view())
     ]

@@ -117,7 +117,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
                   'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
                   'category__category_name', 'submit_username', 'reject_username', 'used_username', 'equip_id',
                   'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id',
-                  'last_updated_date')
+                  'last_updated_date', 'is_synced')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):

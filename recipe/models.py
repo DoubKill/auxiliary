@@ -135,6 +135,7 @@ class ProductBatching(AbstractEntity):
     equip = models.ForeignKey(Equip, help_text='设备', blank=True, null=True, on_delete=models.DO_NOTHING)
     batching_type = models.PositiveIntegerField(verbose_name='配料类型', help_text='配料类型',
                                                 choices=BATCHING_TYPE_CHOICE, default=1)
+    is_synced = models.BooleanField(default=False, help_text='是否已同步至MES')
 
     def __str__(self):
         return self.stage_product_batch_no
