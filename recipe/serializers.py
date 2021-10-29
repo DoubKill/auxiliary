@@ -369,3 +369,11 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
     class Meta:
         model = ProductBatching
         fields = ('id', 'pass_flag')
+
+
+class ProductBatchingDetailUploadSerializer(serializers.ModelSerializer):
+    material__material_no = serializers.CharField(source='material.material_no')
+
+    class Meta:
+        model = ProductBatchingDetail
+        fields = ('sn', 'material__material_no', 'actual_weight', 'standard_error', 'auto_flag', 'type')

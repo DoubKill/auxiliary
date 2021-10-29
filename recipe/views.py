@@ -22,7 +22,7 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductBatchingPartialUpdateSerializer
+    ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
     ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
 
@@ -381,9 +381,11 @@ class ProductBatchingIssue(APIView):
             'versions', 'used_type'
         )
         data = batching_data[0]
-        data['batching_details'] = list(product_batching.batching_details.exclude(
-            material__material_name='卸料').filter(delete_flag=0).values(
-            'sn', 'material__material_no', 'actual_weight', 'standard_error', 'auto_flag', 'type'))
+        # data['batching_details'] = list(product_batching.batching_details.exclude(
+        #     material__material_name='卸料').filter(delete_flag=0).values(
+        #     'sn', 'material__material_no', 'actual_weight', 'standard_error', 'auto_flag', 'type'))
+        batching_details = product_batching.batching_details.exclude(material__material_name='卸料').filter(delete_flag=0)
+        data['batching_details'] = ProductBatchingDetailUploadSerializer(instance=batching_details, many=True).data
         ret = requests.post(MES_URL+'api/v1/recipe/product-dev-batching-receive/', json=data)
         if ret.status_code != 200:
             raise ValidationError('配方上传至MES失败：{}'.format(ret.text))
