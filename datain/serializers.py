@@ -6,6 +6,7 @@ from mes.base_serializer import BaseModelSerializer
 from mes.conf import COMMON_READ_ONLY_FIELDS
 from rest_framework import serializers
 
+from production.models import MaterialTankStatus
 from recipe.models import Material, ProductInfo, ProductBatchingDetail, ProductBatching, MaterialAttribute, \
     MaterialSupplier
 
@@ -406,6 +407,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         batching_details = validated_data.pop('batching_details')
         batching_detail_list = []
         for product_batching in ProductBatching.objects.exclude(used_type=6).filter(
+                batching_type=1,
                 dev_type=validated_data['dev_type'],
                 stage_product_batch_no=validated_data['stage_product_batch_no']):
             product_batching.batching_details.all().delete()
@@ -413,6 +415,17 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             product_batching.used_type = 1
             product_batching.save()
             for detail in batching_details:
+                tank = None
+                if detail['type'] == 2:
+                    tank = MaterialTankStatus.objects.filter(equip_no=product_batching.equip.equip_no,
+                                                             tank_type=1,
+                                                             material_no=detail['material'].material_no).first()
+                elif detail['type'] == 3:
+                    tank = MaterialTankStatus.objects.filter(equip_no=product_batching.equip.equip_no,
+                                                             tank_type=2,
+                                                             material_no=detail['material'].material_no).first()
+                if tank:
+                    detail['tank_no'] = tank.tank_no
                 detail['product_batching'] = product_batching
                 batching_detail_list.append(ProductBatchingDetail(**detail))
         ProductBatchingDetail.objects.bulk_create(batching_detail_list)
