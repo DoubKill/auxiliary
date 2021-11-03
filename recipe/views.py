@@ -1,4 +1,5 @@
 # Create your views here.
+import requests
 from django.db.models import Prefetch, Max
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,13 +15,14 @@ from basics.views import CommonDeleteMixin
 from mes.common_code import return_permission_params
 from mes.derorators import api_recorder
 from mes.permissions import PermissionClass, ProductBatchingPermissions
+from mes.settings import MES_URL
 from production.models import MaterialTankStatus, PlanStatus
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
     MaterialAttributeFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductBatchingPartialUpdateSerializer
+    ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
     ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
 
@@ -210,7 +212,8 @@ class ProductBatchingViewSet(ModelViewSet):
                 'created_date', 'created_user__username', 'batching_type', 'dev_type_id',
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
                 'used_user__username', 'obsolete_user__username', 'equip_id',
-                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id', 'last_updated_date'
+                'factory_id', 'site_id', 'product_info_id', 'precept', 'versions',
+                'stage_id', 'last_updated_date', 'is_synced'
             )
         else:
             return self.queryset
@@ -357,3 +360,36 @@ class MaterialSupplierView(APIView):
             raise ValidationError('缺失参数')
         return Response(MaterialSupplier.objects.filter(
             material__material_no=material_no).values_list('provenance', flat=True))
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductBatchingIssue(APIView):
+
+    def post(self, request):
+        product_batching_id = self.request.data.get('product_batching_id')
+        try:
+            product_batching = ProductBatching.objects.get(id=product_batching_id)
+        except Exception:
+            raise ValidationError('object does not exist!')
+        if product_batching.is_synced:
+            raise ValidationError('非法操作，该配方已同步至MES！')
+        if product_batching.used_type != 4:
+            raise ValidationError('非法操作，该配方未启用！')
+        batching_data = ProductBatching.objects.filter(id=product_batching_id).values(
+            'factory__global_no', 'site__global_no', 'product_info__product_no',
+            'stage_product_batch_no', 'dev_type__category_no', 'stage__global_no',
+            'versions', 'used_type'
+        )
+        data = batching_data[0]
+        # data['batching_details'] = list(product_batching.batching_details.exclude(
+        #     material__material_name='卸料').filter(delete_flag=0).values(
+        #     'sn', 'material__material_no', 'actual_weight', 'standard_error', 'auto_flag', 'type'))
+        batching_details = product_batching.batching_details.exclude(material__material_name='卸料').filter(delete_flag=0)
+        data['batching_details'] = ProductBatchingDetailUploadSerializer(instance=batching_details, many=True).data
+        ret = requests.post(MES_URL+'api/v1/recipe/product-dev-batching-receive/', json=data)
+        if ret.status_code != 200:
+            raise ValidationError('配方上传至MES失败：{}'.format(ret.text))
+        else:
+            ProductBatching.objects.filter(stage_product_batch_no=product_batching.stage_product_batch_no,
+                                           dev_type=product_batching.dev_type).update(is_synced=1)
+        return Response('上传成功！')
