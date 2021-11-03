@@ -258,6 +258,8 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
     # end_time = serializers.DateTimeField(source='work_schedule_plan.end_time', read_only=True, help_text='结束时间')
     begin_time = serializers.SerializerMethodField(read_only=True, help_text='开始时间')
     end_time = serializers.SerializerMethodField(read_only=True, help_text='结束时间')
+    classes_begin_time = serializers.DateTimeField(read_only=True, help_text='开始时间', source='work_schedule_plan.start_time')
+    classes_end_time = serializers.DateTimeField(read_only=True, help_text='开始时间', source='work_schedule_plan.end_time')
 
     def get_begin_time(self, obj):
         tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').first()
