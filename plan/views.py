@@ -631,10 +631,12 @@ class IssuedPlan(APIView):
         if equip_no == '3':
             if not oil_data:
                 oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
-                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0, 'mattype': 'O', 'machineno': int(equip_no)}]
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                             'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}]
             if not cb_data:
                 cb_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
-                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0, 'mattype': 'C', 'machineno': int(equip_no)}]
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                            'mattype': 'C', 'machineno': int(equip_no), 'matcode': ''}]
         datas = ploy_data + oil_data + cb_data
         if not datas:
             raise ValidationError("胶料配料详情为空，该计划不可用")
