@@ -625,9 +625,16 @@ class IssuedPlan(APIView):
 
     def _map_weigh(self, product_batching, product_batching_details, equip_no):
         # 胶料，油料，炭黑的合表
-        datas = self._map_ploy(product_batching, product_batching_details, equip_no) \
-                + self._map_oil(product_batching, product_batching_details, equip_no) \
-                + self._map_cb(product_batching, product_batching_details, equip_no)
+        ploy_data = self._map_ploy(product_batching, product_batching_details, equip_no)
+        oil_data = self._map_oil(product_batching, product_batching_details, equip_no)
+        cb_data = self._map_cb(product_batching, product_batching_details, equip_no)
+        if not oil_data:
+            oil_data = [{'id': '', 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                         'recipe_name': '', 'act_code': 0, 'mattype': 'O', 'machineno': int(equip_no)}]
+        if not cb_data:
+            cb_data = [{'id': '', 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                         'recipe_name': '', 'act_code': 0, 'mattype': 'C', 'machineno': int(equip_no)}]
+        datas = ploy_data + oil_data + cb_data
         if not datas:
             raise ValidationError("胶料配料详情为空，该计划不可用")
         return datas
