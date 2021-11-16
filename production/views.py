@@ -1602,15 +1602,16 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response({"status": False})
 
         # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
-        recipe_info = pcp.product_batching.batching_details.filter(~Q(material__material_name__icontains='细料'),
+        recipe_info = pcp.product_batching.batching_details.filter(~Q(material__material_name__icontains='-细料'),
+                                                                   ~Q(material__material_name__icontains='-硫磺'),
                                                                    ~Q(material__material_name__icontains='掺料'),
-                                                                   ~Q(material__material_name__icontains='硫磺'),
+                                                                   ~Q(material__material_name__in=['细料', '硫磺']),
                                                                    delete_flag=False, type=1) \
             .values("material__material_name", 'standard_error')
         recipe_material_names = set(recipe_info.values_list("material__material_name", flat=True))
         sfj_material_names = {item.get('material_name').strip() for item in materials if
-                              '硫磺' not in item['material_name'] and '细料' not in item['material_name'] and
-                              '掺料' not in item['material_name']}
+                              '-硫磺' not in item['material_name'] and '-细料' not in item['material_name'] and
+                              '掺料' not in item['material_name'] and item['material_name'] not in ['细料', '硫磺']}
         same_values = set(recipe_material_names) & set(sfj_material_names)
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
             # 判定原因
@@ -1626,7 +1627,7 @@ class MaterialReleaseView(FeedBack, APIView):
         # 处理数据
         for item in materials:
             material_name = item.get('material_name').strip()
-            if '细料' not in material_name and '硫磺' not in material_name and '掺料' not in material_name:
+            if '-细料' not in material_name and '-硫磺' not in material_name and '掺料' not in material_name and material_name not in ['细料', '硫磺']:
                 plan_weight = Decimal(item.get("plan_weight"))
                 actual_weight = Decimal(item.get('actual_weight'))
                 item.update(
@@ -1810,9 +1811,10 @@ class HandleFeedView(APIView):
         if not pcp:
             raise ValidationError("未找到该条密炼计划")
         # 配方信息 隐藏细料硫磺
-        recipe_info = pcp.product_batching.batching_details.filter(~Q(material__material_name__icontains='细料'),
+        recipe_info = pcp.product_batching.batching_details.filter(~Q(material__material_name__icontains='-细料'),
+                                                                   ~Q(material__material_name__icontains='-硫磺'),
                                                                    ~Q(material__material_name__icontains='掺料'),
-                                                                   ~Q(material__material_name__icontains='硫磺'),
+                                                                   ~Q(material__material_name__in=['细料', '硫磺']),
                                                                    delete_flag=False, type=1) \
             .values_list("material__material_name", flat=True)
         # 料框表信息
