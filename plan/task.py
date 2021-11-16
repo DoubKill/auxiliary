@@ -44,7 +44,7 @@ class BaseDownloader(object):
         return resp.json()
 
     def download(self):
-        ret = self.model.objects.exclude(id__in=self.loaded, **self.exclude_dict).filter(**self.filter_dict).values(
+        ret = self.model.objects.exclude(id__in=self.loaded, **self.exclude_dict).filter(**self.filter_dict).order_by('id').values(
             *self.upload_fields)
         for data in ret:
             try:
