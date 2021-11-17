@@ -249,3 +249,4 @@ class DataSynchronization(models.Model):
     class Meta:
         db_table = 'data_sync'
         verbose_name_plural = verbose_name = '自动同步数据'
+        indexes = [models.Index(fields=['type'])]
