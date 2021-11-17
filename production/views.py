@@ -1625,6 +1625,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.save()
             return Response(error_message)
         # 处理数据
+        handle_materials = []
         for item in materials:
             material_name = item.get('material_name').strip()
             if '-细料' not in material_name and '-硫磺' not in material_name and '掺料' not in material_name and material_name not in ['细料', '硫磺']:
@@ -1632,12 +1633,11 @@ class MaterialReleaseView(FeedBack, APIView):
                 actual_weight = Decimal(item.get('actual_weight'))
                 item.update(
                     {'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
-            else:
-                materials.remove(item)
+                handle_materials.append(item)
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
-        for item in materials:
+        for item in handle_materials:
             material_name = item.get('material_name')
             plan_weight = item.get("plan_weight")
             actual_weight = item.get('actual_weight')
@@ -1688,7 +1688,7 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.created_username = self.request.user.username
             fml.save()
             # 扣重
-            for item in materials:
+            for item in handle_materials:
                 material_name = item.get('material_name')
                 actual_weight = item.get('actual_weight')
                 # 该计划料框表中物料使用情况
