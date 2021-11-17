@@ -1632,6 +1632,8 @@ class MaterialReleaseView(FeedBack, APIView):
                 actual_weight = Decimal(item.get('actual_weight'))
                 item.update(
                     {'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
+            else:
+                materials.remove(item)
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
