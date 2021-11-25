@@ -117,7 +117,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
                   'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
                   'category__category_name', 'submit_username', 'reject_username', 'used_username', 'equip_id',
                   'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id',
-                  'last_updated_date', 'is_synced')
+                  'last_updated_date', 'is_synced', 'is_changed')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
@@ -284,7 +284,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         processes = validated_data.pop('processes', None)
         process_details = validated_data.pop('process_details', None)
         validated_data['last_updated_user'] = self.context['request'].user
-        # instance = super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
 
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
@@ -326,7 +326,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
     class Meta:
         model = ProductBatching
-        fields = ('id', 'batching_details', 'production_time_interval', 'equip', 'processes', 'process_details')
+        fields = ('id', 'batching_details', 'production_time_interval', 'equip', 'processes', 'process_details', 'is_changed')
 
 
 class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):

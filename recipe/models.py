@@ -136,6 +136,7 @@ class ProductBatching(AbstractEntity):
     batching_type = models.PositiveIntegerField(verbose_name='配料类型', help_text='配料类型',
                                                 choices=BATCHING_TYPE_CHOICE, default=1)
     is_synced = models.BooleanField(default=False, help_text='是否已同步至MES')
+    is_changed = models.BooleanField(default=False, help_text='较上次同步是否做过修改')
 
     def __str__(self):
         return self.stage_product_batch_no
@@ -197,6 +198,9 @@ class ProductProcess(AbstractEntity):
     use_flag = models.BooleanField(help_text='配方启用/弃用，（true:启用,false:弃用）', default=True)
     batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
     sp_num = models.DecimalField(help_text='收皮', default=0, decimal_places=1, max_digits=3)
+    ch_time = models.PositiveIntegerField(help_text='成环时间', default=0)
+    dj_time = models.PositiveIntegerField(help_text='捣胶时间', default=0)
+    ld_time = models.PositiveIntegerField(help_text='拉断时间', default=0)
 
     class Meta:
         db_table = 'product_process'
