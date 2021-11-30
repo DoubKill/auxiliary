@@ -376,29 +376,24 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('上辅机机型{}不存在'.format(attrs.get('dev_type')))
         except Exception as e:
             raise e
-        material_type = GlobalCode.objects.filter(global_type__type_name='原材料类别',
-                                                  global_name='料包').first()
-        if material_type:
-            if p_sn:
-                sn = max(p_sn) + 1
-            else:
-                sn = 1
-            for weight_detail in weight_details:
-                try:
-                    m, _ = Material.objects.get_or_create(
-                        material_no=weight_detail['material'],
-                        material_name=weight_detail['material'],
-                        material_type=material_type)
-                    attrs['batching_details'].append({'material': m,
-                                                      'actual_weight': weight_detail['actual_weight'],
-                                                      'standard_error': weight_detail['standard_error'],
-                                                      'type': 1,
-                                                      'auto_flag': 0,
-                                                      'sn': sn
-                                                      })
-                    sn += 1
-                except Exception as e:
-                    raise e
+        if p_sn:
+            sn = max(p_sn) + 1
+        else:
+            sn = 1
+        for weight_detail in weight_details:
+            try:
+                m = Material.objects.get(material_name=weight_detail['material'],
+                                         delete_flag=False)
+                attrs['batching_details'].append({'material': m,
+                                                  'actual_weight': weight_detail['actual_weight'],
+                                                  'standard_error': weight_detail['standard_error'],
+                                                  'type': 1,
+                                                  'auto_flag': 0,
+                                                  'sn': sn
+                                                  })
+                sn += 1
+            except Exception as e:
+                raise e
         attrs['dev_type'] = dev_type
         return attrs
 
