@@ -1,4 +1,6 @@
 # Create your views here.
+import json
+
 import requests
 from django.db.models import Prefetch, Max
 from django.utils.decorators import method_decorator
@@ -213,7 +215,7 @@ class ProductBatchingViewSet(ModelViewSet):
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
                 'used_user__username', 'obsolete_user__username', 'equip_id',
                 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions',
-                'stage_id', 'last_updated_date', 'is_synced'
+                'stage_id', 'last_updated_date', 'is_synced', 'is_changed'
             )
         else:
             return self.queryset
@@ -371,8 +373,8 @@ class ProductBatchingIssue(APIView):
             product_batching = ProductBatching.objects.get(id=product_batching_id)
         except Exception:
             raise ValidationError('object does not exist!')
-        if product_batching.is_synced:
-            raise ValidationError('非法操作，该配方已同步至MES！')
+        # if product_batching.is_synced:
+        #     raise ValidationError('非法操作，该配方已同步至MES！')
         if product_batching.used_type != 4:
             raise ValidationError('非法操作，该配方未启用！')
         batching_data = ProductBatching.objects.filter(id=product_batching_id).values(
@@ -391,5 +393,21 @@ class ProductBatchingIssue(APIView):
             raise ValidationError('配方上传至MES失败：{}'.format(ret.text))
         else:
             ProductBatching.objects.filter(stage_product_batch_no=product_batching.stage_product_batch_no,
-                                           dev_type=product_batching.dev_type).update(is_synced=1)
+                                           dev_type=product_batching.dev_type).update(is_synced=1, is_changed=0)
         return Response('上传成功！')
+
+
+class DevTypeProductBatching(APIView):
+
+    def get(self, request):
+        dev_type = self.request.query_params.get('dev_type')
+        product_no = self.request.query_params.get('product_no')
+        if not all([dev_type, product_no]):
+            raise ValidationError('参数不足')
+        query_params = {'dev_type': dev_type,
+                        'product_no': product_no}
+        try:
+            ret = requests.get(MES_URL + 'api/v1/recipe/dev-type-batching/', params=query_params)
+        except Exception:
+            raise ValidationError('MES服务错误！')
+        return Response(json.loads(ret.text))
