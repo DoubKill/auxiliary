@@ -456,6 +456,7 @@ class LoadTankMaterialLog(AbstractEntity):
     adjust_left_weight = models.DecimalField(decimal_places=2, max_digits=8, help_text='调整剩余重量', default=0)
     single_need = models.DecimalField(decimal_places=2, max_digits=8, help_text='单车需要物料数量', null=True, blank=True)
     variety = models.DecimalField(decimal_places=2, max_digits=8, help_text='物料修改变化量', null=True, blank=True, default=0)
+    scan_material_type = models.CharField(max_length=64, help_text='上料物料所属类别', null=True, blank=True)
 
     class Meta:
         db_table = 'load_tank_material_log'
