@@ -1351,11 +1351,11 @@ def add_condition_action():
 
 
 def add_tanks():
-    materials = Material.objects.filter(material_type__global_name='炭黑')
-    equips = Equip.objects.all()[:10]
+    equips = Equip.objects.all()
     for equip in equips:
+        th_materials = Material.objects.filter(material_type__global_name='炭黑')
         for i in range(1, 10):
-            m = materials[i]
+            m = th_materials[i]
             MaterialTankStatus.objects.get_or_create(
                 equip_no=equip.equip_no,
                 tank_type='1',
@@ -1372,8 +1372,9 @@ def add_tanks():
                 fast_speed=2,
                 low_speed=2,
             )
+        yl_materials = Material.objects.filter(material_type__global_name='油料')
         for i in range(1, 6):
-            m = materials[i + 10]
+            m = yl_materials[i + 1]
             MaterialTankStatus.objects.get_or_create(
                 equip_no=equip.equip_no,
                 tank_type='2',
