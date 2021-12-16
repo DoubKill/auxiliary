@@ -527,6 +527,11 @@ class IssuedPlan(APIView):
         if int(equip_no) in [1, 7, 8, 9]:
             data["sp_num"] = actual_product_process.sp_num
         if int(equip_no) in [12, 13, 14, 15]:
+            if int(equip_no) in [12, 13]:
+                data['ring_time'] = actual_product_process.ch_time
+                data['smash_time'] = actual_product_process.dj_time
+                data['snap_time'] = actual_product_process.ld_time
+                data['usingif'] = int(actual_product_process.use_flag)
             if data.get("max_temp") <= 0:
                 raise ValidationError(f"Z{equip_no}# 元嘉上辅机进胶最高温度不能小于等于0")
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
