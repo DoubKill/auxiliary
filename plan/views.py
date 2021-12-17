@@ -2,6 +2,7 @@ import datetime
 import json
 from collections import OrderedDict
 
+import requests
 from django.db.models import Max
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
@@ -228,8 +229,10 @@ class StopPlan(APIView):
             data['no'] = ext_str
             try:
                 WebService.issue(data, 'stop', equip_no=ext_str, equip_name="上辅机")
+            except requests.exceptions.ConnectTimeout:
+                raise ValidationError(f"上辅机网络连接超时")
             except Exception as e:
-                raise ValidationError(f"上辅机连接超时|{e}")
+                raise
             ps_obj.status = '停止'
             ps_obj.save()
             pcp_obj.status = '停止'
