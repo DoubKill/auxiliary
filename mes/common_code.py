@@ -117,6 +117,8 @@ class WebService(object):
                 raise ValidationError("该配方不存在于上辅机，无法重传，请检查")
             elif "失败" in rep.text:
                 raise ValidationError("计划下达失败")
+            elif "密炼中" in rep.text:
+                raise ValidationError("密炼机未排胶，无法停止计划！")
             return True, rep.text
         elif rep.status_code == 500:
             logger.error(rep.text)
