@@ -1430,6 +1430,8 @@ class MaterialReleaseView(FeedBack, APIView):
         handle_materials = []
         for item in materials:
             material_name = item.get('material_name').strip()
+            if '掺料' in material_name or '待处理料' in material_name:
+                continue
             if '细料' not in material_name and '硫磺' not in material_name:
                 plan_weight = Decimal(item.get("plan_weight"))
                 actual_weight = Decimal(item.get('actual_weight'))
