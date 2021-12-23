@@ -1446,7 +1446,9 @@ class MaterialReleaseView(FeedBack, APIView):
                 for i in recipe_info:
                     recipe_material_name = i.get('material__material_name')
                     if recipe_material_name in ['硫磺', '细料'] or '机配' in recipe_material_name or '人工配' in recipe_material_name:
-                        data = {'material_name': recipe_material_name, 'plan_weight': i.get('actual_weight'), 'actual_weight': i.get('actual_weight')}
+                        instance = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, material_name=recipe_material_name).last()
+                        data = {'material_name': recipe_material_name, 'plan_weight': 0 if not instance else instance.single_need,
+                                'actual_weight': 0 if not instance else instance.single_need}
                         handle_materials.append(data)
                     else:
                         continue
