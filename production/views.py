@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import requests
 from django.db import connection
-from django.db.models import Sum, Max, Avg
+from django.db.models import Sum, Max, Avg, Q
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1432,26 +1432,27 @@ class MaterialReleaseView(FeedBack, APIView):
             material_name = item.get('material_name').strip()
             if '掺料' in material_name or '待处理料' in material_name:
                 continue
-            if '细料' not in material_name and '硫磺' not in material_name:
-                plan_weight = Decimal(item.get("plan_weight"))
-                actual_weight = Decimal(item.get('actual_weight'))
+            if material_name not in ['细料', '硫磺']:
+                plan_weight = round(Decimal(item.get("plan_weight")), 3)
+                actual_weight = round(Decimal(item.get('actual_weight')), 3)
                 item.update({'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
                 handle_materials.append(item)
-            # 配方生产需要细料或者硫磺(1、全机配; 2、全人工配; 3、机配+人工配)
+            # 配方生产需要细料或者硫磺(1、细料; 2、硫磺;  3、机配+人工配)
             else:
                 res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
                 if isinstance(res, str):
                     raise ValidationError('获取mes配方信息失败')
-                recipe_info = json.loads(res.content)
+                content = json.loads(res.content)
+                material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
+                xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'])
+                recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:
-                    recipe_material_name = i.get('material__material_name')
-                    if recipe_material_name in ['硫磺', '细料'] or '机配' in recipe_material_name or '人工配' in recipe_material_name:
-                        instance = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, material_name=recipe_material_name).last()
-                        data = {'material_name': recipe_material_name, 'plan_weight': 0 if not instance else instance.single_need,
-                                'actual_weight': 0 if not instance else instance.single_need}
-                        handle_materials.append(data)
-                    else:
-                        continue
+                    instance = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, material_name=i).last()
+                    data = {'material_name': i, 'plan_weight': 0 if not instance else instance.single_need,
+                            'actual_weight': 0 if not instance else instance.single_need}
+                    handle_materials.append(data)
+                else:
+                    continue
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
@@ -1634,7 +1635,11 @@ class HandleFeedView(APIView):
         if isinstance(res, str):
             raise ValidationError('获取mes配方信息失败')
         content = json.loads(res.content)
-        recipe_info = [i['material__material_name'] for i in content]
+        material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
+        xl_details = LoadTankMaterialLog.objects.using('mes').filter(Q(material_name__icontains='人工配') | Q(material_name__icontains='机配'), plan_classes_uid=plan_classes_uid)
+        recipe_info = [i['material__material_name'] for i in material_name_weight]
+        if xl_details:
+            recipe_info = [i['material__material_name'] for i in material_name_weight + cnt_type_details if i['material__material_name'] not in ['硫磺', '细料']]
         # 料框表信息
         load_info = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
                                                                     useup_time__year='1970') \
