@@ -2,6 +2,7 @@ import datetime
 import json
 from collections import OrderedDict
 
+import requests
 from django.db.models import Max
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
@@ -228,8 +229,10 @@ class StopPlan(APIView):
             data['no'] = ext_str
             try:
                 WebService.issue(data, 'stop', equip_no=ext_str, equip_name="上辅机")
+            except requests.exceptions.ConnectTimeout:
+                raise ValidationError(f"上辅机网络连接超时")
             except Exception as e:
-                raise ValidationError(f"上辅机连接超时|{e}")
+                raise
             ps_obj.status = '停止'
             ps_obj.save()
             pcp_obj.status = '停止'
@@ -532,6 +535,11 @@ class IssuedPlan(APIView):
         # 三区水温是否启用 国自(true:启用， false:停用)  万龙(0:三区水温启用， 1:三区水温停用)
         data["recipe_off"] = 0 if actual_product_batching.used_type == 4 else 1  # 配方是否启用 国自(4:启用， 其他数字:不可用)  万龙(0:启用， 1:停用)
         data["machineno"] = int(equip_no)
+        if int(equip_no) in [12, 13]:
+            data['ring_time'] = actual_product_process.ch_time
+            data['smash_time'] = actual_product_process.dj_time
+            data['snap_time'] = actual_product_process.ld_time
+            data['usingif'] = int(actual_product_process.use_flag)
         return data
 
     def _map_cb(self, product_batching, product_batching_details, equip_no):
