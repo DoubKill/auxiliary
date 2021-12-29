@@ -39,6 +39,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer
 from production.utils import strtoint, gen_material_export_file_response
+from recipe.models import ProductBatchingDetail
 
 logger = logging.getLogger('api_log')
 
@@ -1412,7 +1413,7 @@ class MaterialReleaseView(FeedBack, APIView):
         if not fml:
             return Response({"status": False})
         # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
-        recipe_material_names = set(pcp.product_batching.batching_details.filter(delete_flag=False, type=1).values_list("material__material_name", flat=True))
+        recipe_material_names = set(ProductBatchingDetail.objects.using('SFJ').filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1).values_list("material__material_name", flat=True))
         sfj_material_names = {item.get('material_name').strip() for item in materials}
         same_values = set(recipe_material_names) & set(sfj_material_names)
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
@@ -1444,7 +1445,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     raise ValidationError('获取mes配方信息失败')
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
-                xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'])
+                xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
                 recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:
                     instance = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, material_name=i).last()
@@ -1636,7 +1637,7 @@ class HandleFeedView(APIView):
             raise ValidationError('获取mes配方信息失败')
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
-        xl_details = LoadTankMaterialLog.objects.using('mes').filter(Q(material_name__icontains='人工配') | Q(material_name__icontains='机配'), plan_classes_uid=plan_classes_uid)
+        xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
         recipe_info = [i['material__material_name'] for i in material_name_weight]
         if xl_details:
             recipe_info = [i['material__material_name'] for i in material_name_weight + cnt_type_details if i['material__material_name'] not in ['硫磺', '细料']]
