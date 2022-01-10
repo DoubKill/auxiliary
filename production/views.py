@@ -1466,12 +1466,18 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 判断当前车次是否进了该物料
                 m_load_log = LoadMaterialLog.objects.filter(feed_log=fml, status=1, material_name=material_name).last()
                 # 判断上一车该物料剩余是够足够一车, 不够提示扫码(防止物料不足时不扫码直接使用)
-                adjust_left_weight = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
-                                                                                     useup_time__year='1970',
-                                                                                     material_name=material_name) \
-                    .aggregate(left_weight=Sum('real_weight'))['left_weight']
+                history_materials = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
+                                                                                    useup_time__year='1970',
+                                                                                    material_name=material_name)
+                adjust_left_weight = history_materials.aggregate(left_weight=Sum('real_weight'))['left_weight']
                 if not adjust_left_weight:
                     adjust_left_weight = 0
+                else:
+                    # 存在历史物料
+                    if history_materials.last().bra_code.startswith('MC'):
+                        plan_weight = history_materials.last().single_need
+                        item['plan_weight'] = plan_weight
+                        item.update({'plan_weight': plan_weight, 'actual_weight': plan_weight})
                 if adjust_left_weight < plan_weight:
                     success = False
                     error_message += "需扫码使用新料:{}".format(material_name)
@@ -1623,11 +1629,13 @@ class HandleFeedView(APIView):
     """物料不足扣重，扫码补料后点击验证物料"""
 
     def post(self, request, *args, **kwargs):
-        data = self.request.data.get('attrs')
-        plan_classes_uid = data[0].get('plan_classes_uid')
-        feed_status = data[0].get('handle_type', '扫码')
-        equip_no = data[0].get("equip_no")
-        trains = data[0].get("trains")
+        attrs_data = self.request.data.get('attrs')
+        # 存在attrs:补料自动调用; 否则为终端调用
+        data = attrs_data[0] if attrs_data else self.request.data
+        plan_classes_uid = data.get('plan_classes_uid')
+        feed_status = data.get('handle_type', '扫码')
+        equip_no = data.get("equip_no")
+        trains = data.get("trains")
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
             raise ValidationError("未找到该条密炼计划")
