@@ -223,6 +223,14 @@ class PlanScheduleSerializer(BaseModelSerializer):
                                                     help_text="""{"classes":班次id, "rest_flag":0, "group":班组id""")
     work_schedule_name = serializers.CharField(source='work_schedule.schedule_name', read_only=True)
 
+    def to_representation(self, instance):
+        sort_rules = {'早班': 1, '中班': 2, '夜班': 3}
+        ret = super().to_representation(instance)
+        work_schedule_plan = list(ret['work_schedule_plan'])
+        sorted_work_schedule_plan = sorted(work_schedule_plan, key=lambda d: sort_rules[d['classes_name']])
+        ret['work_schedule_plan'] = sorted_work_schedule_plan
+        return ret
+
     class Meta:
         model = PlanSchedule
         # fields = '__all__'
