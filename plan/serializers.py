@@ -245,8 +245,8 @@ class ProductBatchingClassesPlanSerializer(BaseModelSerializer):
 
 
 class PalletFeedbacksPlanSerializer(BaseModelSerializer):
-    equip_name = serializers.CharField(source='product_day_plan.equip.equip_no', read_only=True, help_text='机台名')
-    stage_product_batch_no = serializers.CharField(source='product_day_plan.product_batching.stage_product_batch_no',
+    equip_name = serializers.CharField(source='equip.equip_no', read_only=True, help_text='机台名')
+    stage_product_batch_no = serializers.CharField(source='product_batching.stage_product_batch_no',
                                                    read_only=True, help_text='胶料编码')
     classes = serializers.CharField(source='work_schedule_plan.classes.global_name', read_only=True, help_text='班次')
     actual_trains = serializers.SerializerMethodField(read_only=True, help_text='实际车次')
@@ -558,28 +558,28 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
     equip = serializers.CharField()
     work_schedule_plan = serializers.CharField()
     product_batching = serializers.CharField()
-    product_day_plan = ProductDayPlanSyncInterface()
+    # product_day_plan = ProductDayPlanSyncInterface()
 
     @atomic()
     def validate(self, attrs):
         work_schedule_plan = attrs.get('work_schedule_plan')
         product_batching = attrs.get('product_batching')
         equip = attrs.get('equip')
-        plan_schedule = attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']
+        # plan_schedule = attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']
         try:
             equip = Equip.objects.get(equip_no=equip, delete_flag=False)
             work_schedule_plan = WorkSchedulePlan.objects.get(work_schedule_plan_no=work_schedule_plan,
                                                               delete_flag=False)
-            plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
+            # plan_schedule = PlanSchedule.objects.get(plan_schedule_no=plan_schedule, delete_flag=False)
         except Equip.DoesNotExist:
             raise serializers.ValidationError('上辅机机台{}不存在，请MES下发该数据'.format(attrs.get('equip')))
         except WorkSchedulePlan.DoesNotExist:
             raise serializers.ValidationError('上辅机排班详情{}不存在，请MES下发该数据'.format(attrs.get('work_schedule_plan')))
         # except ProductBatching.DoesNotExist:
         #     raise serializers.ValidationError('上辅机胶料配料标准{}不存在，请MES下发该数据'.format(attrs.get('product_batching')))
-        except PlanSchedule.DoesNotExist:
-            raise serializers.ValidationError(
-                '上辅机排班管理{}不存在，请MES下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
+        # except PlanSchedule.DoesNotExist:
+        #     raise serializers.ValidationError(
+        #         '上辅机排班管理{}不存在，请MES下发该数据'.format(attrs.get('product_day_plan')['plan_schedule']['plan_schedule_no']))
         except Exception as e:
             logger.error(e)
             raise serializers.ValidationError("相关表数据错误")
@@ -598,21 +598,21 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                                                                                     attrs.get('product_batching')))
         attrs['product_batching'] = product_batching
         # 判断胶料日计划是否存在 不存在则创建
-        pdp_dict = attrs.get('product_day_plan')
+        # pdp_dict = attrs.get('product_day_plan')
         pb_obj = ProductBatching.objects.exclude(used_type=6).filter(
-            stage_product_batch_no=pdp_dict['product_batching']['stage_product_batch_no'],
+            stage_product_batch_no=product_batching.stage_product_batch_no,
             delete_flag=False, batching_type=1, equip=equip).last()
         if not pb_obj:
             raise serializers.ValidationError(
-                '{}在群控上没有同名的机台配方'.format(pdp_dict['product_batching']['stage_product_batch_no']))
+                '{}在群控上没有同名的机台配方'.format(product_batching.stage_product_batch_no))
         # 校验胶料日计划设备
-        pdp_obj = ProductDayPlan.objects.filter(equip=equip, product_batching=pb_obj,
-                                                plan_schedule=plan_schedule).first()
-        if pdp_obj:
-            attrs['product_day_plan'] = pdp_obj
-        else:
-            attrs['product_day_plan'] = ProductDayPlan.objects.create(equip=equip, product_batching=pb_obj,
-                                                                      plan_schedule=plan_schedule)
+        # pdp_obj = ProductDayPlan.objects.filter(equip=equip, product_batching=pb_obj,
+        #                                         plan_schedule=plan_schedule).first()
+        # if pdp_obj:
+        #     attrs['product_day_plan'] = pdp_obj
+        # else:
+        #     attrs['product_day_plan'] = ProductDayPlan.objects.create(equip=equip, product_batching=pb_obj,
+        #                                                               plan_schedule=plan_schedule)
         attrs['work_schedule_plan'] = work_schedule_plan
         attrs['equip'] = equip
         attrs['status'] = '等待'
@@ -637,13 +637,13 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
             PlanStatus.objects.filter(plan_classes_uid=instance.plan_classes_uid).update(
                 equip_no=instance.equip.equip_no,
                 product_no=instance.product_batching.stage_product_batch_no)
-            MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
-            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
-                MaterialDemanded.objects.create(product_classes_plan=instance,
-                                                work_schedule_plan=instance.work_schedule_plan,
-                                                material=pbd_obj.material,
-                                                material_demanded=pbd_obj.actual_weight * instance.plan_trains,
-                                                plan_classes_uid=instance.plan_classes_uid)
+            # MaterialDemanded.objects.filter(product_classes_plan=instance).update(delete_flag=True)
+            # for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+            #     MaterialDemanded.objects.create(product_classes_plan=instance,
+            #                                     work_schedule_plan=instance.work_schedule_plan,
+            #                                     material=pbd_obj.material,
+            #                                     material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+            #                                     plan_classes_uid=instance.plan_classes_uid)
         else:
             instance = super().create(validated_data)
             # 创建计划状态
@@ -651,18 +651,17 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
                                       product_no=instance.product_batching.stage_product_batch_no,
                                       status='等待', operation_user=self.context['request'].user.username)
             # 创建原材料需求量
-            for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
-                MaterialDemanded.objects.create(product_classes_plan=instance,
-                                                work_schedule_plan=instance.work_schedule_plan,
-                                                material=pbd_obj.material,
-                                                material_demanded=pbd_obj.actual_weight * instance.plan_trains,
-                                                plan_classes_uid=instance.plan_classes_uid)
+            # for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+            #     MaterialDemanded.objects.create(product_classes_plan=instance,
+            #                                     work_schedule_plan=instance.work_schedule_plan,
+            #                                     material=pbd_obj.material,
+            #                                     material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+            #                                     plan_classes_uid=instance.plan_classes_uid)
         return instance
 
     class Meta:
         model = ProductClassesPlan
-        fields = ('product_day_plan',
-                  'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan',
+        fields = ('sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan',
                   'plan_classes_uid', 'note', 'equip',
                   'product_batching',)
         read_only_fields = COMMON_READ_ONLY_FIELDS
