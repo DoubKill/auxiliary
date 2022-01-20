@@ -148,7 +148,8 @@ class ProductBatching(AbstractEntity):
             ('submit_prod', '提交配方'),
             ('using_prod', '启用配方'),
             ('refuse_prod', '驳回配方'),
-            ('abandon_prod', '弃用配方')
+            ('abandon_prod', '弃用配方'),
+            ('upload_prod', '上传至MES'),
         )
 
 
