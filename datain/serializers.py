@@ -1,3 +1,5 @@
+import copy
+
 from django.db.transaction import atomic
 
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, Equip, \
@@ -340,35 +342,65 @@ class ProductBatchingDetailSerializer2(serializers.ModelSerializer):
 
 class RecipeReceiveSerializer(serializers.ModelSerializer):
     dev_type = serializers.CharField()
-    batching_details = ProductBatchingDetailSerializer2(many=True, write_only=True)
-    weight_details = serializers.ListField(write_only=True)
+    batching_details = serializers.DictField(write_only=True)
+    weight_details = serializers.DictField(write_only=True)
+
+    def get_material(self, material_name):
+        try:
+            material = Material.objects.get(material_name=material_name, delete_flag=False)
+        except Material.DoesNotExist:
+            raise serializers.ValidationError('原材料{}不存在'.format(material_name))
+        return material
+
+    def handle_xl(self, s_batching_detail, s_weight_detail, xl, type):
+        xl_flag = []
+        next_sn = 1
+        c_o_data = s_batching_detail['C'] if type == 2 else s_batching_detail['O']
+        for index, c in enumerate(c_o_data):
+            mode = c.pop('feeding_mode')
+            if index == 0:
+                xl_flag.append(mode)
+                s_batching_detail['P'].append(c)
+                next_sn += 1
+                # 判断是否存在走罐的化工原料
+                for c_xl_tanks in s_weight_detail:
+                    c_xl_tank = c_xl_tanks.pop('c_xl_tank')
+                    if c_xl_tank:
+                        for c_material in c_xl_tank:
+                            tr_material = self.get_material(c_material.pop('material_name'))
+                            c_material.update({'material': tr_material, 'type': 2, 'sn': next_sn, 'auto_flag': 0})
+                            s_batching_detail['P'].append(c_material)
+                            next_sn += 1
+                continue
+            xl_data = {'material': xl, 'actual_weight': 0, 'standard_error': 0, 'type': type, 'auto_flag': 0,
+                       'sn': next_sn}
+            if mode == 'C':
+                s_batching_detail['P'].append(xl_data)
+                next_sn += 1
+                c['sn'] = next_sn
+                s_batching_detail['P'].append(c)
+                next_sn += 1
+                xl_flag += ['卸料', mode]
+                if index == len(c_o_data) - 1:
+                    xl_flag += ['卸料']
+                    new_xl_data = copy.deepcopy(xl_data)
+                    new_xl_data['sn'] = next_sn
+                    s_batching_detail['P'].append(new_xl_data)
+            else:
+                c['sn'] = next_sn
+                s_batching_detail['P'].append(c)
+                next_sn += 1
+                xl_flag += [mode]
+                if index == len(c_o_data) - 1:
+                    xl_flag += ['卸料']
+                    new_xl_data = copy.deepcopy(xl_data)
+                    new_xl_data['sn'] = next_sn
+                    s_batching_detail['P'].append(new_xl_data)
 
     def validate(self, attrs):
         weight_details = attrs.pop('weight_details', None)
-        batching_details = attrs['batching_details']
-        p_sn = [i['sn'] for i in batching_details if i['type'] == 1]
-        o_sn = [i['sn'] for i in batching_details if i['type'] == 3]
-        c_sn = [i['sn'] for i in batching_details if i['type'] == 2]
-        if o_sn:
-            o_xl = Material.objects.filter(material_name='卸料', material_type__global_name='油料').first()
-            if o_xl:
-                attrs['batching_details'].append({'material': o_xl,
-                                                  'actual_weight': 0,
-                                                  'standard_error': 0,
-                                                  'type': 3,
-                                                  'auto_flag': 0,
-                                                  'sn': max(o_sn) + 1
-                                                  })
-        if c_sn:
-            c_xl = Material.objects.filter(material_name='卸料', material_type__global_name='炭黑').first()
-            if c_xl:
-                attrs['batching_details'].append({'material': c_xl,
-                                                  'actual_weight': 0,
-                                                  'standard_error': 0,
-                                                  'type': 2,
-                                                  'auto_flag': 0,
-                                                  'sn': max(c_sn) + 1
-                                                  })
+        batching_details = attrs.pop('batching_details', None)
+        equip_no_list = batching_details.keys() if batching_details else weight_details.keys()
         dev_type = attrs.get('dev_type')
         try:
             dev_type = EquipCategoryAttribute.objects.get(category_no=dev_type)
@@ -376,52 +408,90 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('上辅机机型{}不存在'.format(attrs.get('dev_type')))
         except Exception as e:
             raise e
-        if p_sn:
-            sn = max(p_sn) + 1
-        else:
-            sn = 1
-        for weight_detail in weight_details:
-            try:
-                m = Material.objects.get(material_name=weight_detail['material'],
-                                         delete_flag=False)
-                attrs['batching_details'].append({'material': m,
-                                                  'actual_weight': weight_detail['actual_weight'],
-                                                  'standard_error': weight_detail['standard_error'],
-                                                  'type': 1,
-                                                  'auto_flag': 0,
-                                                  'sn': sn
-                                                  })
-                sn += 1
-            except Exception as e:
-                raise e
-        attrs['dev_type'] = dev_type
+        handle_batching_details = {}
+        for equip_no in equip_no_list:
+            s_batching_detail = batching_details.get(equip_no)
+            s_weight_detail = weight_details.get(equip_no)
+            p_sn = [i['sn'] for i in s_batching_detail['P']]
+            c_sn = [i['sn'] for i in s_batching_detail['C']]
+            o_sn = [i['sn'] for i in s_batching_detail['O']]
+            # 更新 material
+            for i in s_batching_detail['P'] + s_batching_detail['C'] + s_batching_detail['O']:
+                material_name = i.pop('material_name')
+                material = self.get_material(material_name)
+                update_data = {'material': material, 'auto_flag': 0}
+                i.update(**update_data)
+                continue
+            if c_sn:
+                c_xl = Material.objects.filter(material_name='卸料', material_type__global_name='炭黑').first()
+                if c_xl:
+                    # 走罐化工原料与炭黑增加卸料
+                    self.handle_xl(s_batching_detail, s_weight_detail, c_xl, type=2)
+            if o_sn:
+                o_xl = Material.objects.filter(material_name='卸料', material_type__global_name='油料').first()
+                if o_xl:
+                    # 油料增加卸料
+                    self.handle_xl(s_batching_detail, s_weight_detail, o_xl, type=3)
+            if p_sn:
+                n_sn = max(p_sn) + 1
+            else:
+                n_sn = 1
+            for weight_detail in s_weight_detail:
+                try:
+                    xl_instance = self.get_material(weight_detail['material_name'])
+                    add_data = {'material': xl_instance, 'actual_weight': weight_detail['actual_weight'],
+                                'standard_error': weight_detail['standard_error'], 'type': 1, 'auto_flag': 0,
+                                'sn': n_sn}
+                    s_batching_detail['P'].append(add_data)
+                    n_sn += 1
+                except Exception as e:
+                    raise e
+            handle_batching_details[equip_no] = s_batching_detail['P']
+        attrs.update({'dev_type': dev_type, 'batching_details': handle_batching_details})
         return attrs
 
     @atomic()
     def create(self, validated_data):
         batching_details = validated_data.pop('batching_details')
+        dev_type, product_no, batching_weight = validated_data['dev_type'], validated_data['stage_product_batch_no'].split('_NEW')[0], validated_data['batching_weight']
+        try:
+            init_site, init_stage, init_product_info, init_version = product_no.split('-')
+        except:
+            raise serializers.ValidationError('配方拆分明细错误')
         batching_detail_list = []
-        for product_batching in ProductBatching.objects.exclude(used_type=6).filter(
-                batching_type=1,
-                dev_type=validated_data['dev_type'],
-                stage_product_batch_no=validated_data['stage_product_batch_no']):
-            product_batching.batching_details.all().delete()
-            product_batching.batching_weight = validated_data['batching_weight']
-            product_batching.used_type = 1
-            product_batching.save()
-            for detail in batching_details:
+        # 获取机台配方
+        equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, dev_type=dev_type,
+                                                                            stage_product_batch_no=product_no)
+        for equip_no, details in batching_details.items():
+            now_recipe = equip_recipes.filter(equip__equip_no=equip_no).first()
+            if not now_recipe:  # 不存在机台配方则新增
+                factory = GlobalCode.objects.filter(global_type__type_name='产地', global_name='安吉').first()
+                site = GlobalCode.objects.filter(global_type__type_name='SITE', global_name=init_site).first()
+                stage = GlobalCode.objects.filter(global_type__type_name='胶料段次', global_name=init_stage).first()
+                product_info = ProductInfo.objects.filter(product_name=init_product_info).first()
+                equip = Equip.objects.filter(equip_no=equip_no).first()
+                create_recipe = {'factory': factory, 'stage_product_batch_no': product_no, 'dev_type': dev_type,
+                                 'batching_weight': batching_weight, 'site': site, 'stage': stage, 'equip': equip,
+                                 'product_info': product_info, 'versions': product_no.split('-')[-1]}
+                now_recipe = ProductBatching.objects.create(**create_recipe)
+            else:
+                now_recipe.batching_details.all().delete()
+                now_recipe.batching_weight = validated_data['batching_weight']
+                now_recipe.used_type = 1
+                now_recipe.save()
+            for detail in details:
                 tank = None
                 if detail['type'] == 2:
-                    tank = MaterialTankStatus.objects.filter(equip_no=product_batching.equip.equip_no,
+                    tank = MaterialTankStatus.objects.filter(equip_no=now_recipe.equip.equip_no,
                                                              tank_type=1,
                                                              material_no=detail['material'].material_no).first()
                 elif detail['type'] == 3:
-                    tank = MaterialTankStatus.objects.filter(equip_no=product_batching.equip.equip_no,
+                    tank = MaterialTankStatus.objects.filter(equip_no=now_recipe.equip.equip_no,
                                                              tank_type=2,
                                                              material_no=detail['material'].material_no).first()
                 if tank:
                     detail['tank_no'] = tank.tank_no
-                detail['product_batching'] = product_batching
+                detail['product_batching'] = now_recipe
                 batching_detail_list.append(ProductBatchingDetail(**detail))
         ProductBatchingDetail.objects.bulk_create(batching_detail_list)
         return validated_data
