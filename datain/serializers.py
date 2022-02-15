@@ -411,7 +411,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         handle_batching_details = {}
         for equip_no in equip_no_list:
             s_batching_detail = batching_details.get(equip_no)
-            s_weight_detail = weight_details.get(equip_no)
+            s_weight_detail = weight_details.get(equip_no, [])
             p_sn = [i['sn'] for i in s_batching_detail['P']]
             c_sn = [i['sn'] for i in s_batching_detail['C']]
             o_sn = [i['sn'] for i in s_batching_detail['O']]
@@ -452,12 +452,16 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
 
     @atomic()
     def create(self, validated_data):
+        special_recipe = False
         batching_details = validated_data.pop('batching_details')
         dev_type, product_no, batching_weight = validated_data['dev_type'], validated_data['stage_product_batch_no'].split('_NEW')[0], validated_data['batching_weight']
         try:
+            # 正常胶料拆分
             init_site, init_stage, init_product_info, init_version = product_no.split('-')
         except:
-            raise serializers.ValidationError('配方拆分明细错误')
+            # 特殊胶料
+            special_recipe = True
+            init_site = init_stage = init_product_info = init_version = None
         batching_detail_list = []
         # 获取机台配方
         equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, dev_type=dev_type,
@@ -465,10 +469,13 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         for equip_no, details in batching_details.items():
             now_recipe = equip_recipes.filter(equip__equip_no=equip_no).first()
             if not now_recipe:  # 不存在机台配方则新增
-                factory = GlobalCode.objects.filter(global_type__type_name='产地', global_name='安吉').first()
-                site = GlobalCode.objects.filter(global_type__type_name='SITE', global_name=init_site).first()
-                stage = GlobalCode.objects.filter(global_type__type_name='胶料段次', global_name=init_stage).first()
-                product_info = ProductInfo.objects.filter(product_name=init_product_info).first()
+                if not special_recipe:
+                    factory = GlobalCode.objects.filter(global_type__type_name='产地', global_name='安吉').first()
+                    site = GlobalCode.objects.filter(global_type__type_name='SITE', global_name=init_site).first()
+                    stage = GlobalCode.objects.filter(global_type__type_name='胶料段次', global_name=init_stage).first()
+                    product_info = ProductInfo.objects.filter(product_name=init_product_info).first()
+                else:
+                    factory = site = stage = product_info = None
                 equip = Equip.objects.filter(equip_no=equip_no).first()
                 create_recipe = {'factory': factory, 'stage_product_batch_no': product_no, 'dev_type': dev_type,
                                  'batching_weight': batching_weight, 'site': site, 'stage': stage, 'equip': equip,
