@@ -437,6 +437,9 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             else:
                 n_sn = 1
             for weight_detail in s_weight_detail:
+                # 料包总量是0不加入胶料区域
+                if weight_detail['actual_weight'] == 0:
+                    continue
                 try:
                     xl_instance = self.get_material(weight_detail['material_name'])
                     add_data = {'material': xl_instance, 'actual_weight': weight_detail['actual_weight'],
