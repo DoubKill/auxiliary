@@ -355,7 +355,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
     def handle_xl(self, s_batching_detail, s_weight_detail, xl, type):
         xl_flag = []
         next_sn = 1
-        c_o_data = s_batching_detail['C'] if type == 2 else s_batching_detail['O']
+        c_o_data, keyword = [s_batching_detail['C'], 'C'] if type == 2 else [s_batching_detail['O'], 'O']
         for index, c in enumerate(c_o_data):
             mode = c.pop('feeding_mode')
             xl_data = {'material': xl, 'actual_weight': 0, 'standard_error': 0, 'type': type, 'auto_flag': 0, 'sn': next_sn}
@@ -376,7 +376,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                     xl_data['sn'] = next_sn
                     s_batching_detail['P'].append(xl_data)
                 continue
-            if mode == 'C':
+            if mode == keyword:
                 s_batching_detail['P'].append(xl_data)
                 next_sn += 1
                 c['sn'] = next_sn
