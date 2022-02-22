@@ -358,6 +358,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
         c_o_data = s_batching_detail['C'] if type == 2 else s_batching_detail['O']
         for index, c in enumerate(c_o_data):
             mode = c.pop('feeding_mode')
+            xl_data = {'material': xl, 'actual_weight': 0, 'standard_error': 0, 'type': type, 'auto_flag': 0, 'sn': next_sn}
             if index == 0:
                 xl_flag.append(mode)
                 s_batching_detail['P'].append(c)
@@ -371,9 +372,10 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                             c_material.update({'material': tr_material, 'type': 2, 'sn': next_sn, 'auto_flag': 0})
                             s_batching_detail['P'].append(c_material)
                             next_sn += 1
+                if len(c_o_data) == 1:
+                    xl_data['sn'] = next_sn
+                    s_batching_detail['P'].append(xl_data)
                 continue
-            xl_data = {'material': xl, 'actual_weight': 0, 'standard_error': 0, 'type': type, 'auto_flag': 0,
-                       'sn': next_sn}
             if mode == 'C':
                 s_batching_detail['P'].append(xl_data)
                 next_sn += 1
