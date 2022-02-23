@@ -2,7 +2,8 @@
 """
 auther: 
 datetime: 2020/8/19
-name: 
+name:
+    生产数据同步至MES脚本
 """
 import datetime
 import os
