@@ -79,10 +79,10 @@ def send_to_yikong_run():
             recipe_weight = pcp_obj[0].get("product_day_plan__product_batching__batching_weight", 220)
             test_dict['weight'] = recipe_weight
             test_dict['sp_number'] = 750 // recipe_weight
-            # try:
-            #     WebService.issue(test_dict, 'plan', equip_no="4")
-            # except Exception as e:
-            #     logger.error(f"Z04计划下达失败：超时链接|{e}")
+            try:
+                WebService.issue(test_dict, 'plan', equip_no="4")
+            except Exception as e:
+                logger.error(f"Z04计划下达失败：超时链接|{e}")
 
             sfj_plan_trains = pcp_obj[0].get("plan_trains", 0)
             z04_plan_trains = plan_obj.batches_set
@@ -91,10 +91,10 @@ def send_to_yikong_run():
                 test_dict2['updatestate'] = z04_plan_trains
                 test_dict2['planid'] = plan_obj.order_name
                 test_dict2['no'] = 4
-                # try:
-                #     WebService.issue(test_dict2, 'updatetrains', equip_no="4")
-                # except Exception as e:
-                #     logger.error(f"Z04更新计划失败,超时链接|{e}")
+                try:
+                    WebService.issue(test_dict2, 'updatetrains', equip_no="4")
+                except Exception as e:
+                    logger.error(f"Z04更新计划失败,超时链接|{e}")
                 pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_id).first()
                 pcp.plan_trains = z04_plan_trains
                 pcp.save()
