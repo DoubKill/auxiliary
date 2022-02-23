@@ -365,7 +365,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                 next_sn += 1
                 # 判断是否存在走罐的化工原料
                 for c_xl_tanks in s_weight_detail:
-                    c_xl_tank = c_xl_tanks.pop('c_xl_tank')
+                    c_xl_tank = c_xl_tanks.pop('c_xl_tank', [])
                     if c_xl_tank:
                         for c_material in c_xl_tank:
                             tr_material = self.get_material(c_material.pop('material_name'))
