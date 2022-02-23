@@ -3,7 +3,7 @@
 auther:
 datetime: 2020/8/19
 name:
-    Z04生产数据采集至群控
+    元佳数据采集（12-15号密炼机），暂时没用到，都是易控直接写
 """
 import datetime
 import os
