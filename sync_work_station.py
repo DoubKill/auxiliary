@@ -2,7 +2,8 @@
 """
 auther: 
 datetime: 2020/8/19
-name: 
+name:
+    生产数据同步至MES脚本
 """
 import datetime
 import os
@@ -308,9 +309,9 @@ def hf_trains_up():
             else:
                 interval_time = 15
             consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
-            if plan.plan_trains != temp.get("batr_batch_number"):
-                plan.plan_trains = temp.get("batr_batch_number")
-                plan.save()
+            # if plan.plan_trains != temp.get("batr_batch_number"):
+            #     plan.plan_trains = temp.get("batr_batch_number")
+            #     plan.save()
             train = dict(
                 plan_classes_uid = temp.get("batr_order_number"),
                 plan_trains = temp.get("batr_batch_quantity_set"),

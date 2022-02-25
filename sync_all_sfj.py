@@ -1,4 +1,9 @@
 # -*- coding: UTF-8 -*-
+
+
+# 无用文件
+
+
 """
 auther:
 datetime: 2020/11/30
@@ -159,22 +164,24 @@ def sync_plan(db, pb):
             if 0 < h < 8:
                 times = (actual_times + datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
         # 2、代码核心（这里应该没啥子问题）
-        gc_obj = GlobalCode.objects.filter(global_name='密炼工序').first()
+        # gc_obj = GlobalCode.objects.filter(global_name='密炼工序').first()
         # 根据密炼工序找到work_schedule 总感觉通过密炼工序找work_schedule有点不对劲
-        ws_obj = WorkSchedule.objects.filter(work_procedure=gc_obj, schedule_name="三班两运转").last()
+        # ws_obj = WorkSchedule.objects.filter(work_procedure=gc_obj, schedule_name="三班两运转").last()
         # 根据work_schedule和时间找到plan_schedule
-        ps_obj = PlanSchedule.objects.filter(day_time=times, work_schedule=ws_obj).last()
+        # ps_obj = PlanSchedule.objects.filter(day_time=times, work_schedule=ws_obj).last()
 
         # 根据班次 班组和plan_schedule找到唯一一条work_schedule_plan
         wsp_classes = GlobalCode.objects.filter(global_name=classes).first()
         # 按照三班两运转可以根据班组跟当日排班确定班组
         # wsp_group = GlobalCode.objects.filter(global_name=group).first()
-        wsp_obj = WorkSchedulePlan.objects.filter(classes=wsp_classes, plan_schedule=ps_obj).first()
+        wsp_obj = WorkSchedulePlan.objects.filter(classes=wsp_classes,
+                                                  plan_schedule__day_time=times,
+                                                  plan_schedule__work_schedule__work_procedure__global_name='密炼').first()
         if not wsp_obj:
             continue
         ProductClassesPlan.objects.create(product_day_plan=ProductDayPlan.objects.create(equip=equip,
                                                                                          product_batching=pb,
-                                                                                         plan_schedule=ps_obj),
+                                                                                         plan_schedule=wsp_obj.plan_schedule),
                                           sn=1,
                                           plan_trains=plan.setno,
                                           weight=0,  # 参考创建计划那部分代码

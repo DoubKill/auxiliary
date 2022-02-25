@@ -3,6 +3,7 @@
 auther:
 datetime: 2020/8/19
 name:
+    元佳数据采集（12-15号密炼机），暂时没用到，都是易控直接写
 """
 import datetime
 import os
