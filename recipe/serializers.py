@@ -312,9 +312,13 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
             instance = super().update(instance, validated_data)
         # 修改步序
         if processes:
-            s = ProductProcessCreateSerializer(instance=instance.processes, data=processes)
-            s.is_valid(raise_exception=True)
-            s.save()
+            try:
+                s = ProductProcessCreateSerializer(instance=instance.processes, data=processes)
+                s.is_valid(raise_exception=True)
+                s.save()
+            except:
+                processes['product_batching'] = instance
+                p_instance = ProductProcess.objects.create(**processes)
             if process_details is not None:
                 process_detail_list = [None] * len(process_details)
                 instance.process_details.filter().update(delete_flag=True)
