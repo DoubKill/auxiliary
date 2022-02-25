@@ -121,6 +121,9 @@ class ProductBatching(AbstractEntity):
     submit_user = models.ForeignKey(User, help_text='提交人', blank=True, null=True,
                                     on_delete=models.DO_NOTHING, related_name='submit_batching')
     submit_time = models.DateTimeField(help_text='提交时间', blank=True, null=True)
+    check_user = models.ForeignKey(User, help_text='提交人', blank=True, null=True,
+                                   on_delete=models.CASCADE, related_name='check_batching')
+    check_time = models.DateTimeField(help_text='提交时间', blank=True, null=True)
     reject_user = models.ForeignKey(User, help_text='驳回人', blank=True, null=True,
                                     on_delete=models.DO_NOTHING, related_name='reject_batching')
     reject_time = models.DateTimeField(help_text='驳回时间', blank=True, null=True)
