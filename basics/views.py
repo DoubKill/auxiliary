@@ -1,3 +1,5 @@
+import datetime
+
 from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -305,3 +307,34 @@ class PlanScheduleManyCreate(APIView):
         s.is_valid(raise_exception=True)
         s.save()
         return Response('新建成功')
+
+
+class CurrentFactoryDate(APIView):
+
+    def get(self, request):
+        # 获取当前时间的工厂日期，开始、结束时间
+        now = datetime.datetime.now()
+        current_work_schedule_plan = WorkSchedulePlan.objects.filter(
+            start_time__lte=now,
+            end_time__gte=now,
+            plan_schedule__work_schedule__work_procedure__global_name='密炼'
+        ).first()
+        date_now = str(now.date())
+        if current_work_schedule_plan:
+            date_now = str(current_work_schedule_plan.plan_schedule.day_time)
+            st = current_work_schedule_plan.plan_schedule.work_schedule_plan.filter(
+                classes__global_name='早班').first()
+            et = current_work_schedule_plan.plan_schedule.work_schedule_plan.filter(
+                classes__global_name='夜班').first()
+            if st:
+                begin_time = str(st.start_time)
+            else:
+                begin_time = date_now + ' 00:00:01'
+            if et:
+                end_time = str(et.end_time)
+            else:
+                end_time = date_now + ' 23:59:59'
+        else:
+            begin_time = date_now + ' 00:00:01'
+            end_time = date_now + ' 23:59:59'
+        return Response({'factory_date': date_now, 'begin_time': begin_time, 'end_time': end_time})
