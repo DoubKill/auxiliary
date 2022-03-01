@@ -430,6 +430,9 @@ class ProductTechParams(APIView):
         if not pb:
             return Response({})
         else:
-            process_data = ProductProcessSerializer(instance=pb.processes).data
+            if hasattr(pb, 'processes'):
+                process_data = ProductProcessSerializer(instance=pb.processes).data
+            else:
+                process_data = {}
             process_detail_data = ProductProcessDetailSerializer(instance=pb.process_details.filter(delete_flag=False).order_by('sn'), many=True).data
             return Response({'process_data': process_data, 'process_detail_data': process_detail_data})
