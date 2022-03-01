@@ -170,12 +170,12 @@ class PlanStatusSerializer(BaseModelSerializer):
         fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
-    @atomic
     def create(self, validated_data):
         uid = validated_data.get("plan_classes_uid")
-        pcp = ProductClassesPlan.objects.get(plan_classes_uid=uid)
-        pcp.status = "完成"
-        pcp.save()
+        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=uid).last()
+        if pcp:
+            pcp.status = "完成"
+            pcp.save()
         return super().create(validated_data)
 
 
