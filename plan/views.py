@@ -22,7 +22,7 @@ from mes.common_code import WebService, DecimalEncoder
 from mes.conf import VERSION_EQUIP, hf_db
 from mes.derorators import api_recorder
 from plan.filters import ProductDayPlanFilter, PalletFeedbacksFilter
-from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded
+from plan.models import ProductDayPlan, ProductClassesPlan, MaterialDemanded, SchedulingResult
 from plan.serializers import UpRegulationSerializer, DownRegulationSerializer, UpdateTrainsSerializer, \
     PalletFeedbacksPlanSerializer, PlanReceiveSerializer, ProductDayPlanSerializer
 from production.models import PlanStatus, TrainsFeedbacks, MaterialTankStatus
@@ -710,7 +710,7 @@ class IssuedPlan(APIView):
         data['grouptime'] = pcp_obj.work_schedule_plan.classes.global_name  # 班次
         data['groupoper'] = pcp_obj.work_schedule_plan.group.global_name  # 班组????
         data['setno'] = pcp_obj.plan_trains
-        data['actno'] = 0,  # 当前车次
+        data['actno'] = 0  # 当前车次
         data['oper'] = self.request.user.username  # 操作员角色
         data['runstate'] = '运行中'  # 计划状态：等待，运行中，完成
         data['runmark'] = '0'  # 计划单条下发默认值为1   计划表里用于标注批量计划的顺序, 按时弃用为0
@@ -977,3 +977,27 @@ class LabelPlanInfo(APIView):
         else:
             return Response({'factory_date': '',
                              'group': ''})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class SchedulingResultView(APIView):
+
+    def get(self, request):
+        factory_date = self.request.query_params.get('factory_date')
+        equip_no = self.request.query_params.get('equip_no')
+        last_result = SchedulingResult.objects.using('mes').filter(factory_date=factory_date).order_by('id').last()
+        if not last_result:
+            return Response([])
+        else:
+            data = list(SchedulingResult.objects.using('mes').filter(
+                schedule_no=last_result.schedule_no,
+                equip_no=equip_no
+            ).order_by('id').values('id', 'recipe_name', 'plan_trains', 'time_consume', 'desc', 'status'))
+        return Response(data)
+
+    def post(self, request):
+        result_id = self.request.data.get('result_id')
+        if not result_id:
+            raise ValidationError('bad request')
+        SchedulingResult.objects.using('mes').filter(id=result_id).update(status='已下发')
+        return Response('OK')
