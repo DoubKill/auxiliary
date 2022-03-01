@@ -5,7 +5,7 @@ from recipe.views import MaterialViewSet, ProductInfoViewSet, \
     ProductBatchingViewSet, MaterialAttributeViewSet, \
     ValidateProductVersionsView, ActionListView, ConditionListView, \
     RecipeObsoleteAPiView, BatchingEquip, TankMaterialVIew, MaterialSupplierView, ProductBatchingIssue, \
-    DevTypeProductBatching
+    DevTypeProductBatching, ProductTechParams
 
 router = DefaultRouter()
 
@@ -31,5 +31,6 @@ urlpatterns = [
     path('tank_materials/', TankMaterialVIew.as_view()),
     path('material_suppliers/', MaterialSupplierView.as_view()),
     path('product-batching-issue/', ProductBatchingIssue.as_view()),
-    path('dev-type-batching/', DevTypeProductBatching.as_view())
+    path('dev-type-batching/', DevTypeProductBatching.as_view()),
+    path('product-tech-params/', ProductTechParams.as_view())
 ]
