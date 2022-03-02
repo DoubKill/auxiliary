@@ -174,3 +174,20 @@ class WeightPackageLog(AbstractEntity):
         managed = False
         db_table = 'weight_package_log'
         verbose_name_plural = verbose_name = '称量打包履历'
+
+
+class SchedulingResult(models.Model):
+    factory_date = models.DateField(help_text='排程日期', verbose_name='排程日期')
+    schedule_no = models.CharField(max_length=64, help_text='排程编号', db_index=True)
+    equip_no = models.CharField(max_length=64, help_text='机台', verbose_name='机台')
+    sn = models.IntegerField(help_text='顺序')
+    recipe_name = models.CharField(max_length=64, help_text='配方名称')
+    time_consume = models.FloatField(help_text='耗时(h)', default=0)
+    plan_trains = models.IntegerField(help_text='车数')
+    desc = models.CharField(max_length=64, help_text='备注', null=True, blank=True)
+    created_time = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
+    status = models.CharField(max_length=8, help_text='下发状态（未下发/已下发）', default='未下发')
+
+    class Meta:
+        db_table = 'aps_result'
+        managed = False

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from plan.views import PalletFeedbackViewSet, UpRegulation, DownRegulation, \
     UpdateTrains, StopPlan, IssuedPlan, PlanReceive, ProductDayPlanViewSet, ProductDayPlanManyCreate, PlanStatusList, \
-    HfRecipeList, LabelPlanInfo
+    HfRecipeList, LabelPlanInfo, SchedulingResultView
 
 router = DefaultRouter()
 
@@ -27,5 +27,6 @@ urlpatterns = [
     path('plan-receive/', PlanReceive.as_view()),  # mes下达到上辅机
     path('plan-status-list/', PlanStatusList.as_view()),  # 计划管理当前机台计划展示
     path('hf-recipe-list/', HfRecipeList.as_view()),  # hf配方列表查询
-    path('label-plan-info/', LabelPlanInfo.as_view())
+    path('label-plan-info/', LabelPlanInfo.as_view()),
+    path('scheduling-result/', SchedulingResultView.as_view())
 ]
