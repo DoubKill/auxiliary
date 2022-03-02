@@ -24,7 +24,8 @@ from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFil
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
-    ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer
+    ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer, ProductProcessSerializer, \
+    ProductProcessDetailSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
     ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
 
@@ -226,6 +227,9 @@ class ProductBatchingViewSet(ModelViewSet):
             data = set(queryset.values_list('stage_product_batch_no', flat=True))
             return Response({'results': data})
         if self.request.query_params.get('all'):
+            recipe_no = self.request.query_params.get('recipe_no')
+            if recipe_no:
+                queryset = queryset.filter(stage_product_batch_no=recipe_no)
             data = queryset.values('id',
                                    'stage_product_batch_no',
                                    'batching_weight',
@@ -411,3 +415,24 @@ class DevTypeProductBatching(APIView):
         except Exception:
             raise ValidationError('MES服务错误！')
         return Response(json.loads(ret.text))
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductTechParams(APIView):
+
+    def get(self, request):
+        equip_id = self.request.query_params.get('equip_id')
+        recipe_no = self.request.query_params.get('recipe_no')
+        if not all([equip_id, recipe_no]):
+            raise ValidationError('参数缺失！')
+        pb = ProductBatching.objects.exclude(
+            used_type=6).filter(equip_id=equip_id, batching_type=1, stage_product_batch_no=recipe_no).first()
+        if not pb:
+            return Response({})
+        else:
+            if hasattr(pb, 'processes'):
+                process_data = ProductProcessSerializer(instance=pb.processes).data
+            else:
+                process_data = {}
+            process_detail_data = ProductProcessDetailSerializer(instance=pb.process_details.filter(delete_flag=False).order_by('sn'), many=True).data
+            return Response({'process_data': process_data, 'process_detail_data': process_detail_data})
