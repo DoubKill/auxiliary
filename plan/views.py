@@ -997,7 +997,7 @@ class SchedulingResultView(APIView):
 
     def post(self, request):
         result_id = self.request.data.get('result_id')
-        if not result_id:
+        if not isinstance(result_id, list):
             raise ValidationError('bad request')
-        SchedulingResult.objects.using('mes').filter(id=result_id).update(status='已下发')
+        SchedulingResult.objects.using('mes').filter(id__in=result_id).update(status='已下发')
         return Response('OK')
