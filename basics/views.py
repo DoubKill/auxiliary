@@ -309,12 +309,13 @@ class PlanScheduleManyCreate(APIView):
         return Response('新建成功')
 
 
+@method_decorator([api_recorder], name="dispatch")
 class CurrentFactoryDate(APIView):
 
     def get(self, request):
         # 获取当前时间的工厂日期，开始、结束时间
-        # now = datetime.datetime.now()
-        now = datetime.datetime.strptime('2022-03-02 19:49:00', '%Y-%m-%d %H:%M:%S')
+        now = datetime.datetime.now()
+        # now = datetime.datetime.strptime('2022-03-02 19:49:00', '%Y-%m-%d %H:%M:%S')
         current_work_schedule_plan = WorkSchedulePlan.objects.filter(
             start_time__lte=now,
             end_time__gte=now,
