@@ -309,21 +309,32 @@ class PlanScheduleManyCreate(APIView):
         return Response('新建成功')
 
 
+@method_decorator([api_recorder], name="dispatch")
 class CurrentFactoryDate(APIView):
 
     def get(self, request):
         # 获取当前时间的工厂日期，开始、结束时间
         now = datetime.datetime.now()
+        # now = datetime.datetime.strptime('2022-03-02 19:49:00', '%Y-%m-%d %H:%M:%S')
         current_work_schedule_plan = WorkSchedulePlan.objects.filter(
             start_time__lte=now,
             end_time__gte=now,
             plan_schedule__work_schedule__work_procedure__global_name='密炼'
         ).first()
+        ret = {}
         if current_work_schedule_plan:
-            return Response(
-                {'factory_date': current_work_schedule_plan.plan_schedule.day_time,
-                 'classes': current_work_schedule_plan.classes.global_name
-                 }
-            )
-        else:
-            return Response({})
+            c_factory_date = current_work_schedule_plan.plan_schedule.day_time.strftime("%Y-%m-%d")
+            next_end_time = now + datetime.timedelta(minutes=10)
+            next_work_schedule_plan = WorkSchedulePlan.objects.filter(
+                plan_schedule__work_schedule__work_procedure__global_name='密炼',
+                start_time__lte=next_end_time).order_by('-start_time').first()
+            ret[c_factory_date] = {'factory_date': c_factory_date,
+                                   'classes': {current_work_schedule_plan.classes.global_name}}
+            if next_work_schedule_plan:
+                n_factory_date = next_work_schedule_plan.plan_schedule.day_time.strftime("%Y-%m-%d")
+                if n_factory_date in ret:
+                    ret[n_factory_date]['classes'].add(next_work_schedule_plan.classes.global_name)
+                else:
+                    ret[n_factory_date] = {'factory_date': n_factory_date,
+                                           'classes': {next_work_schedule_plan.classes.global_name}}
+        return Response(list(ret.values()))
