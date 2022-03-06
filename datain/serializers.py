@@ -369,7 +369,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                     if c_xl_tank:
                         for c_material in c_xl_tank:
                             tr_material = self.get_material(c_material.pop('material_name'))
-                            c_material.update({'material': tr_material, 'type': 2, 'sn': next_sn, 'auto_flag': 0})
+                            c_material.update({'material': tr_material, 'type': 2, 'sn': next_sn, 'auto_flag': 0, 'standard_error': 0.2})
                             s_batching_detail['P'].append(c_material)
                             next_sn += 1
                 if len(c_o_data) == 1:
