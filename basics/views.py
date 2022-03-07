@@ -324,7 +324,7 @@ class CurrentFactoryDate(APIView):
         ret = {}
         if current_work_schedule_plan:
             c_factory_date = current_work_schedule_plan.plan_schedule.day_time.strftime("%Y-%m-%d")
-            next_end_time = now + datetime.timedelta(minutes=10)
+            next_end_time = now + datetime.timedelta(minutes=15)
             next_work_schedule_plan = WorkSchedulePlan.objects.filter(
                 plan_schedule__work_schedule__work_procedure__global_name='密炼',
                 start_time__lte=next_end_time).order_by('-start_time').first()
