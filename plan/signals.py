@@ -19,11 +19,11 @@ def batching_post_save(sender, instance=None, created=False, update_fields=None,
         DataSynchronization.objects.filter(type=11, obj_id=instance.id).delete()
 
 
-@receiver(post_save, sender=ProductBatchingDetail)
-def batching_detail_post_save(sender, instance=None, created=False, update_fields=None, **kwargs):
-    if not created:
-        """更新了数据则需要从同步表中删除此记录"""
-        DataSynchronization.objects.filter(type=12, obj_id=instance.id).delete()
+# @receiver(post_save, sender=ProductBatchingDetail)
+# def batching_detail_post_save(sender, instance=None, created=False, update_fields=None, **kwargs):
+#     if not created:
+#         """更新了数据则需要从同步表中删除此记录"""
+#         DataSynchronization.objects.filter(type=12, obj_id=instance.id).delete()
 
 
 @receiver(post_save, sender=ProductDayPlan)
