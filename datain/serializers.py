@@ -1,5 +1,6 @@
 import copy
 
+from django.db.models import Q
 from django.db.transaction import atomic
 
 from basics.models import GlobalCode, GlobalCodeType, WorkSchedule, ClassesDetail, EquipCategoryAttribute, Equip, \
@@ -487,6 +488,39 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                                  'product_info': product_info, 'versions': product_no.split('-')[-1]}
                 now_recipe = ProductBatching.objects.create(**create_recipe)
             else:
+                # 删除之前确定掺料和待处理料的顺序
+                other_material = now_recipe.batching_details.filter(Q(material__material_name__icontains='待处理料') |
+                                                                    Q(material__material_name__icontains='掺料'),
+                                                                    delete_flag=False, type=1).last()
+                if other_material:
+                    other_material_info = {'type': 1, 'actual_weight': other_material.actual_weight, 'auto_flag': 0,
+                                           'standard_error': other_material.standard_error,
+                                           'material': other_material.material}
+                    xl = now_recipe.batching_details.filter(delete_flag=False, type=1, material__material_name__in=['细料', '硫磺']).last()
+                    new_details = []
+                    if xl:
+                        point = 0
+                        for detail in details:
+                            if detail['type'] != 1:
+                                new_details.append(detail)
+                                continue
+                            if detail['material'].material_name in ['细料', '硫磺']:
+                                point = detail['sn']
+                                if xl.sn > other_material.sn:  # 掺料或待处理料在料包前
+                                    other_material_info['sn'] = point
+                                    detail['sn'] = point + 1
+                                    new_details += [other_material_info, detail]
+                                else:
+                                    other_material_info['sn'] = point + 1
+                                    new_details += [detail, other_material_info]
+                            else:
+                                if point != 0:
+                                    detail['sn'] = detail['sn'] + 1
+                                new_details.append(detail)
+                        details = new_details
+                    else:
+                        other_material_info['sn'] = max([i['sn'] for i in details if i['type'] == 1]) + 1
+                        details.append(other_material_info)
                 now_recipe.batching_details.all().delete()
                 now_recipe.batching_weight = validated_data['batching_weight']
                 now_recipe.used_type = 1
