@@ -8,7 +8,7 @@ from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductDayPlan
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, QualityControl, \
     OperationLog, MaterialTankStatus, ProcessFeedback, AlarmLog
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.forms.models import model_to_dict
 from production.utils import strtoint
 from recipe.models import ProductBatching, Material, ProductProcessDetail
@@ -384,11 +384,12 @@ class TrainsFeedbacksSerializer2(BaseModelSerializer):
 
     def get_ai_value(self, obj):
         irm_queryset = ProcessFeedback.objects.filter(
-            plan_classes_uid=obj.plan_classes_uid,
-            equip_no=obj.equip_no,
-            product_no=obj.product_no,
-            current_trains=obj.actual_trains,
-            condition__isnull=False
+            Q(plan_classes_uid=obj.plan_classes_uid,
+              equip_no=obj.equip_no,
+              product_no=obj.product_no,
+              current_trains=obj.actual_trains)
+            &
+            ~Q(Q(condition='') | Q(condition__isnull=True))
         ).order_by('sn').first()
         if irm_queryset:
             return irm_queryset.power
