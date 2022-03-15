@@ -380,6 +380,19 @@ class TrainsFeedbacksSerializer2(BaseModelSerializer):
     status = serializers.SerializerMethodField(read_only=True)
     actual_weight = serializers.SerializerMethodField(read_only=True)
     mixer_time = serializers.SerializerMethodField(read_only=True)
+    ai_value = serializers.SerializerMethodField(read_only=True)
+
+    def get_ai_value(self, obj):
+        irm_queryset = ProcessFeedback.objects.filter(
+            plan_classes_uid=obj.plan_classes_uid,
+            equip_no=obj.equip_no,
+            product_no=obj.product_no,
+            current_trains=obj.actual_trains,
+            condition__isnull=False
+        ).order_by('sn').first()
+        if irm_queryset:
+            return irm_queryset.power
+        return None
 
     def to_representation(self, instance):
         data = super(TrainsFeedbacksSerializer2, self).to_representation(instance)
