@@ -434,6 +434,7 @@ class LoadMaterialLog(models.Model):
     bra_code = models.CharField(max_length=64, help_text='条形码', blank=True, null=True)
     weight_time = models.DateTimeField(help_text='上料时间', null=True)
     status = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, null=True)
+    created_username = models.CharField(max_length=8, help_text='投入人', null=True, blank=True)
 
     class Meta:
         db_table = 'load_material_log'

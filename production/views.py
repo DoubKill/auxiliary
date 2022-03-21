@@ -1573,6 +1573,7 @@ class CurrentWeighView(FeedBack, APIView):
             "equip_no": "Z08"}"""
         data_list = request.data
         details = data_list.get('attrs')
+        created_username = data_list.get('created_username')
         for data in details:
             material_status = data.get("status")  # 条码状态，正常或者异常
             bra_code = data.get("bra_code")  # 条形码
@@ -1598,7 +1599,8 @@ class CurrentWeighView(FeedBack, APIView):
                 material_no=material_no,
                 material_name=material_name,
                 bra_code=bra_code,
-                status=int(material_status)
+                status=int(material_status),
+                created_username=created_username
             )
         return Response('ok')
 
