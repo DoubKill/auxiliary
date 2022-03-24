@@ -1,5 +1,4 @@
 import datetime
-import datetime
 import json
 import logging
 import re
@@ -7,7 +6,7 @@ from decimal import Decimal
 
 import requests
 from django.db import connection
-from django.db.models import Sum, Max, Avg, Q
+from django.db.models import Sum, Max, Avg
 from django.db.transaction import atomic
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -39,7 +38,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer
 from production.utils import strtoint, gen_material_export_file_response
-from recipe.models import ProductBatchingDetail
+from recipe.models import ProductBatchingDetail, ProductBatchingMixed
 
 logger = logging.getLogger('api_log')
 
@@ -1414,6 +1413,12 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response({"status": False})
         # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
         recipe_material_names = set(ProductBatchingDetail.objects.filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1).values_list("material__material_name", flat=True))
+        # 增加对搭料
+        classes_plan = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=plan_classes_uid).first()
+        mixed = ProductBatchingMixed.objects.using('mes').filter(product_batching_id=classes_plan.product_batching_id)
+        if mixed:
+            mixed_names = set(mixed.values_list('f_feed_name', 's_feed_name')[0])
+            recipe_material_names.update(mixed_names)
         sfj_material_names = {item.get('material_name').strip() for item in materials}
         same_values = set(recipe_material_names) & set(sfj_material_names)
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
@@ -1493,6 +1498,8 @@ class MaterialReleaseView(FeedBack, APIView):
                                                    status=last_load_log.status,
                                                    plan_weight=plan_weight,
                                                    actual_weight=actual_weight,
+                                                   display_name=last_load_log.display_name,
+                                                   created_username=last_load_log.created_username
                                                    )
                 else:
                     # 更新物料记录
@@ -1573,6 +1580,8 @@ class CurrentWeighView(FeedBack, APIView):
             "equip_no": "Z08"}"""
         data_list = request.data
         details = data_list.get('attrs')
+        created_username = data_list.get('created_username')
+        scan_material_type = data_list.get('scan_material_type')
         for data in details:
             material_status = data.get("status")  # 条码状态，正常或者异常
             bra_code = data.get("bra_code")  # 条形码
@@ -1593,12 +1602,15 @@ class CurrentWeighView(FeedBack, APIView):
                 self.feed_record(base_train, pcp)
             # 根据扫描的条码信息，记录一条数据。
             fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
+            display_name = f'{scan_material_type}({material_name}...)' if scan_material_type in ['人工配', '机配'] else material_name
             LoadMaterialLog.objects.get_or_create(
                 feed_log=fml,
                 material_no=material_no,
                 material_name=material_name,
                 bra_code=bra_code,
-                status=int(material_status)
+                status=int(material_status),
+                created_username=created_username,
+                display_name=display_name
             )
         return Response('ok')
 
@@ -1657,28 +1669,38 @@ class HandleFeedView(APIView):
             .values('material_name').annotate(total_left=Sum('real_weight'), single_need=Avg('single_need'))
         # 物料种类不对
         if set(recipe_info) != set(load_info.values_list('material_name', flat=True)):
-            return Response({"success": False, "message": "物料种类不一致, 不可进料"})
+            unknow_material = ','.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
+            not_found_material = ','.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
+            reason = '不在配方中物料:' + unknow_material if unknow_material else '未扫码物料:' + not_found_material
+            yk_flag, yk_msg = self.send_to_yk(equip_no, feed_status, reason)
+            return Response({"success": False, "message": "物料种类不一致"})
         # 剩余量仍然不足
         quantity = [i for i in load_info if i['total_left'] < i['single_need']]
         if len(quantity) != 0:
-            return Response({"success": False, "message": "物料不足, 不可进料"})
+            yk_flag, yk_msg = self.send_to_yk(equip_no, feed_status, '物料单重不足')
+            return Response({"success": False, "message": '物料不足, 不可进料'})
         # 当前车次已经进料了, 返回false
         is_feed_end = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=trains,
                                                         feed_end_time__isnull=False)
         if is_feed_end:
+            yk_flag, yk_msg = self.send_to_yk(equip_no, feed_status, '')
             return Response({"success": False, "message": f"当前车次: {trains}已完成进料"})
+        yk_flag, yk_msg = self.send_to_yk(equip_no, feed_status, '')
+        return Response({"success": yk_flag, "message": yk_msg})
+
+    def send_to_yk(self, equip_no, feed_status, reason):
         # 物料种类正确且数量充足, 可以进料
         if "0" in equip_no and not equip_no.endswith('0'):
             ext_str = equip_no[-1]
         else:
             ext_str = equip_no[1:]
         try:
-            status, text = WebService.issue({"status": feed_status}, 'force_feed', equip_no=ext_str, equip_name="上辅机")
+            status, text = WebService.issue({"status": feed_status, 'reason': reason}, 'force_feed', equip_no=ext_str, equip_name="上辅机")
         except APIException:
-            return Response({"success": False, "message": f"{equip_no} 称量反馈异常", "data": {}})
+            return False, f"{equip_no} 称量反馈异常"
         except:
-            return Response({"success": False, "message": f"{equip_no} 网络连接异常", "data": {}})
+            return False, f"{equip_no} 网络连接异常"
         if not status:
-            return Response({"success": False, "message": f"{equip_no} 称量信息未反馈", "data": {}})
-        return Response({"success": True, "message": f"{feed_status} 请求进料"})
+            return False, f"{equip_no} 称量信息未反馈"
+        return True, f"{feed_status} 请求进料"
 
