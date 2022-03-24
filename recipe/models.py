@@ -257,3 +257,21 @@ class RecipeUpdateHistory(AbstractEntity):
     class Meta:
         db_table = 'recipe_update_history'
         verbose_name_plural = verbose_name = '配方详情历史记录'
+
+
+class ProductBatchingMixed(models.Model):
+    product_batching = models.ForeignKey(ProductBatching, on_delete=models.CASCADE, help_text='配方id',
+                                         related_name='product_batching_mixed')
+    f_feed = models.CharField(max_length=8, help_text='对搭原料段次1')
+    s_feed = models.CharField(max_length=8, help_text='对搭原料段次2')
+    f_feed_name = models.CharField(max_length=64, help_text='对搭原料名1')
+    s_feed_name = models.CharField(max_length=64, help_text='对搭原料名2')
+    f_ratio = models.IntegerField(help_text='对搭原料名1比例')
+    s_ratio = models.IntegerField(help_text='对搭原料名2比例')
+    f_weight = models.DecimalField(decimal_places=3, max_digits=6, help_text='对搭原料名1重量')
+    s_weight = models.DecimalField(decimal_places=3, max_digits=6, help_text='对搭原料名2重量')
+
+    class Meta:
+        db_table = 'product_batching_mixed'
+        managed = False
+        verbose_name_plural = verbose_name = '对搭设置表'
