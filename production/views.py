@@ -1510,7 +1510,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该车次无正常进料
                 success = False
                 add_feed_result = 1
-                error_message += "条码信息未找到:{}".format(material_name)
+                error_message += f"条码信息未找到:{material_name}" if not error_message else f" {material_name}"
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
