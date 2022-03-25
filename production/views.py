@@ -1510,7 +1510,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该车次无正常进料
                 success = False
                 add_feed_result = 1
-                error_message += f"条码信息未找到:\r\n{material_name}" if not error_message else f"\r\n{material_name}"
+                error_message += f"条码信息未找到:\n{material_name}" if not error_message else f"\n{material_name}"
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1669,9 +1669,9 @@ class HandleFeedView(APIView):
             .values('material_name').annotate(total_left=Sum('real_weight'), single_need=Avg('single_need'))
         # 物料种类不对
         if set(recipe_info) != set(load_info.values_list('material_name', flat=True)):
-            unknow_material = '\r\n'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
-            not_found_material = '\r\n'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
-            reason = '不在配方中物料:\r\n' + unknow_material if unknow_material else '未扫码物料:\r\n' + not_found_material
+            unknow_material = '\n'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
+            not_found_material = '\n'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
+            reason = '不在配方中物料:\n' + unknow_material if unknow_material else '未扫码物料:\n' + not_found_material
             yk_flag, yk_msg = self.send_to_yk(equip_no, "异常", reason)
             return Response({"success": False, "message": "物料种类不一致"})
         # 剩余量仍然不足
