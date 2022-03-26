@@ -526,9 +526,9 @@ class IssuedPlan(APIView):
         data["shut_temp"] = actual_product_process.xlm_temp
         data["side_temp"] = actual_product_process.cb_temp
         data["temp_on_off"] = 0 if actual_product_process.temp_use_flag else 1
-        data["sp_num"] = int(actual_product_process.sp_num)
-        if int(equip_no) in [1, 7, 8, 9]:
-            data["sp_num"] = actual_product_process.sp_num
+        data["sp_num"] = actual_product_process.sp_num
+        # if int(equip_no) in [1, 7, 8, 9]:
+        #     data["sp_num"] = actual_product_process.sp_num
         if int(equip_no) in [12, 13, 14, 15]:
             if data.get("max_temp") <= 0:
                 raise ValidationError(f"Z{equip_no}# 元嘉上辅机进胶最高温度不能小于等于0")
