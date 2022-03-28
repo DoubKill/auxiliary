@@ -184,7 +184,7 @@ class ExpendMaterialSerializer(BaseModelSerializer):
 
     class Meta:
         model = ExpendMaterial
-        fields = "__all__"
+        fields = ('equip_no', 'product_no', 'material_type', 'material_no', 'material_name', 'actual_weight')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
