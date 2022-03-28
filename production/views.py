@@ -1459,7 +1459,7 @@ class MaterialReleaseView(FeedBack, APIView):
                         item.update({'plan_weight': plan_weight, 'actual_weight': plan_weight})
                 if adjust_left_weight < plan_weight:
                     success = False
-                    error_message += f"需扫码使用新料: {material_name}" if not error_message else f"/{material_name}"
+                    error_message += f"需扫码使用新料: {material_name}" if not error_message else f"&{material_name}"
                     add_feed_result = 1
                     break
                 if not m_load_log:
@@ -1482,7 +1482,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该车次无正常进料
                 success = False
                 add_feed_result = 1
-                error_message += f"条码信息未找到: {material_name}" if not error_message else f"/{material_name}"
+                error_message += f"条码信息未找到: {material_name}" if not error_message else f"&{material_name}"
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1641,8 +1641,8 @@ class HandleFeedView(APIView):
             .values('material_name').annotate(total_left=Sum('real_weight'), single_need=Avg('single_need'))
         # 物料种类不对
         if set(recipe_info) != set(load_info.values_list('material_name', flat=True)):
-            unknow_material = '/'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
-            not_found_material = '/'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
+            unknow_material = '&'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
+            not_found_material = '&'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
             reason = '不在配方中物料: ' + unknow_material if unknow_material else '未扫码物料: ' + not_found_material
             yk_flag, yk_msg = self.send_to_yk(equip_no, "异常", reason)
             return Response({"success": False, "message": "物料种类不一致"})
