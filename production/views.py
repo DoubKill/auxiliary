@@ -1371,7 +1371,7 @@ class MaterialReleaseView(FeedBack, APIView):
         add_feed_result = 0
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
-            raise ValidationError("未找到该条密炼计划")
+            raise ValidationError("异常:未找到该条密炼计划")
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
@@ -1396,9 +1396,9 @@ class MaterialReleaseView(FeedBack, APIView):
         if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
             # 判定原因
             if set(recipe_material_names) - set(sfj_material_names):
-                error_message = f"投料缺少{list(set(recipe_material_names) - set(sfj_material_names))[0]}"
+                error_message = f"投料缺少:{list(set(recipe_material_names) - set(sfj_material_names))[0]}"
             else:
-                error_message = f"未知投料{list(set(sfj_material_names) - set(recipe_material_names))[0]}"
+                error_message = f"未知投料:{list(set(sfj_material_names) - set(recipe_material_names))[0]}"
             fml.judge_reason = error_message
             fml.failed_flag = 2
             fml.add_feed_result = 1
@@ -1419,7 +1419,7 @@ class MaterialReleaseView(FeedBack, APIView):
             else:
                 res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
                 if isinstance(res, str):
-                    raise ValidationError('获取mes配方信息失败')
+                    raise ValidationError('异常: 获取mes配方信息失败')
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
                 if not cnt_type_details:  # 通用料包码：cnt_type_details为空
@@ -1459,7 +1459,7 @@ class MaterialReleaseView(FeedBack, APIView):
                         item.update({'plan_weight': plan_weight, 'actual_weight': plan_weight})
                 if adjust_left_weight < plan_weight:
                     success = False
-                    error_message += "需扫码使用新料:{}".format(material_name)
+                    error_message += f"需扫码使用新料: {material_name}" if not error_message else f"&{material_name}"
                     add_feed_result = 1
                     break
                 if not m_load_log:
@@ -1482,7 +1482,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 # 该车次无正常进料
                 success = False
                 add_feed_result = 1
-                error_message += f"条码信息未找到:\n{material_name}" if not error_message else f"\n{material_name}"
+                error_message += f"条码信息未找到: {material_name}" if not error_message else f"&{material_name}"
         if success:
             # 修改feed_log的状态和进料时间
             time_now = datetime.datetime.now()
@@ -1641,9 +1641,9 @@ class HandleFeedView(APIView):
             .values('material_name').annotate(total_left=Sum('real_weight'), single_need=Avg('single_need'))
         # 物料种类不对
         if set(recipe_info) != set(load_info.values_list('material_name', flat=True)):
-            unknow_material = '\n'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
-            not_found_material = '\n'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
-            reason = '不在配方中物料:\n' + unknow_material if unknow_material else '未扫码物料:\n' + not_found_material
+            unknow_material = '&'.join(list(set(load_info.values_list('material_name', flat=True)) - set(recipe_info)))
+            not_found_material = '&'.join(list(set(recipe_info) - set(load_info.values_list('material_name', flat=True))))
+            reason = '不在配方中物料: ' + unknow_material if unknow_material else '未扫码物料: ' + not_found_material
             yk_flag, yk_msg = self.send_to_yk(equip_no, "异常", reason)
             return Response({"success": False, "message": "物料种类不一致"})
         # 剩余量仍然不足
