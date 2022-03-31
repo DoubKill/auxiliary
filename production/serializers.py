@@ -184,6 +184,15 @@ class ExpendMaterialSerializer(BaseModelSerializer):
 
     class Meta:
         model = ExpendMaterial
+        fields = '__all__'
+        read_only_fields = COMMON_READ_ONLY_FIELDS
+
+
+class ExpendMaterialSerializer2(BaseModelSerializer):
+    """原材料消耗表"""
+
+    class Meta:
+        model = ExpendMaterial
         fields = ('equip_no', 'product_no', 'material_type', 'material_no', 'material_name', 'actual_weight')
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
