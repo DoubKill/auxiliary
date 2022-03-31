@@ -1382,7 +1382,7 @@ class MaterialReleaseView(FeedBack, APIView):
 
         fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=feed_trains).first()
         if not fml:
-            return Response({"status": False})
+            return Response("异常: 当前车次未进料")
         # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
         recipe_material_names = set(ProductBatchingDetail.objects.filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1).values_list("material__material_name", flat=True))
         # 增加对搭料
