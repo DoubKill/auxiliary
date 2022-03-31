@@ -107,6 +107,8 @@ def one_instance(func):
 
 
 def add_Z04_plan_status():
+    #  同步在4号机厂家软件上新建的计划，如果计划在群控新建则不会同步过来
+    #  4号机计划完成的状态是由上位机发起请求掉接口完成
     order_set_status = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_start_date__gte=(datetime.datetime.now() -
                                                                      datetime.timedelta(days=1)),
                                                                      order_status__in=["FINISHED", "UNFINISHED"])
