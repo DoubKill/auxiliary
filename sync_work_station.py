@@ -106,7 +106,6 @@ def one_instance(func):
     return f
 
 
-
 def add_Z04_plan_status():
     order_set_status = I_ORDER_STATE_V.objects.using("H-Z04").filter(order_start_date__gte=(datetime.datetime.now() -
                                                                      datetime.timedelta(days=1)),
@@ -158,8 +157,6 @@ def update_Z04_plan_status():
                 ProductClassesPlan.objects.filter(plan_classes_uid=plan.plan_classes_uid).update(status=run_status)
             except Exception as e:
                 logger.error(e)
-
-
 
 
 def plan_status_monitor():
@@ -410,29 +407,28 @@ def consume_data_up():
             continue
 
 
-
-@one_instance
+# @one_instance
 def run():
-    while True:
-        try:
-            plan_status_monitor()
-        except Exception as e:
-            logger.error(f"计划状态同步异常:{e}")
-        try:
-            MesUpClient.sync()
-        except Exception as e:
-            logger.error(f"群控至MES上行异常:{e}")
-        try:
-            hf_trains_up()
-        except Exception as e:
-            print(e)
-            logger.error(e)
-        try:
-            consume_data_up()
-        except Exception as e:
-            print(e)
-            logger.error(e)
-        time.sleep(5)
+    # while True:
+    try:
+        plan_status_monitor()
+    except Exception as e:
+        logger.error(f"计划状态同步异常:{e}")
+    try:
+        MesUpClient.sync()
+    except Exception as e:
+        logger.error(f"群控至MES上行异常:{e}")
+    try:
+        hf_trains_up()
+    except Exception as e:
+        print(e)
+        logger.error(e)
+    try:
+        consume_data_up()
+    except Exception as e:
+        print(e)
+        logger.error(e)
+        # time.sleep(5)
 
 
 if __name__ == "__main__":
