@@ -34,13 +34,13 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog
-from production.serializers import QualityControlSerializer, OperationLogSerializer, ExpendMaterialSerializer, \
+from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
     WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, \
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
-    MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer
-from production.utils import strtoint, gen_material_export_file_response
+    MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer, ExpendMaterialSerializer2
+from production.utils import strtoint
 from recipe.models import ProductBatchingDetail, ProductBatchingMixed
 
 logger = logging.getLogger('api_log')
@@ -218,7 +218,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
     # permission_classes = (IsAuthenticatedOrReadOnly,)
     permission_classes = ()
     authentication_classes = ()
-    serializer_class = ExpendMaterialSerializer
+    serializer_class = ExpendMaterialSerializer2
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     ordering_fields = ('id',)
     filter_class = ExpendMaterialFilter
@@ -1177,97 +1177,6 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
 
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
-
-
-@method_decorator([api_recorder], name="dispatch")
-class MaterialExport(mixins.CreateModelMixin,
-                     mixins.RetrieveModelMixin,
-                     mixins.ListModelMixin,
-                     GenericViewSet):
-    queryset = ExpendMaterial.objects.filter(delete_flag=False)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = ExpendMaterialSerializer
-    filter_backends = [OrderingFilter]
-    ordering_fields = ('id',)
-    filter_class = ExpendMaterialFilter
-
-    def _validate_params(self, params):
-        for k, v in params.items():
-            if not re.search(r"^[a-zA-Z0-9\u4e00-\u9fa5\-\s:.]+$", v):
-                raise ValidationError(f"字段{k}的值{v}非规范输入，请规范后重试")
-
-    def _get_sql(self, params):
-        equip_no = params.get("equip_no")
-        product_no = params.get("product_no")
-        material_type = params.get("material_type")
-        st = params.get("st")
-        et = params.get("et")
-        if equip_no or product_no or material_type or st or et:
-            condition_str = "WHERE"
-            if equip_no:
-                if condition_str == "WHERE":
-                    condition_str += f" equip_no='{equip_no}'"
-                else:
-                    condition_str += f" and equip_no='{equip_no}'"
-            if material_type:
-                if condition_str == "WHERE":
-                    condition_str += f" material_type='{material_type}'"
-                else:
-                    condition_str += f" and material_type='{material_type}'"
-            if product_no:
-                if condition_str == "WHERE":
-                    condition_str += f" product_no='{product_no}'"
-                else:
-                    condition_str += f" and product_no='{product_no}'"
-            if st:
-                if condition_str == "WHERE":
-                    condition_str += f" product_time >= '{st}'"
-                else:
-                    condition_str += f" and product_time >= '{st}'"
-            if et:
-                if condition_str == "WHERE":
-                    condition_str += f" product_time <= '{et}'"
-                else:
-                    condition_str += f" and product_time <= '{et}'"
-        else:
-            condition_str = ''
-        sql_str = f"""select min(id) as id, equip_no, product_no, material_no, max(material_type) as material_type, 
-                        max(material_name) as material_name, max(plan_classes_uid) as plan_classes_uid, 
-                        SUM(expend_material.actual_weight / 100) as actual_weight 
-                        from expend_material {condition_str} GROUP BY equip_no, product_no, material_no ORDER BY product_time;
-            """
-        # return gen_material_export_file_response('导出', sql_str)
-
-        return sql_str
-
-    def list(self, request, *args, **kwargs):
-        params = request.query_params
-        page = int(params.get("page", 1))
-        page_size = int(params.get("page_size", 10))
-        if not 1 <= page <= 2 ** 16:
-            raise ValidationError(f"页码:{page}错误")
-        if not 10 <= page_size <= 1000:
-            raise ValidationError(f"页长:{page_size}错误")
-        self._validate_params(params)
-        sql_str = self._get_sql(params)
-        em_set = ExpendMaterial.objects.raw(sql_str)
-        count = len(em_set)
-        rep_list = []
-        for em in em_set:
-            rep = {
-                "id": em.id,
-                "equip_no": em.equip_no,
-                "product_no": em.product_no,
-                "material_no": em.material_no,
-                "material_type": em.material_type,
-                "material_name": em.material_name,
-                "actual_weight": em.actual_weight,
-                "plan_classes_uid": em.plan_classes_uid
-            }
-            rep_list.append(rep)
-        rep_list = rep_list[(page - 1) * page_size:page_size * page]
-        # return Response({"count": count, "results": rep_list})
-        return gen_material_export_file_response("results", rep_list)
 
 
 @method_decorator([api_recorder], name="dispatch")

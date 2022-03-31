@@ -5,7 +5,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ExpendMaterialViewSet, OperationLogViewSet, QualityControlViewSet, \
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
-    CurveInformationList, TrainsFeedbacksAPIView, MaterialExport, PalletDetailViewSet, TankWeighSyncView, AlarmLogList, \
+    CurveInformationList, TrainsFeedbacksAPIView, PalletDetailViewSet, TankWeighSyncView, AlarmLogList, \
     MaterialReleaseView, CurrentWeighView, ForceFeedView, HandleFeedView
 
 router = DefaultRouter()
@@ -50,9 +50,6 @@ router.register(r'weigh-oil', WeighParameterFuelViewSet, basename="weigh-oil")
 
 # 物料统计
 router.register(r'material-statistics', ExpendMaterialViewSet, basename="material-statistics")
-
-# 物料统计保存
-router.register(r'material-export', MaterialExport, basename="material-export")
 
 # 称量信息展示
 router.register(r'weigh-information-list', WeighInformationList, basename="weigh-information-list")
