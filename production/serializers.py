@@ -22,7 +22,7 @@ class EquipStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = EquipStatus
-        fields = "__all__"
+        exclude = ('id', )
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
