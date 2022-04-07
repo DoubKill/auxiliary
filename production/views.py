@@ -272,7 +272,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         export = self.request.query_params.get('export')
         material_type = self.request.query_params.get('material_type')
         queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.values('equip_no', 'product_no', 'material_type', 'material_no', 'material_name').order_by('equip_no', 'product_no', 'material_type').annotate(actual_weight=Sum('actual_weight')/100)
+        queryset = queryset.values('equip_no', 'product_no', 'material_no', 'material_name').order_by('equip_no', 'product_no').annotate(actual_weight=Sum('actual_weight')/100)
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         data = serializer.data
