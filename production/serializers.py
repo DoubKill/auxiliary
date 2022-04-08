@@ -194,7 +194,7 @@ class ExpendMaterialSerializer2(BaseModelSerializer):
 
     def get_material_type(self, obj):
         material_type_dict = self.context['material_type_dict']
-        return material_type_dict.get(obj.get('material_no'), obj.get('material_type'))
+        return material_type_dict.get(obj.get('material_name'), '')
 
     class Meta:
         model = ExpendMaterial
