@@ -41,7 +41,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer, ExpendMaterialSerializer2
 from production.utils import strtoint
-from recipe.models import ProductBatchingDetail, ProductBatchingMixed
+from recipe.models import ProductBatchingDetail, ProductBatchingMixed, Material
 
 logger = logging.getLogger('api_log')
 
@@ -256,16 +256,31 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         response.write(output.getvalue())
         return response
 
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        """
+        material_type_dict = dict(Material.objects.values_list('material_no', 'material_type__global_name'))
+        return {
+            'request': self.request,
+            'format': self.format_kwarg,
+            'view': self,
+            'material_type_dict': material_type_dict
+        }
+
     def list(self, request, *args, **kwargs):
         export = self.request.query_params.get('export')
+        material_type = self.request.query_params.get('material_type')
         queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.values('equip_no', 'product_no', 'material_type', 'material_no', 'material_name').order_by('equip_no', 'product_no', 'material_type').annotate(actual_weight=Sum('actual_weight')/100)
+        queryset = queryset.values('equip_no', 'product_no', 'material_no', 'material_name').order_by('equip_no', 'product_no').annotate(actual_weight=Sum('actual_weight')/100)
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
+        data = serializer.data
+        if material_type:
+            data = list(filter(lambda x: x['material_type'] == material_type, data))
         if export:
-            serializer = self.get_serializer(queryset, many=True)
-            return self.export_xls(serializer.data)
-        return self.get_paginated_response(serializer.data)
+            return self.export_xls(data)
+        return self.get_paginated_response(data)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1331,8 +1346,12 @@ class MaterialReleaseView(FeedBack, APIView):
                     raise ValidationError('异常: 获取mes配方信息失败')
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
-                if not cnt_type_details:  # 通用料包码：cnt_type_details为空
+                xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
+                if not xl:  # 通用料包码：扣重请求包含料包，但配方标准中没有则表示扫过通用条码
                     continue
+                else:
+                    if not cnt_type_details:
+                        raise ValidationError("异常:未找到mes料包明细信息")
                 xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
                 recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:

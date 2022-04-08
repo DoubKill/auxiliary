@@ -22,7 +22,7 @@ class EquipStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = EquipStatus
-        fields = "__all__"
+        exclude = ('id', )
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
@@ -190,6 +190,11 @@ class ExpendMaterialSerializer(BaseModelSerializer):
 
 class ExpendMaterialSerializer2(BaseModelSerializer):
     """原材料消耗表"""
+    material_type = serializers.SerializerMethodField()
+
+    def get_material_type(self, obj):
+        material_type_dict = self.context['material_type_dict']
+        return material_type_dict.get(obj.get('material_no'), obj.get('material_type'))
 
     class Meta:
         model = ExpendMaterial
