@@ -260,7 +260,7 @@ class ExpendMaterialViewSet(mixins.CreateModelMixin,
         """
         Extra context provided to the serializer class.
         """
-        material_type_dict = dict(Material.objects.values_list('material_no', 'material_type__global_name'))
+        material_type_dict = dict(Material.objects.filter(delete_flag=False).values_list('material_name', 'material_type__global_name'))
         return {
             'request': self.request,
             'format': self.format_kwarg,
