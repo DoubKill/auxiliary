@@ -33,7 +33,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog
+    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains
 from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1599,3 +1599,34 @@ class HandleFeedView(APIView):
             return False, f"{equip_no} 称量信息未反馈"
         return True, f"{feed_status} 请求进料"
 
+
+@method_decorator([api_recorder], name='dispatch')
+class ManualInputTrainsView(APIView):
+    """手动录入车次信息"""
+    permission_classes = (IsAuthenticatedOrReadOnly, )
+
+    def get(self, request):
+        query_set = ManualInputTrains.objects.using('mes').order_by('id')
+        factory_date = self.request.query_params.get('factory_date')
+        equip_no = self.request.query_params.get('equip_no')
+        if factory_date:
+            query_set = query_set.filter(factory_date=factory_date)
+        if equip_no:
+            query_set = query_set.filter(equip_no=equip_no)
+        return Response(query_set.values())
+
+    def post(self, request):
+        data = self.request.data
+        data['created_username'] = self.request.user.username
+        ManualInputTrains.objects.using('mes').create(**data)
+        return Response('OK')
+
+    def put(self, request):
+        data = self.request.data
+        ManualInputTrains.objects.using('mes').filter(id=data['id']).update(**data)
+        return Response('OK')
+
+    def delete(self, request):
+        instance_id = self.request.data.get('id')
+        ManualInputTrains.objects.using('mes').filter(id=instance_id).delete()
+        return Response('OK')
