@@ -464,3 +464,19 @@ class LoadTankMaterialLog(AbstractEntity):
         db_table = 'load_tank_material_log'
         verbose_name_plural = verbose_name = '料框物料信息'
         managed = False
+
+
+class ManualInputTrains(models.Model):
+    """仅供MES计算绩效使用"""
+    factory_date = models.DateField(help_text='工厂日期', verbose_name='工厂日期')
+    equip_no = models.CharField(help_text='机台', max_length=12)
+    classes = models.CharField(help_text='班次', max_length=12)
+    product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
+    actual_trains = models.IntegerField(help_text='车数', verbose_name='车数')
+    created_username = models.CharField(max_length=256, help_text='录入人')
+    created_time = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
+
+    class Meta:
+        db_table = 'manual_input_trains'
+        verbose_name_plural = verbose_name = '手动录入车次信息'
+        managed = False
