@@ -8,7 +8,7 @@ from io import BytesIO
 import requests
 import xlwt
 from django.db import connection
-from django.db.models import Sum, Max, Avg
+from django.db.models import Sum, Max, Avg, F
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
@@ -40,7 +40,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     WeighInformationSerializer1, MixerInformationSerializer1, CurveInformationSerializer, \
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer, ExpendMaterialSerializer2
-from production.utils import strtoint
+from production.utils import strtoint, send_msg_to_terminal
 from recipe.models import ProductBatchingDetail, ProductBatchingMixed, Material
 
 logger = logging.getLogger('api_log')
@@ -1272,6 +1272,7 @@ class MaterialReleaseView(FeedBack, APIView):
     def post(self, request, *args, **kwargs):
         """{'plan_no': '2021032616541329Z08',
             'feed_trains': 8,
+            'equip_no': 'Z04',
             'feed_status': '正常',
             'materials': [
                 {
@@ -1288,13 +1289,20 @@ class MaterialReleaseView(FeedBack, APIView):
             }"""
         data = request.data
         plan_classes_uid = data.get("plan_no")  # 计划编号
+        equip_no = data.get("equip_no")
         feed_trains = data.get("feed_trains")  # 当前请求的进料车次
         materials = data.get("materials")  # 原材料以及称量信息，传送带只反馈胶料称量的数据
         feed_status = data.get("feed_status") + str(feed_trains)  # 进料表类型, 默认正常, 可选['处理', '强制']
         add_feed_result = 0
-        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
+        if equip_no == 'Z04':  # 4号密炼机只能通过机台去查询计划号并组装数据
+            pcp = ProductClassesPlan.objects.filter(equip__equip_no=equip_no, status='运行中').order_by('id').last()
+        else:
+            pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
-            raise ValidationError("异常:未找到该条密炼计划")
+            if equip_no == 'Z04':
+                send_msg_to_terminal('异常: 未找到该条密炼计划(联系中控)')
+            raise ValidationError("异常:未找到该条密炼计划(联系中控)")
+        plan_classes_uid = pcp.plan_classes_uid
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
@@ -1305,44 +1313,64 @@ class MaterialReleaseView(FeedBack, APIView):
 
         fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=feed_trains).first()
         if not fml:
-            return Response("异常: 当前车次未进料")
-        # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
-        recipe_material_names = set(ProductBatchingDetail.objects.filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1).values_list("material__material_name", flat=True))
-        # 增加对搭料
-        classes_plan = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=plan_classes_uid).first()
-        mixed = ProductBatchingMixed.objects.using('mes').filter(product_batching_id=classes_plan.product_batching_id)
-        if mixed:
-            mixed_names = set(mixed.values_list('f_feed_name', 's_feed_name')[0])
-            recipe_material_names.update(mixed_names)
-        sfj_material_names = {item.get('material_name').strip() for item in materials}
-        same_values = set(recipe_material_names) & set(sfj_material_names)
-        if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
-            # 判定原因
-            if set(recipe_material_names) - set(sfj_material_names):
-                error_message = f"投料缺少:{list(set(recipe_material_names) - set(sfj_material_names))[0]}"
-            else:
-                error_message = f"未知投料:{list(set(sfj_material_names) - set(recipe_material_names))[0]}"
-            fml.judge_reason = error_message
-            fml.failed_flag = 2
-            fml.add_feed_result = 1
-            fml.save()
-            return Response(error_message)
+            if equip_no == 'Z04':
+                send_msg_to_terminal(f"异常: 车次{feed_trains}不存在[联系中控]")
+            return Response(f"异常: 车次{feed_trains}不存在[联系中控]")
+        batching_details = ProductBatchingDetail.objects.filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1)
+        if equip_no != 'Z04':
+            # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
+            recipe_material_names = set(batching_details.values_list("material__material_name", flat=True))
+            sfj_material_names = {item.get('material_name').strip() for item in materials}
+            same_values = set(recipe_material_names) & set(sfj_material_names)
+            if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
+                # 判定原因
+                if set(recipe_material_names) - set(sfj_material_names):
+                    error_message = f"投料缺少:{list(set(recipe_material_names) - set(sfj_material_names))[0]}"
+                else:
+                    error_message = f"未知投料:{list(set(sfj_material_names) - set(recipe_material_names))[0]}"
+                fml.judge_reason = error_message
+                fml.failed_flag = 2
+                fml.add_feed_result = 1
+                fml.save()
+                if equip_no == 'Z04':
+                    send_msg_to_terminal(error_message)
+                return Response(error_message)
+        else:  # 获取4号机投料信息
+            materials = list(batching_details.annotate(material_name=F('material__material_name'),
+                                                       plan_weight=F('actual_weight'))
+                             .values('material_name', 'plan_weight', 'actual_weight'))
         # 处理数据
         handle_materials = []
+        # 获取对搭设置
+        classes_plan = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=plan_classes_uid).first()
+        mixed = ProductBatchingMixed.objects.using('mes').filter(product_batching__stage_product_batch_no=classes_plan.product_batching.stage_product_batch_no,
+                                                                 product_batching__dev_type__category_name=classes_plan.product_batching.dev_type.category_name,
+                                                                 product_batching__used_type=4, product_batching__batching_type=2,
+                                                                 ).last()
+        mixed_info = {} if not mixed else {mixed.f_feed_name: mixed.f_weight, mixed.s_feed_name: mixed.s_weight}
         for item in materials:
             material_name = item.get('material_name').strip()
             if '掺料' in material_name or '待处理料' in material_name:
                 continue
             if material_name not in ['细料', '硫磺']:
-                plan_weight = round(Decimal(item.get("plan_weight")), 3)
-                actual_weight = round(Decimal(item.get('actual_weight')), 3)
-                item.update({'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
-                handle_materials.append(item)
+                # 增加对搭料
+                if material_name in mixed_info:
+                    for m_name, m_weight in mixed_info.items():
+                        item = {'material_name': m_name, 'plan_weight': round(m_weight, 3), 'actual_weight': round(m_weight, 3)}
+                        if item not in handle_materials:
+                            handle_materials.append(item)
+                else:
+                    plan_weight = round(Decimal(item.get("plan_weight")), 3)
+                    actual_weight = round(Decimal(item.get('actual_weight')), 3)
+                    item.update({'material_name': material_name, 'plan_weight': plan_weight, 'actual_weight': actual_weight})
+                    handle_materials.append(item)
             # 配方生产需要细料或者硫磺(1、细料; 2、硫磺;  3、机配+人工配)
             else:
                 res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
                 if isinstance(res, str):
-                    raise ValidationError('异常: 获取mes配方信息失败')
+                    if equip_no == 'Z04':
+                        send_msg_to_terminal('异常: 获取mes配方信息失败[联系工艺]')
+                    raise ValidationError('异常: 获取mes配方信息失败[联系工艺]')
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
                 xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
@@ -1350,7 +1378,9 @@ class MaterialReleaseView(FeedBack, APIView):
                     continue
                 else:
                     if not cnt_type_details:
-                        raise ValidationError("异常:未找到mes料包明细信息")
+                        if equip_no == 'Z04':
+                            send_msg_to_terminal("异常:未找到mes配方[联系工艺]")
+                        raise ValidationError("异常:未找到mes配方[联系工艺]")
                 xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
                 recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:
@@ -1435,6 +1465,17 @@ class MaterialReleaseView(FeedBack, APIView):
                     load_tank.actual_weight = load_tank.actual_weight + actual_weight
                     load_tank.adjust_left_weight = load_tank.adjust_left_weight - actual_weight
                     load_tank.real_weight = load_tank.real_weight - actual_weight
+                    # 修正最后一车重量(单位不为包)
+                    if feed_trains == pcp.plan_trains and load_tank.unit != '包':
+                        # 获取实际扣重的车次
+                        total_feed_trains = 0
+                        feed_train_records = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, feed_end_time__isnull=False)
+                        for j in feed_train_records:
+                            total_feed_trains += len(j.feed_status.split('-'))
+                        total_need_weight = load_tank.single_need * (feed_trains if not total_feed_trains else (total_feed_trains if total_feed_trains < feed_trains else feed_trains))
+                        actual_scan_weight = load_tank.init_weight
+                        load_tank.real_weight = 0 if actual_scan_weight - total_need_weight < 0 else actual_scan_weight - total_need_weight
+                        load_tank.adjust_left_weight = load_tank.real_weight
                     if load_tank.real_weight == 0:
                         load_tank.useup_time = datetime.datetime.now()
                     load_tank.save()
@@ -1463,6 +1504,8 @@ class MaterialReleaseView(FeedBack, APIView):
             fml.failed_flag = 2
             fml.add_feed_result = add_feed_result
             fml.save()
+            if equip_no == 'Z04':
+                send_msg_to_terminal(error_message)
             return Response(error_message)
 
 
