@@ -93,5 +93,5 @@ def send_msg_to_terminal(msg):
         client.service.GetMessageInfo(msg)
     except:
         logger.error('调用终端信息显示服务失败')
-
-
+    else:
+        logger.info('调用终端信息显示服务成功')
