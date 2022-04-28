@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token
 
+from recipe.views import BatchingMaterials
 from system.views import UserViewSet, UserGroupsViewSet, GroupExtensionViewSet, SectionViewSet, PermissionViewSet, \
     GroupAddUserViewSet, SystemConfigViewSet, ChildSystemInfoViewSet, LoginView, Synchronization, UpdatePassWord, \
     InterfaceOperationLogView, Manualsync, SaveInternetTime, OwnerPermission
@@ -35,5 +36,5 @@ urlpatterns = [
     path('update-password/', UpdatePassWord.as_view()),  # 修改密码接口，
     path('operations/', InterfaceOperationLogView.as_view()),  # 操作日志
     path('manual-sync/', Manualsync.as_view()),  # mes和上辅机数据同步
-
+    path('batching-materials/', BatchingMaterials.as_view())
 ]
