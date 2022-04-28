@@ -6,7 +6,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
     CurveInformationList, TrainsFeedbacksAPIView, PalletDetailViewSet, TankWeighSyncView, AlarmLogList, \
-    MaterialReleaseView, CurrentWeighView, ForceFeedView, HandleFeedView
+    MaterialReleaseView, CurrentWeighView, ForceFeedView, HandleFeedView, ManualInputTrainsView
 
 router = DefaultRouter()
 
@@ -75,4 +75,6 @@ urlpatterns = [
     path('force_feed/', ForceFeedView.as_view()),
     # C#调用
     path('handle_feed/', HandleFeedView.as_view()),
+    # 手动录入车次信息
+    path('manual-input-trains/', ManualInputTrainsView.as_view()),
 ]
