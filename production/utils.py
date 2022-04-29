@@ -7,13 +7,17 @@ name:
 
 from io import BytesIO
 import json
+import logging
 from datetime import datetime
+from suds.client import Client
 
 import xlwt
 from django.http import HttpResponse
 
 from production.models import OperationLog
 import re
+
+logger = logging.getLogger('api_log')
 
 
 class OpreationLogRecorder(object):
@@ -36,6 +40,7 @@ def strtoint(equip_no):
     for i in equip_list:
         equip_int += i
     return int(equip_int)
+
 
 def gen_material_export_file_response(filename: str, queryset):
 
@@ -80,3 +85,13 @@ def gen_material_export_file_response(filename: str, queryset):
     return response
 
 
+def send_msg_to_terminal(msg):
+    try:
+        # 终端url
+        url = 'http://10.4.22.63:3000/StockService?wsdl'
+        client = Client(url)
+        client.service.GetMessageInfo(msg)
+    except:
+        logger.error('调用终端信息显示服务失败')
+    else:
+        logger.info('调用终端信息显示服务成功')
