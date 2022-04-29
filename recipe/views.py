@@ -436,3 +436,14 @@ class ProductTechParams(APIView):
                 process_data = {}
             process_detail_data = ProductProcessDetailSerializer(instance=pb.process_details.filter(delete_flag=False).order_by('sn'), many=True).data
             return Response({'process_data': process_data, 'process_detail_data': process_detail_data})
+
+
+@method_decorator([api_recorder], name="dispatch")
+class BatchingMaterials(APIView):
+
+    def get(self, request):
+        query_set = ProductBatching.objects.all()
+        product_no = self.request.query_params.get('product_no')
+        if product_no:
+            query_set = query_set.filter(stage_product_batch_no__icontains=product_no)
+        return Response(query_set.values('stage_product_batch_no').distinct())
