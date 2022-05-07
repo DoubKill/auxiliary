@@ -1342,9 +1342,8 @@ class MaterialReleaseView(FeedBack, APIView):
         # 处理数据
         handle_materials = []
         # 获取对搭设置
-        classes_plan = ProductClassesPlan.objects.using('mes').filter(plan_classes_uid=plan_classes_uid).first()
-        mixed = ProductBatchingMixed.objects.using('mes').filter(product_batching__stage_product_batch_no=classes_plan.product_batching.stage_product_batch_no,
-                                                                 product_batching__dev_type__category_name=classes_plan.product_batching.dev_type.category_name,
+        mixed = ProductBatchingMixed.objects.using('mes').filter(product_batching__stage_product_batch_no=pcp.product_batching.stage_product_batch_no,
+                                                                 product_batching__dev_type__category_name=pcp.equip.category.category_no,
                                                                  product_batching__used_type=4, product_batching__batching_type=2,
                                                                  ).last()
         mixed_info = {} if not mixed else {mixed.f_feed_name: mixed.f_weight, mixed.s_feed_name: mixed.s_weight}
