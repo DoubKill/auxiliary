@@ -470,7 +470,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             init_site = init_stage = init_product_info = init_version = None
         batching_detail_list = []
         # 获取机台配方
-        equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, dev_type=dev_type,
+        equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, equip__category=dev_type,
                                                                             stage_product_batch_no=product_no)
         for equip_no, details in batching_details.items():
             now_recipe = equip_recipes.filter(equip__equip_no=equip_no).first()
