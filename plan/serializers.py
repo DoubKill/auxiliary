@@ -108,7 +108,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
 
     @atomic()
     def create(self, validated_data):
-        pb = validated_data.get('product_batching', None)
         equip = validated_data.get("equip")
         product_no = validated_data.pop("product_batch_no")
         product_info = product_no.split('-')
@@ -128,11 +127,9 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                     stage_product_batch_no=product_no,
                     used_type=4,
                     equip=equip,
-                    precept=precept,
                     stage=stage,
                 )
             except Exception as e:
-                print(e)
                 raise serializers.ValidationError("无法根据Z04机台返回信息绑定配方")
         else:
             try:
@@ -140,7 +137,6 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                     stage_product_batch_no=product_no,
                     equip=equip)
             except Exception as e:
-                print(e)
                 raise serializers.ValidationError("胶料信息异常,详情:{}".format(e))
         if product_batching.used_type != 4:
             raise serializers.ValidationError('该配方不是启用状态！')
