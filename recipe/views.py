@@ -216,7 +216,7 @@ class ProductBatchingViewSet(ModelViewSet):
                 'equip__category__category_name', 'submit_user__username', 'reject_user__username',
                 'used_user__username', 'obsolete_user__username', 'equip_id',
                 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions',
-                'stage_id', 'last_updated_date', 'is_synced', 'is_changed'
+                'stage_id', 'last_updated_date', 'is_synced', 'is_changed', 'last_updated_user__username'
             )
         else:
             return self.queryset

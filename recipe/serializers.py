@@ -109,6 +109,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
     reject_username = serializers.CharField(source='reject_user__username', read_only=True)
     used_username = serializers.CharField(source='used_user__username', read_only=True)
     obsolete_username = serializers.CharField(source='obsolete_user__username', read_only=True)
+    last_update_username = serializers.CharField(source='last_updated_user__username', read_only=True)
 
     class Meta:
         model = ProductBatching
@@ -117,7 +118,7 @@ class ProductBatchingListSerializer(BaseModelSerializer):
                   'batching_type', 'created_date', 'batching_weight', 'used_type', 'dev_type',
                   'category__category_name', 'submit_username', 'reject_username', 'used_username', 'equip_id',
                   'obsolete_username', 'factory_id', 'site_id', 'product_info_id', 'precept', 'versions', 'stage_id',
-                  'last_updated_date', 'is_synced', 'is_changed')
+                  'last_updated_date', 'is_synced', 'is_changed', 'last_update_username')
 
 
 class ProductProcessDetailSerializer(BaseModelSerializer):
