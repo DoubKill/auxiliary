@@ -7,6 +7,7 @@ name:
 """
 import datetime
 import os
+import re
 import time
 import socket
 import functools
@@ -78,6 +79,12 @@ class MesUpClient(object):
                         x.pop("equip_status")
                     if "stage" in x:
                         x.pop("stage")
+                    if model_name != 'AlarmLog':
+                        p = x['plan_classes_uid']
+                        b = re.sub(u'\u0000', "", p)
+                        if not b:
+                            continue
+                        x['plan_classes_uid'] = b
                     datas.append(x)
                 temp.config_value = new_temp_id
                 ret = cls.Client("post", f"http://{cls.mes_ip}:{MES_PORT}{cls.API_DICT[model_name]}", json=datas)
