@@ -480,3 +480,18 @@ class ManualInputTrains(models.Model):
         db_table = 'manual_input_trains'
         verbose_name_plural = verbose_name = '手动录入车次信息'
         managed = False
+
+
+class OtherMaterialLog(models.Model):
+    plan_classes_uid = models.CharField(max_length=64, help_text='密炼计划号')
+    product_no = models.CharField(max_length=64, help_text='胶料名称-配方号')
+    material_name = models.CharField(max_length=64, help_text='物料名称', null=True)
+    plan_weight = models.DecimalField(decimal_places=3, max_digits=8, help_text='单重', default=0)
+    bra_code = models.CharField(max_length=64, help_text='条形码')
+    status = models.BooleanField(help_text='使用状态', default=False)
+    other_type = models.CharField(max_length=64, help_text='物料类别: 胶皮、胶块、人工配、机配、待处理料、掺料', null=True, blank=True)
+
+    class Meta:
+        db_table = 'other_material_log'
+        verbose_name_plural = verbose_name = '其他物料信息扫码上料暂存表'
+        managed = False
