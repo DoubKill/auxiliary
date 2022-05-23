@@ -8,7 +8,7 @@ from io import BytesIO
 import requests
 import xlwt
 from django.db import connection
-from django.db.models import Sum, Max, Avg, F
+from django.db.models import Sum, Max, Avg, F, Q
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
@@ -33,7 +33,8 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
     PlanStatusFilter, ExpendMaterialFilter, WeighParameterCarbonFilter, MaterialStatisticsFilter
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
-    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains
+    ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains, \
+    OtherMaterialLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1347,9 +1348,11 @@ class MaterialReleaseView(FeedBack, APIView):
                                                                  product_batching__used_type=4, product_batching__batching_type=2,
                                                                  ).last()
         mixed_info = {} if not mixed else {mixed.f_feed_name: mixed.f_weight, mixed.s_feed_name: mixed.s_weight}
+        other_material_name = ''
         for item in materials:
             material_name = item.get('material_name').strip()
             if '掺料' in material_name or '待处理料' in material_name:
+                other_material_name = material_name
                 continue
             if material_name not in ['细料', '硫磺']:
                 # 增加对搭料
@@ -1389,6 +1392,13 @@ class MaterialReleaseView(FeedBack, APIView):
                     handle_materials.append(data)
                 else:
                     continue
+        # 未扫掺料或待处理料
+        if other_material_name:
+            scan_info = OtherMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, other_type=other_material_name, status=1).last()
+            if not scan_info:
+                if equip_no == 'Z04':
+                    send_msg_to_terminal(f"异常: {other_material_name}未扫码'")
+                return Response(f"异常: {other_material_name}未扫码")
         error_message = ""
         success = True
         # 再判断配方的所有的物料条码是否正确
@@ -1594,6 +1604,15 @@ class HandleFeedView(APIView):
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
         if not pcp:
             raise ValidationError("未找到该条密炼计划")
+        # 掺料或者待处理料未扫码
+        other_material = pcp.product_batching.batching_details.filter(Q(material__material_name__icontains='掺料') |
+                                                                      Q(material__material_name__icontains='待处理料'),
+                                                                      delete_flag=False, type=1).last()
+        if other_material:
+            scan_info = OtherMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, status=1,
+                                                                     other_type=other_material.material.material_name).last()
+            if not scan_info:
+                return Response({"success": False, "message": f"{other_material.material.material_name}未扫码"})
         # mes配方
         res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
         if isinstance(res, str):

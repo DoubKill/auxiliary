@@ -470,7 +470,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
             init_site = init_stage = init_product_info = init_version = None
         batching_detail_list = []
         # 获取机台配方
-        equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, dev_type=dev_type,
+        equip_recipes = ProductBatching.objects.exclude(used_type=6).filter(batching_type=1, equip__category=dev_type,
                                                                             stage_product_batch_no=product_no)
         for equip_no, details in batching_details.items():
             now_recipe = equip_recipes.filter(equip__equip_no=equip_no).first()
@@ -488,6 +488,8 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                                  'product_info': product_info, 'versions': product_no.split('-')[-1]}
                 now_recipe = ProductBatching.objects.create(**create_recipe)
             else:
+                # 原配方包含的掺料或者待处理料重量需要加到配方上
+                other_material_weight = 0
                 # 删除之前确定掺料和待处理料的顺序
                 other_material = now_recipe.batching_details.filter(Q(material__material_name__icontains='待处理料') |
                                                                     Q(material__material_name__icontains='掺料'),
@@ -496,6 +498,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                     other_material_info = {'type': 1, 'actual_weight': other_material.actual_weight, 'auto_flag': 0,
                                            'standard_error': other_material.standard_error,
                                            'material': other_material.material}
+                    other_material_weight = other_material.actual_weight
                     xl = now_recipe.batching_details.filter(delete_flag=False, type=1, material__material_name__in=['细料', '硫磺']).last()
                     new_details = []
                     if xl:
@@ -522,7 +525,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                         other_material_info['sn'] = max([i['sn'] for i in details if i['type'] == 1]) + 1
                         details.append(other_material_info)
                 now_recipe.batching_details.all().delete()
-                now_recipe.batching_weight = validated_data['batching_weight']
+                now_recipe.batching_weight = validated_data['batching_weight'] + other_material_weight
                 now_recipe.used_type = 1
                 now_recipe.save()
             for detail in details:
