@@ -1356,7 +1356,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 continue
             if material_name not in ['细料', '硫磺']:
                 # 增加对搭料
-                if material_name in mixed_info:
+                if mixed and material_name == mixed.origin_material_name:
                     for m_name, m_weight in mixed_info.items():
                         item = {'material_name': m_name, 'plan_weight': round(m_weight, 3), 'actual_weight': round(m_weight, 3)}
                         if item not in handle_materials:

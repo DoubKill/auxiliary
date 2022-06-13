@@ -262,6 +262,7 @@ class RecipeUpdateHistory(AbstractEntity):
 class ProductBatchingMixed(models.Model):
     product_batching = models.ForeignKey(ProductBatching, on_delete=models.CASCADE, help_text='配方id',
                                          related_name='product_batching_mixed')
+    origin_material_name = models.CharField(max_length=64, help_text='被对搭的原始物料', null=True, blank=True)
     f_feed = models.CharField(max_length=8, help_text='对搭原料段次1')
     s_feed = models.CharField(max_length=8, help_text='对搭原料段次2')
     f_feed_name = models.CharField(max_length=64, help_text='对搭原料名1')
