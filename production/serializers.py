@@ -191,6 +191,7 @@ class ExpendMaterialSerializer(BaseModelSerializer):
 class ExpendMaterialSerializer2(BaseModelSerializer):
     """原材料消耗表"""
     material_type = serializers.SerializerMethodField()
+    actual_weight = serializers.FloatField()
 
     def get_material_type(self, obj):
         material_type_dict = self.context['material_type_dict']
