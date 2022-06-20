@@ -274,6 +274,7 @@ class ProductBatchingViewSet(ModelViewSet):
             instance.used_type = 7
         elif instance.used_type == 7:  # 启用
             instance.used_type = 4
+        instance.last_updated_user = self.request.user
         instance.save()
 
 
