@@ -309,11 +309,11 @@ def hf_trains_up():
         try:
             plan_weight = plan.weight if plan.weight else 23000
             class_name = plan.work_schedule_plan.classes.global_name
-            temp1 = TrainsFeedbacks.objects.filter(equip_no=plan.equip.equip_no).order_by("id").last()
-            if temp1:
-                interval_time = (temp.get("batr_start_date") - temp1.end_time).total_seconds()
-            else:
-                interval_time = 15
+            # temp1 = TrainsFeedbacks.objects.filter(equip_no=plan.equip.equip_no).order_by("id").last()
+            # if temp1:
+            #     interval_time = (temp.get("batr_start_date") - temp1.end_time).total_seconds()
+            # else:
+            #     interval_time = 15
             consume_time = (temp.get("batr_end_date") - temp.get("batr_start_date")).total_seconds()
             # if plan.plan_trains != temp.get("batr_batch_number"):
             #     plan.plan_trains = temp.get("batr_batch_number")
@@ -336,8 +336,8 @@ def hf_trains_up():
                 operating_type = "自动",
                 evacuation_time = int(temp.get("batr_drop_cycle_time")),
                 evacuation_temperature = temp.get("batr_transition_temperature"),
-                evacuation_energy = int(temp.get("batr_tot_integr_energy")),
-                interval_time=int(interval_time),
+                evacuation_energy = int(temp.get("batr_total_spec_energy")),
+                # interval_time=int(interval_time),
                 mixer_time=int(temp.get("batr_mixing_time")),
                 consum_time=int(consume_time),
             )
