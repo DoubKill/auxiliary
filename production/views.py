@@ -1298,11 +1298,11 @@ class MaterialReleaseView(FeedBack, APIView):
         if equip_no == 'Z04':  # 4号密炼机只能通过机台去查询计划号并组装数据
             pcp = ProductClassesPlan.objects.filter(equip__equip_no=equip_no, status='运行中').order_by('id').last()
         else:
-            pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
+            pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, status='运行中').first()
         if not pcp:
             if equip_no == 'Z04':
-                send_msg_to_terminal('异常: 未找到该条密炼计划(联系中控)')
-            raise ValidationError("异常:未找到该条密炼计划(联系中控)")
+                send_msg_to_terminal(f'异常: 计划不存在或不是运行状态{plan_classes_uid}(联系中控)')
+            raise ValidationError(f"异常:计划不存在或不是运行状态:{plan_classes_uid}(联系中控)")
         plan_classes_uid = pcp.plan_classes_uid
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
@@ -1601,9 +1601,9 @@ class HandleFeedView(APIView):
         feed_status = data.get('handle_type', '扫码')
         equip_no = data.get("equip_no")
         trains = data.get("trains")
-        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid).first()
+        pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, status='运行中').first()
         if not pcp:
-            raise ValidationError("未找到该条密炼计划")
+            raise ValidationError(f"计划不存在或不是运行状态:{plan_classes_uid}")
         # 掺料或者待处理料未扫码
         other_material = pcp.product_batching.batching_details.filter(Q(material__material_name__icontains='掺料') |
                                                                       Q(material__material_name__icontains='待处理料'),
