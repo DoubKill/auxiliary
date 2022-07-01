@@ -42,7 +42,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer, ExpendMaterialSerializer2
 from production.utils import strtoint, send_msg_to_terminal
-from recipe.models import ProductBatchingDetail, ProductBatchingMixed, Material
+from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan
 
 logger = logging.getLogger('api_log')
 
@@ -1302,7 +1302,7 @@ class MaterialReleaseView(FeedBack, APIView):
         if not pcp:
             if equip_no == 'Z04':
                 send_msg_to_terminal(f'异常: 计划不存在或不是运行状态{plan_classes_uid}(联系中控)')
-            raise ValidationError(f"异常:计划不存在或不是运行状态:{plan_classes_uid}(联系中控)")
+            raise ValidationError(f"异常:计划不存在或不是运行状态{plan_classes_uid}(联系中控)")
         plan_classes_uid = pcp.plan_classes_uid
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
@@ -1317,10 +1317,12 @@ class MaterialReleaseView(FeedBack, APIView):
             if equip_no == 'Z04':
                 send_msg_to_terminal(f"异常: 车次{feed_trains}不存在[联系中控]")
             return Response(f"异常: 车次{feed_trains}不存在[联系中控]")
-        batching_details = ProductBatchingDetail.objects.filter(product_batching_id=pcp.product_batching_id, delete_flag=False, type=1)
+        batching_details = ProductBatchingDetailPlan.objects.filter(plan_classes_uid=plan_classes_uid)
+        if not batching_details:
+            raise ValidationError(f'异常: 未找到下计划时配方[{plan_classes_uid}](联系中控)')
         if equip_no != 'Z04':
             # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
-            recipe_material_names = set(batching_details.values_list("material__material_name", flat=True))
+            recipe_material_names = set(batching_details.values_list("material_name", flat=True))
             sfj_material_names = {item.get('material_name').strip() for item in materials}
             same_values = set(recipe_material_names) & set(sfj_material_names)
             if not len(same_values) == len(recipe_material_names) == len(sfj_material_names):
@@ -1337,9 +1339,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     send_msg_to_terminal(error_message)
                 return Response(error_message)
         else:  # 获取4号机投料信息
-            materials = list(batching_details.annotate(material_name=F('material__material_name'),
-                                                       plan_weight=F('actual_weight'))
-                             .values('material_name', 'plan_weight', 'actual_weight'))
+            materials = list(batching_details.annotate(plan_weight=F('actual_weight')).values('material_name', 'plan_weight', 'actual_weight'))
         # 处理数据
         handle_materials = []
         # 获取对搭设置
@@ -1605,14 +1605,14 @@ class HandleFeedView(APIView):
         if not pcp:
             raise ValidationError(f"计划不存在或不是运行状态:{plan_classes_uid}")
         # 掺料或者待处理料未扫码
-        other_material = pcp.product_batching.batching_details.filter(Q(material__material_name__icontains='掺料') |
-                                                                      Q(material__material_name__icontains='待处理料'),
-                                                                      delete_flag=False, type=1).last()
+        other_material = ProductBatchingDetailPlan.objects.filter(Q(material_name__icontains='掺料') |
+                                                                  Q(material_name__icontains='待处理料'),
+                                                                  plan_classes_uid=plan_classes_uid).last()
         if other_material:
             scan_info = OtherMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, status=1,
-                                                                     other_type=other_material.material.material_name).last()
+                                                                     other_type=other_material.material_name).last()
             if not scan_info:
-                return Response({"success": False, "message": f"{other_material.material.material_name}未扫码"})
+                return Response({"success": False, "message": f"{other_material.material_name}未扫码"})
         # mes配方
         res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
         if isinstance(res, str):

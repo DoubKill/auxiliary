@@ -276,3 +276,19 @@ class ProductBatchingMixed(models.Model):
         db_table = 'product_batching_mixed'
         managed = False
         verbose_name_plural = verbose_name = '对搭设置表'
+
+
+class ProductBatchingDetailPlan(models.Model):
+    receive_time = models.DateTimeField(auto_now_add=True, help_text='创建时间')
+    plan_classes_uid = models.CharField(max_length=64, help_text='计划号')
+    stage_product_batch_no = models.CharField(max_length=32, help_text='胶料名称')
+    dev_type = models.CharField(max_length=16, help_text='机型')
+    equip = models.CharField(max_length=16, help_text='机台')
+    sn = models.PositiveIntegerField(help_text='称量顺序')
+    material_name = models.CharField(max_length=64, help_text='物料名称')
+    actual_weight = models.DecimalField(help_text='重量', decimal_places=3, max_digits=8)
+    standard_error = models.DecimalField(help_text='误差值范围', decimal_places=2, max_digits=8, default=0)
+
+    class Meta:
+        db_table = 'product_batching_detail_plan'
+        verbose_name_plural = verbose_name = '下达计划时胶料配料标准详情'
