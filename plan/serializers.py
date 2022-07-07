@@ -236,7 +236,7 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                 if pbd_obj.type == 1:  # 胶料称物料保存到临时配方中(密炼防错使用)
                     ProductBatchingDetailPlan.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid, sn=pbd_obj.sn,
                                                              stage_product_batch_no=pbd_obj.product_batching.stage_product_batch_no,
-                                                             dev_type=pbd_obj.product_batching.dev_type.category_name,
+                                                             dev_type=pbd_obj.product_batching.equip.category.category_name,
                                                              equip=pbd_obj.product_batching.equip.equip_no,
                                                              material_name=pbd_obj.material.material_name,
                                                              actual_weight=pbd_obj.actual_weight,
@@ -672,7 +672,7 @@ class PlanReceiveSerializer(serializers.ModelSerializer):
         for s_record in recipe_details:  # 胶料称物料保存到临时配方中(密炼防错使用)
             ProductBatchingDetailPlan.objects.create(plan_classes_uid=instance.plan_classes_uid, sn=s_record.sn,
                                                      stage_product_batch_no=s_record.product_batching.stage_product_batch_no,
-                                                     dev_type=s_record.product_batching.dev_type.category_name,
+                                                     dev_type=s_record.product_batching.equip.category.category_name,
                                                      equip=s_record.product_batching.equip.equip_no,
                                                      material_name=s_record.material.material_name,
                                                      actual_weight=s_record.actual_weight,
