@@ -169,7 +169,7 @@ LOGGING = {
         },
         'timedRotatingFile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'mes.customer_log.CommonTimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'api_log.log'),
             'when': 'midnight',
             'backupCount': 10,
@@ -178,7 +178,7 @@ LOGGING = {
         },
         'errorFile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'mes.customer_log.CommonTimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'error.log'),
             'when': 'midnight',
             'backupCount': 10,
@@ -187,7 +187,7 @@ LOGGING = {
         },
         'syncFile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'mes.customer_log.CommonTimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'sync.log'),
             'when': 'midnight',
             'backupCount': 10,
@@ -196,7 +196,7 @@ LOGGING = {
         },
         'asyncFile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'mes.customer_log.CommonTimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'async.log'),
             'when': 'midnight',
             'backupCount': 10,
@@ -205,7 +205,7 @@ LOGGING = {
         },
         'sendFile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'mes.customer_log.CommonTimedRotatingFileHandler',
             'filename': os.path.join(LOGGING_DIR, 'send.log'),
             'when': 'midnight',
             'backupCount': 10,
