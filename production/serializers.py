@@ -258,6 +258,7 @@ class ProductionRecordSerializer(BaseModelSerializer):
 class MaterialTankStatusSerializer(BaseModelSerializer):
     """称量参数"""
     material_name1 = serializers.SerializerMethodField(read_only=True, help_text='原材料名称')
+    last_updated_username = serializers.CharField(source='last_updated_user.username', default=None, read_only=True)
 
     def get_material_name1(self, obj):
         tfb_obj = Material.objects.filter(material_name=obj.material_name, use_flag=True).last()
@@ -268,13 +269,7 @@ class MaterialTankStatusSerializer(BaseModelSerializer):
 
     class Meta:
         model = MaterialTankStatus
-        fields = (
-            "id", "material_name1", "material_no", "equip_no", "tank_type", "tank_name", "low_value",
-            "advance_value",
-            "adjust_value",
-            "dot_time",
-            "fast_speed",
-            "low_speed", "use_flag", 'provenance')
+        fields = "__all__"
         read_only_fields = COMMON_READ_ONLY_FIELDS
 
 
