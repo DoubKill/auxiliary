@@ -2,7 +2,7 @@
 import json
 
 import requests
-from django.db.models import Prefetch, Max
+from django.db.models import Prefetch, Max, Q
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -56,10 +56,12 @@ class MaterialViewSet(CommonDeleteMixin, ModelViewSet):
                     PermissionClass(return_permission_params(self.model_name))())
 
     def list(self, request, *args, **kwargs):
+        mc_code = self.request.query_params.get('mc_code')
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
-            data = queryset.filter(use_flag=1).values('id', 'material_no',
-                                                      'material_name', 'material_type__global_name')
+            data = queryset.filter(use_flag=1).values('id', 'material_no', 'material_name', 'material_type__global_name')
+            if mc_code:  # 去除带尾缀的物料名
+                data = data.exclude(Q(material_name__endswith='-C') | Q(material_name__endswith='-X'))
             return Response({'results': data})
         else:
             return super().list(request, *args, **kwargs)
