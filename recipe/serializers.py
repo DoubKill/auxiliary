@@ -347,7 +347,7 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.used_type = 2
             elif instance.used_type == 2:  # 启用
                 # 早上8点到17点之间提交人和启用人不能一致
-                if 8 <= now_time <= 17 and instance.submit_user == self.context['request'].user:
+                if 8 <= now_time <= 16 and instance.submit_user == self.context['request'].user:
                     raise serializers.ValidationError('配方提交人不可启用配方[08:00-17:00]')
                 instance.used_type = 4
                 instance.used_user = self.context['request'].user
