@@ -108,8 +108,7 @@ class ProductClassesPlanDown(BaseDownloader):
     upload_fields = (
         'id', 'sn', 'plan_trains', 'time', 'weight', 'unit', 'work_schedule_plan__work_schedule_plan_no',
         'plan_classes_uid', 'note', 'equip__equip_no', 'product_batching__stage_product_batch_no', 'status',
-        'product_day_plan__equip__equip_no', 'product_day_plan__product_batching__stage_product_batch_no',
-        'product_day_plan__plan_schedule__plan_schedule_no', 'delete_flag', 'created_date')
+        'delete_flag', 'created_date')
     model = ProductClassesPlan
     # exclude_dict = {'status': '等待'}
 
@@ -117,6 +116,6 @@ class ProductClassesPlanDown(BaseDownloader):
 if __name__ == '__main__':
 
     for downloader in (
-            ProductBatchingDown, MaterialDown, ProductDayPlanDown, ProductClassesPlanDown,
+            ProductBatchingDown, MaterialDown, ProductClassesPlanDown,
     ):
         downloader().download()
