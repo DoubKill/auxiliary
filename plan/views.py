@@ -283,31 +283,7 @@ class IssuedPlan(APIView):
         product_process_details = product_batching.process_details.filter(delete_flag=False)
         # if not product_process_details:
         #     raise ValidationError("胶料配料步序详情为空，该计划不可用")
-        cb_cnt = product_batching_details.exclude(material__material_name='卸料').filter(type=2).count()  # 炭黑称量数量
-        oil_cnt = product_batching_details.exclude(material__material_name='卸料').filter(type=3).count()  # 油料称量数量
-        cb_xl_cnt = product_batching_details.filter(type=2, material__material_name='卸料').count()  # 炭黑卸料数量
-        oil_xl_cnt = product_batching_details.filter(type=3, material__material_name='卸料').count()  # 油料卸料数量
-        add_cb_cnt = product_process_details.filter(action__action='加炭黑').count()  # 步序加炭黑次数
-        add_oil_cnt = product_process_details.filter(action__action__icontains='加油').count()  # 步序加油料次数
-        last_action_process = product_process_details.exclude(
-            condition__condition__in=('配方结束', '同时执行')
-        ).filter(condition__isnull=False).order_by('sn').last()
-        open_door_process = product_process_details.filter(action__action='开卸料门').order_by('sn').last()
-        if cb_xl_cnt != add_cb_cnt:
-            raise ValidationError('炭黑称量卸料次数与步序里的加炭黑次数不相等，请校验后重试！')
-        if oil_xl_cnt != add_oil_cnt:
-            raise ValidationError('油料称量卸料次数与步序里的加油次数不相等，请校验后重试！')
-        if cb_cnt and not add_cb_cnt:
-            raise ValidationError('步序错误，炭黑称量列表中有炭黑！')
-        if not cb_cnt and add_cb_cnt:
-            raise ValidationError('步序错误，炭黑称量列表中无炭黑！')
-        if oil_cnt and not add_oil_cnt:
-            raise ValidationError('步序错误，油料称量列表中有油料！')
-        if not oil_cnt and add_oil_cnt:
-            raise ValidationError('步序错误，油料称量列表中无油料！')
-        if open_door_process and last_action_process:
-            if open_door_process.sn <= last_action_process.sn:
-                raise ValidationError("步序错误，开卸料门动作必需在条件 '{}' 之后！".format(last_action_process.condition.condition))
+
         return product_batching, product_batching_details, product_process, product_process_details, pcp_obj
 
     def _map_PmtRecipe(self, pcp_object, product_process, product_batching, equip_no):
