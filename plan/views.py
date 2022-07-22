@@ -1012,6 +1012,8 @@ class PlanIssueValidate(APIView):
             plan = ProductClassesPlan.objects.get(id=plan_id)
         except Exception:
             raise ValidationError('该计划不存在！')
+        if plan.equip.equip_no == 'Z04':
+            return Response({'success': True, 'msg': 'OK'})
         pb = ProductBatching.objects.filter(batching_type=1,
                                             equip=plan.equip,
                                             stage_product_batch_no=plan.product_batching.stage_product_batch_no,
