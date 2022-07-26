@@ -290,10 +290,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
         if batching_details is not None:
-            # instance.batching_details.filter().update(delete_flag=True)
-            for detail in instance.batching_details.all():
-                detail.delete_flag = True
-                detail.save()
+            instance.batching_details.filter().delete()
             batching_detail_list = [None] * len(batching_details)
             for i, detail in enumerate(batching_details):
                 actual_weight = detail.get('actual_weight', 0)
@@ -322,7 +319,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                 p_instance = ProductProcess.objects.create(**processes)
             if process_details is not None:
                 process_detail_list = [None] * len(process_details)
-                instance.process_details.filter().update(delete_flag=True)
+                instance.process_details.filter().delete()
                 for i, process_detail in enumerate(process_details):
                     process_detail['product_batching'] = instance
                     process_detail_list[i] = ProductProcessDetail(**process_detail)

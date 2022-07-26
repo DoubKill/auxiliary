@@ -1001,3 +1001,63 @@ class SchedulingResultView(APIView):
             raise ValidationError('bad request')
         SchedulingResult.objects.using('mes').filter(id__in=result_id).update(status='已下发')
         return Response('OK')
+
+
+@method_decorator([api_recorder], name="dispatch")
+class PlanIssueValidate(APIView):
+
+    def get(self, request):
+        plan_id = self.request.query_params.get('plan_id')
+        try:
+            plan = ProductClassesPlan.objects.get(id=plan_id)
+        except Exception:
+            raise ValidationError('该计划不存在！')
+        if plan.equip.equip_no == 'Z04':
+            return Response({'success': True, 'msg': 'OK'})
+        pb = ProductBatching.objects.filter(batching_type=1,
+                                            equip=plan.equip,
+                                            stage_product_batch_no=plan.product_batching.stage_product_batch_no,
+                                            used_type=4).first()
+        if not pb:
+            raise ValidationError('该计划配方未启用或不存在！')
+        product_batching_details = pb.batching_details.filter(delete_flag=False)
+        product_process_details = pb.process_details.filter(delete_flag=False)
+        cb_cnt = product_batching_details.exclude(material__material_name='卸料').filter(type=2).count()  # 炭黑称量数量
+        oil_cnt = product_batching_details.exclude(material__material_name='卸料').filter(type=3).count()  # 油料称量数量
+
+        cb_xl_cnt = product_batching_details.filter(type=2, material__material_name='卸料').count()  # 炭黑卸料数量
+        oil_xl_cnt = product_batching_details.filter(type=3, material__material_name='卸料').count()  # 油料卸料数量
+
+        add_cb_cnt = product_process_details.filter(
+            action__action__icontains='炭黑').count()  # 步序加炭黑次数
+        add_oil_actions = product_process_details.filter(
+            action__action__icontains='油').values_list('action__action', flat=True)
+        add_oil_cnt = 0  # 步序加油料次数
+        for oil_action in add_oil_actions:
+            for i in oil_action:
+                if i == '油':
+                    add_oil_cnt += 1
+
+        last_action_process = product_process_details.exclude(
+            condition__condition__in=('配方结束', '同时执行')
+        ).filter(condition__isnull=False).order_by('sn').last()
+        open_door_process = product_process_details.filter(action__action='开卸料门').order_by('sn').last()
+        if cb_xl_cnt != add_cb_cnt:
+            return Response({'success': False, 'msg': '配方步序有误：配方炭黑称量卸料次数与步序里的加炭黑次数不一致！'})
+        if oil_xl_cnt != add_oil_cnt:
+            return Response({'success': False, 'msg': '配方步序有误，油料称量卸料次数与步序里的加油次数不一致！'})
+        if cb_cnt and not add_cb_cnt:  # 有炭黑称量，无加炭黑步序
+            return Response({'success': False, 'msg': '配方步序有误，炭黑称量列表中有炭黑！'})
+        if not cb_cnt and add_cb_cnt:  # 无炭黑称量，有加炭黑步序
+            return Response({'success': False, 'msg': '配方步序有误，炭黑称量列表中无炭黑！'})
+        if oil_cnt and not add_oil_cnt:  # 有油料称量、无加油步序
+            return Response({'success': False, 'msg': '配方步序有误，油料称量列表中有油料！'})
+        if not oil_cnt and add_oil_cnt:  # 无油料称量，有加油料步序
+            return Response({'success': False, 'msg': '配方步序有误，油料称量列表中无油料！'})
+        if open_door_process:
+            if not last_action_process:
+                return Response({'success': False, 'msg': '步序错误,开卸料门动作之前必需要有条件！'})
+            else:
+                if open_door_process.sn <= last_action_process.sn:
+                    return Response({'success': False, 'msg': "步序错误，开卸料门动作必需在条件 '{}' 之后！".format(last_action_process.condition.condition)})
+        return Response({'success': True, 'msg': 'OK'})
