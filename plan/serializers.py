@@ -49,12 +49,12 @@ class ProductClassesPlanManyCreateSerializer(BaseModelSerializer):
                                   product_no=instance.product_batching.stage_product_batch_no,
                                   status='等待', operation_user=self.context['request'].user.username)
         # 创建原材料需求量
-        for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
-            MaterialDemanded.objects.create(product_classes_plan=instance,
-                                            work_schedule_plan=instance.work_schedule_plan,
-                                            material=pbd_obj.material,
-                                            material_demanded=pbd_obj.actual_weight * instance.plan_trains,
-                                            plan_classes_uid=instance.plan_classes_uid)
+        # for pbd_obj in instance.product_batching.batching_details.filter(delete_flag=False):
+        #     MaterialDemanded.objects.create(product_classes_plan=instance,
+        #                                     work_schedule_plan=instance.work_schedule_plan,
+        #                                     material=pbd_obj.material,
+        #                                     material_demanded=pbd_obj.actual_weight * instance.plan_trains,
+        #                                     plan_classes_uid=instance.plan_classes_uid)
 
         return instance
 
@@ -227,21 +227,15 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                                       status='等待', operation_user=self.context['request'].user.username)
             recipe_details = instance.product_batching.batching_details.filter(delete_flag=False).order_by('sn')
             ProductBatchingDetailPlan.objects.filter(plan_classes_uid=pcp_obj.plan_classes_uid).delete()
-            for pbd_obj in recipe_details:
-                MaterialDemanded.objects.create(product_classes_plan=pcp_obj,
-                                                work_schedule_plan=pcp_obj.work_schedule_plan,
-                                                material=pbd_obj.material,
-                                                material_demanded=pbd_obj.actual_weight * pcp_obj.plan_trains,
-                                                plan_classes_uid=pcp_obj.plan_classes_uid)
-                if pbd_obj.type == 1:  # 胶料称物料保存到临时配方中(密炼防错使用)
-                    ProductBatchingDetailPlan.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
-                                                             sn=pbd_obj.sn,
-                                                             stage_product_batch_no=pbd_obj.product_batching.stage_product_batch_no,
-                                                             dev_type=pcp_obj.equip.category.category_name,
-                                                             equip=pcp_obj.equip.equip_no,
-                                                             material_name=pbd_obj.material.material_name,
-                                                             actual_weight=pbd_obj.actual_weight,
-                                                             standard_error=pbd_obj.standard_error)
+            for pbd_obj in recipe_details.filter(type=1):
+                ProductBatchingDetailPlan.objects.create(plan_classes_uid=pcp_obj.plan_classes_uid,
+                                                         sn=pbd_obj.sn,
+                                                         stage_product_batch_no=pbd_obj.product_batching.stage_product_batch_no,
+                                                         dev_type=pcp_obj.equip.category.category_name,
+                                                         equip=pcp_obj.equip.equip_no,
+                                                         material_name=pbd_obj.material.material_name,
+                                                         actual_weight=pbd_obj.actual_weight,
+                                                         standard_error=pbd_obj.standard_error)
         return instance
 
 
