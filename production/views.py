@@ -42,7 +42,7 @@ from production.serializers import QualityControlSerializer, OperationLogSeriali
     MaterialStatisticsSerializer, PalletSerializer, WeighInformationSerializer2, \
     MixerInformationSerializer2, TrainsFeedbacksSerializer2, AlarmLogSerializer, ExpendMaterialSerializer2
 from production.utils import strtoint, send_msg_to_terminal
-from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan
+from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan, ProductBatching
 
 logger = logging.getLogger('api_log')
 
@@ -1685,6 +1685,13 @@ class ManualInputTrainsView(APIView):
     def post(self, request):
         data = self.request.data
         data['created_username'] = self.request.user.username
+        equip_no = data['equip_no']
+        product_no = data['product_no']
+        pb = ProductBatching.objects.filter(batching_type=1,
+                                            equip__equip_no=equip_no,
+                                            stage_product_batch_no=product_no).order_by('id').last()
+        if pb:
+            data['weight'] = pb.batching_weight
         ManualInputTrains.objects.using('mes').create(**data)
         return Response('OK')
 
