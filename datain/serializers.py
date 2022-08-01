@@ -526,7 +526,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                         details.append(other_material_info)
                 now_recipe.batching_details.all().delete()
                 now_recipe.batching_weight = validated_data['batching_weight'] + other_material_weight
-                now_recipe.used_type = 1
+                now_recipe.used_type = 1 if equip_no != 'Z04' else 4
                 now_recipe.save()
             for detail in details:
                 tank = None
