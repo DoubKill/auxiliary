@@ -1605,7 +1605,7 @@ class HandleFeedView(APIView):
         trains = data.get("trains")
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, status='运行中').first()
         if not pcp:
-            raise ValidationError(f"计划不存在或不是运行状态:{plan_classes_uid}")
+            return Response({"success": False, "message": f"计划不存在或不是运行状态:{plan_classes_uid}"})
         # 掺料或者待处理料未扫码
         other_material = ProductBatchingDetailPlan.objects.filter(Q(material_name__icontains='掺料') |
                                                                   Q(material_name__icontains='待处理料'),
@@ -1618,7 +1618,7 @@ class HandleFeedView(APIView):
         # mes配方
         res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
         if isinstance(res, str):
-            raise ValidationError('获取mes配方信息失败')
+            return Response({"success": False, "message": '获取mes配方信息失败'})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
         xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
