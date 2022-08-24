@@ -249,6 +249,7 @@ class MaterialTankStatus(AbstractEntity):
     low_speed = models.DecimalField(decimal_places=2, max_digits=8, help_text='慢称速度', verbose_name='慢称速度')
     product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
     provenance = models.CharField(max_length=64, help_text='产地', verbose_name='产地', blank=True, null=True)
+    line_no = models.IntegerField(help_text='称量线体编号', blank=True, null=True)
 
     def __str__(self):
         return f"{self.tank_name}|{self.tank_type}|{self.equip_no}"
