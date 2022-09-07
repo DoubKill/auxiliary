@@ -665,9 +665,10 @@ class IssuedPlan(APIView):
                      'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
                      'mattype': 'W', 'machineno': int(equip_no), 'matcode': ''}))
         else:
-            oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
-                         'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
-                         'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}]
+            if not oil_data:
+                oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                             'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}]
         if not cb_data:
             cb_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
                          'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
