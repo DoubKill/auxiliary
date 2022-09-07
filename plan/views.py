@@ -748,16 +748,16 @@ class IssuedPlan(APIView):
 
     def _sync_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
-        # recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
-        # try:
-        #     status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
-        # except APIException:
-        #     raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
-        # except:
-        #     raise ValidationError(f"{equip_no} 网络连接异常")
-        #
-        # if not status:
-        #     raise ValidationError(f"主配方下达失败:{text}")
+        recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
+        try:
+            status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+        except APIException:
+            raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
+        except:
+            raise ValidationError(f"{equip_no} 网络连接异常")
+
+        if not status:
+            raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
         try:
