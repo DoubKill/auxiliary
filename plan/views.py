@@ -643,10 +643,32 @@ class IssuedPlan(APIView):
         ploy_data = self._map_ploy(product_batching, product_batching_details, equip_no)
         oil_data = self._map_oil(product_batching, product_batching_details, equip_no)
         cb_data = self._map_cb(product_batching, product_batching_details, equip_no)
-        if not oil_data:
-            oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
-                         'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
-                         'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}]
+        if int(equip_no) == 7:
+            line_1_data = list(filter(lambda x: x['mattype'] == 'O', oil_data))
+            line_2_data = list(filter(lambda x: x['mattype'] == 'W', oil_data))
+            if not oil_data:
+                oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                             'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''},
+                            {'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                             'mattype': 'W', 'machineno': int(equip_no), 'matcode': ''}
+                            ]
+            elif not line_1_data:
+                oil_data.append(OrderedDict(
+                    {'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                     'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                     'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}))
+            elif not line_2_data:
+                oil_data.append(OrderedDict(
+                    {'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                     'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                     'mattype': 'W', 'machineno': int(equip_no), 'matcode': ''}))
+        else:
+            if not oil_data:
+                oil_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
+                             'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
+                             'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}]
         if not cb_data:
             cb_data = [{'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
                          'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
