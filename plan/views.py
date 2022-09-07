@@ -544,7 +544,7 @@ class IssuedPlan(APIView):
 
     def _map_cb(self, product_batching, product_batching_details, equip_no):
         datas = []
-        product_batching_details = product_batching_details.filter(type=2)
+        product_batching_details = product_batching_details.filter(type=2).order_by('sn')
         # equip = product_batching.equip.equip_no
         if len(equip_no) == 1:
             equip = "Z0" + equip_no
@@ -581,7 +581,7 @@ class IssuedPlan(APIView):
 
     def _map_oil(self, product_batching, product_batching_details, equip_no):
         datas = []
-        product_batching_details = product_batching_details.filter(type=3)
+        product_batching_details = product_batching_details.filter(type=3).order_by('line_no', 'sn')
         if len(equip_no) == 1:
             equip = "Z0" + equip_no
         else:
@@ -589,6 +589,7 @@ class IssuedPlan(APIView):
         for pbd in product_batching_details:
             material_name = pbd.material.material_name
             tank_no = pbd.tank_no
+            line_no = pbd.line_no
             if tank_no is None:
                 if material_name == "卸料":
                     tank_no = "卸料"
@@ -596,28 +597,34 @@ class IssuedPlan(APIView):
                     tank_no = ""
             if material_name == "卸料":
                 if not MaterialTankStatus.objects.filter(material_name=material_name, tank_type='2',
-                                                         equip_no=equip).exists():
+                                                         equip_no=equip, line_no=line_no).exists():
                     raise ValidationError("油料罐中未匹配到该物料，请检查")
             else:
                 if not MaterialTankStatus.objects.filter(tank_no=tank_no, material_name=material_name, tank_type='2',
-                                                         equip_no=equip).exists():
+                                                         equip_no=equip, line_no=line_no).exists():
                     raise ValidationError("油料罐中未匹配到该物料，请检查")
             data = OrderedDict()
             data["id"] = pbd.id
-            data["matname"] = "卸料" if tank_no == "卸料" else "油料罐" + tank_no
+            if tank_no == "卸料":
+                matname = '卸料'
+            elif line_no == 2:
+                matname = '油料{}罐{}'.format(str(line_no), tank_no)
+            else:
+                matname = "油料罐{}".format(tank_no)
+            data["matname"] = matname
             data["matcode"] = pbd.material.material_name
-            data["set_weight"] = round(pbd.actual_weight,2)
+            data["set_weight"] = round(pbd.actual_weight, 2)
             data["error_allow"] = pbd.standard_error
             data["recipe_name"] = product_batching.stage_product_batch_no
             data["act_code"] = pbd.sn
-            data["mattype"] = "O"  # 油料
+            data["mattype"] = 'W' if line_no == 2 else "O"  # 油料
             data["machineno"] = int(equip_no)
             datas.append(data)
         return datas
 
     def _map_ploy(self, product_batching, product_batching_details, equip_no):
         datas = []
-        product_batching_details = product_batching_details.filter(type=1)
+        product_batching_details = product_batching_details.filter(type=1).order_by('sn')
         for pbd in product_batching_details:
             data = OrderedDict()
             data["id"] = pbd.id

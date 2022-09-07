@@ -177,6 +177,7 @@ class ProductBatchingDetail(AbstractEntity):
     auto_flag = models.PositiveSmallIntegerField(help_text='手动/自动', choices=AUTO_FLAG)
     type = models.PositiveSmallIntegerField(help_text='类别', choices=TYPE_CHOICE, default=1)
     tank_no = models.CharField(max_length=64, help_text='罐号', blank=True, null=True)
+    line_no = models.IntegerField(help_text='称量线体编号', default=1)
 
     class Meta:
         db_table = 'product_batching_detail'

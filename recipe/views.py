@@ -346,7 +346,7 @@ class TankMaterialVIew(APIView):
         data = []
         material_data = MaterialTankStatus.objects.filter(
             equip_no=equip_no, tank_type=tank_type).values('material_no', 'tank_no', 'tank_name', 'provenance',
-                                                           'material_name')
+                                                           'material_name', 'line_no')
         for item in material_data:
             material = Material.objects.filter(material_no=item['material_no']).first()
             if not material:

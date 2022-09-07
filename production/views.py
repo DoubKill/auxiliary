@@ -690,11 +690,15 @@ def send_cd_cil(equip_no, user_name):
         for mts_obj in mts_set:
             if mts_obj.tank_no == "卸料":
                 continue
+            line_no = mts_obj.line_no
+            if line_no == 2:
+                matname = '油料{}罐{}'.format(str(line_no), mts_obj.tank_no) if mts_obj.tank_type == '2' else "炭黑罐{}".format(mts_obj.tank_no)
+            else:
+                matname = "油料罐{}".format(mts_obj.tank_no) if mts_obj.tank_type == '2' else "炭黑罐{}".format(mts_obj.tank_no)
             mts_dict = {"latesttime": None,
                         "oper": user_name,
                         "matno": int(mts_obj.tank_no),
-                        "matname": "炭黑罐" + str(mts_obj.tank_no) if mts_obj.tank_type == '1' else "油料罐" + str(
-                            mts_obj.tank_no),
+                        "matname": matname,
                         "matcode": mts_obj.material_name,
                         "slow": str(mts_obj.low_value),
                         "shark": str(mts_obj.advance_value),
@@ -703,7 +707,7 @@ def send_cd_cil(equip_no, user_name):
                         "fast_speed": str(mts_obj.fast_speed),
                         "slow_speed": str(mts_obj.low_speed),
                         "machineno": equip_no_int,
-                        "choices": tank_type,
+                        "choices": '3' if line_no == 2 else tank_type,
                         'matplace': mts_obj.provenance if mts_obj.provenance else " "}
             date_dict['json']['data'].append(mts_dict)
     data = json.dumps(date_dict['json'])
@@ -1219,9 +1223,15 @@ class TankWeighSyncView(APIView):
             tank_no = data.get("tank_no")
             material_type = "炭黑" if data.get("material_type") == 1 else "油料"
             equip_no = data.get("equip_no")
+            instance = MaterialTankStatus.objects.filter(equip_no=equip_no,
+                                                         tank_no=str(tank_no),
+                                                         material_type=material_type)
+            if data['material_type'] == 2:
+                instance = instance.exclude(line_no=2)
+            elif data['material_type'] == 3:
+                instance = instance.filter(line_no=2)
             try:
-                MaterialTankStatus.objects.filter(equip_no=equip_no, tank_no=str(tank_no), material_type=material_type
-                                                  ).update(
+                instance.update(
                     material_name=material_name,
                     material_no=material_name,
                     low_value=data.get("low_value", 2),
