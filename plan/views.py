@@ -655,10 +655,10 @@ class IssuedPlan(APIView):
                              'mattype': 'W', 'machineno': int(equip_no), 'matcode': ''}
                             ]
             elif not line_1_data:
-                oil_data.insert(0, (OrderedDict(
+                oil_data.insert(0, OrderedDict(
                     {'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
                      'recipe_name': product_batching.stage_product_batch_no, 'act_code': 0,
-                     'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''})))
+                     'mattype': 'O', 'machineno': int(equip_no), 'matcode': ''}))
             elif not line_2_data:
                 oil_data.append(OrderedDict(
                     {'id': product_batching.id, 'matname': '', 'set_weight': 0, 'error_allow': 0,
