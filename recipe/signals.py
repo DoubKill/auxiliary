@@ -8,7 +8,7 @@ from mes.conf import COMMON_READ_ONLY_FIELDS
 from plan.models import ProductClassesPlan, ProductBatchingClassesPlan
 from production.models import ExpendMaterial, MaterialTankStatus
 from recipe.models import Material, ProductInfo, ProductRecipe, ProductBatching, ProductBatchingDetail, ProductProcess, \
-    ProductProcessDetail, RecipeUpdateHistory
+    ProductProcessDetail
 from recipe.serializers import ProductBatchingRetrieveSerializer
 from system.models import DataChangeLog
 
@@ -86,20 +86,20 @@ def class_plan_in_post_save(sender, instance=None, created=False, update_fields=
     inner(sender, instance, created)
 
 
-@receiver(post_save, sender=ProductBatching)
-def update_product_batching(sender, instance=None, created=False, **kwargs):
-    try:
-        if not created:
-            if instance.last_updated_user is None:
-                user = "mes"
-            else:
-                user = instance.last_updated_user.username
-            data = ProductBatchingRetrieveSerializer(instance).data
-            RecipeUpdateHistory.objects.create(
-                product_no=instance.stage_product_batch_no,
-                equip_no=instance.equip.equip_no,
-                recipe_detail=json.loads(json.dumps(data)),
-                username=user
-            )
-    except Exception:
-        pass
+# @receiver(post_save, sender=ProductBatching)
+# def update_product_batching(sender, instance=None, created=False, **kwargs):
+#     try:
+#         if not created:
+#             if instance.last_updated_user is None:
+#                 user = "mes"
+#             else:
+#                 user = instance.last_updated_user.username
+#             data = ProductBatchingRetrieveSerializer(instance).data
+#             RecipeUpdateHistory.objects.create(
+#                 product_no=instance.stage_product_batch_no,
+#                 equip_no=instance.equip.equip_no,
+#                 recipe_detail=json.loads(json.dumps(data)),
+#                 username=user
+#             )
+#     except Exception:
+#         pass

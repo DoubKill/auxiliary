@@ -1,15 +1,18 @@
+import json
+import operator
 from datetime import datetime
 import logging
 
 from django.db.models import Max
 from django.db.transaction import atomic
+from django.forms import model_to_dict
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from basics.models import GlobalCode
 from mes.base_serializer import BaseModelSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, ProductBatchingDetail, \
-    MaterialAttribute, ProductProcess, ProductProcessDetail
+    MaterialAttribute, ProductProcess, ProductProcessDetail, RecipeChangeHistory, RecipeChangeDetail
 from production.models import PlanStatus, MaterialTankStatus
 from mes.conf import COMMON_READ_ONLY_FIELDS
 
@@ -286,6 +289,98 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
         process_details = validated_data.pop('process_details', None)
         validated_data['last_updated_user'] = self.context['request'].user
         instance = super().update(instance, validated_data)
+        try:
+            if instance.equip:
+                change_data = {
+                    'recipe_no': instance.stage_product_batch_no,
+                    'equip_no': instance.equip.equip_no,
+                    'dev_type': instance.equip.category.category_name,
+                    'used_type': instance.used_type,
+                    'created_time': instance.created_date,
+                    'created_username': '' if not instance.created_user else instance.created_user.username,
+                    'updated_time': datetime.now(),
+                    'updated_username': self.context['request'].user.username
+                }
+                change_history, _ = RecipeChangeHistory.objects.update_or_create(
+                    defaults=change_data,
+                    **{'recipe_no': instance.stage_product_batch_no,
+                       'equip_no': instance.equip.equip_no})
+                # 当前配方详情
+                current_batching_details = list(instance.batching_details.filter(
+                    delete_flag=False).values('material__material_no', 'actual_weight', 'type').order_by('type', 'id'))
+                current_batching_details_dict = {i['material__material_no']: i for i in current_batching_details}
+                # 修改后配方详情
+                batching_details_dict = {i['material'].material_no: i for i in batching_details}
+                added_material = set(batching_details_dict.keys()) - set(current_batching_details_dict.keys())
+                deleted_material = set(current_batching_details_dict.keys()) - set(batching_details_dict.keys())
+                common_material = set(current_batching_details_dict.keys()) & set(batching_details_dict.keys())
+                desc = []
+                change_detail_data = {1: [], 2: [], 3: []}
+                # {1: [{'type': 1, 'material_no': "aaa", 'flag': 'add', 'pv': '12', 'cv': '13'}], 2: "", 3: ""}
+                # 比对配料
+                if added_material:
+                    desc.append('配方新增')
+                    for i in added_material:
+                        change_detail_data[1].append({'type': batching_details_dict[i]['type'],
+                                                      'key': i,
+                                                      'flag': '新增',
+                                                      'cv': float(batching_details_dict[i]['actual_weight'])})
+                if deleted_material:
+                    desc.append('配方删除')
+                    for i in deleted_material:
+                        change_detail_data[1].append({'type': current_batching_details_dict[i]['type'],
+                                                      'key': i,
+                                                      'flag': '删除'})
+                if common_material:
+                    for i in common_material:
+                        cv = batching_details_dict[i]['actual_weight']
+                        pv = current_batching_details_dict[i]['actual_weight']
+                        if pv != cv:
+                            desc.append('配方修改')
+                            change_detail_data[1].append({'type': batching_details_dict[i]['type'],
+                                                          'key': i,
+                                                          'flag': '修改',
+                                                          'cv': float(cv),
+                                                          'pv': float(pv)})
+                # 比对工艺参数
+                if processes and hasattr(instance, 'processes'):
+                    current_processes = model_to_dict(instance.processes)
+                    for k, v in processes.items():
+                        if not current_processes[k] == v:
+                            desc.append('工艺修改')
+                            if isinstance(v, bool):
+                                cv = '启用' if v else '停用'
+                                pv = '启用' if current_processes[k] else '停用'
+                            else:
+                                cv = float(v)
+                                pv = float(current_processes[k])
+                            change_detail_data[2].append({'type': None,
+                                                          'key': ProductProcess._meta.get_field(k).help_text,
+                                                          'flag': '修改',
+                                                          'cv': cv,
+                                                          'pv': pv})
+                # 比对密炼步序
+                if process_details and instance.process_details.exists():
+                    p_pds = list(instance.process_details.filter(
+                        delete_flag=False).order_by('id').values_list('action_id', flat=True))
+                    v_pds = list(i['action'].id for i in process_details)
+                    if not operator.eq(p_pds, v_pds):
+                        desc.append('步序修改')
+                        for i in process_details:
+                            change_detail_data[3].append({'type': None,
+                                                          'key': i['action'].action,
+                                                          'flag': '修改',
+                                                          'cv': None,
+                                                          'pv': None})
+                if desc:
+                    RecipeChangeDetail.objects.create(
+                        change_history=change_history,
+                        desc='/'.join(set(desc)),
+                        details=json.dumps(change_detail_data),
+                        changed_username=self.context['request'].user.username
+                    )
+        except Exception:
+            pass
 
         # 修改配料
         batching_weight = manual_material_weight = auto_material_weight = 0
@@ -316,14 +411,14 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                 s.save()
             except:
                 processes['product_batching'] = instance
-                p_instance = ProductProcess.objects.create(**processes)
-            if process_details is not None:
-                process_detail_list = [None] * len(process_details)
-                instance.process_details.filter().delete()
-                for i, process_detail in enumerate(process_details):
-                    process_detail['product_batching'] = instance
-                    process_detail_list[i] = ProductProcessDetail(**process_detail)
-                ProductProcessDetail.objects.bulk_create(process_detail_list)
+                ProductProcess.objects.create(**processes)
+        if process_details is not None:
+            process_detail_list = [None] * len(process_details)
+            instance.process_details.filter().delete()
+            for i, process_detail in enumerate(process_details):
+                process_detail['product_batching'] = instance
+                process_detail_list[i] = ProductProcessDetail(**process_detail)
+            ProductProcessDetail.objects.bulk_create(process_detail_list)
         return instance
 
     class Meta:
@@ -379,3 +474,21 @@ class ProductBatchingDetailUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductBatchingDetail
         fields = ('sn', 'material__material_no', 'actual_weight', 'standard_error', 'auto_flag', 'type')
+
+
+class RecipeChangeHistorySerializer(serializers.ModelSerializer):
+    change_desc = serializers.SerializerMethodField()
+
+    def get_change_desc(self, obj):
+        return obj.change_details.order_by('id').values('desc', 'changed_time__date', 'changed_username')
+
+    class Meta:
+        model = RecipeChangeHistory
+        fields = '__all__'
+
+
+class RecipeChangeHistoryRetrieveSerializer(RecipeChangeHistorySerializer):
+    change_details = serializers.SerializerMethodField()
+
+    def get_change_details(self, obj):
+        return obj.change_details.order_by('id').values_list('details', flat=True)

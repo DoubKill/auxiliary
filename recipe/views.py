@@ -20,14 +20,14 @@ from mes.permissions import PermissionClass, ProductBatchingPermissions
 from mes.settings import MES_URL
 from production.models import MaterialTankStatus, PlanStatus
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter
+    MaterialAttributeFilter, RecipeChangeHistoryFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
     ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer, ProductProcessSerializer, \
-    ProductProcessDetailSerializer
+    ProductProcessDetailSerializer, RecipeChangeHistorySerializer, RecipeChangeHistoryRetrieveSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
-    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier, RecipeChangeHistory
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -450,3 +450,16 @@ class BatchingMaterials(APIView):
         if product_no:
             query_set = query_set.filter(stage_product_batch_no__icontains=product_no)
         return Response(query_set.values('stage_product_batch_no').distinct())
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeChangeHistoryViewSet(ModelViewSet):
+    queryset = RecipeChangeHistory.objects.all()
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = RecipeChangeHistoryFilter
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return RecipeChangeHistoryRetrieveSerializer
+        return RecipeChangeHistorySerializer

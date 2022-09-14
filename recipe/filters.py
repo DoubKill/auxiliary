@@ -1,6 +1,6 @@
 import django_filters
 
-from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess
+from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, ProductProcess, RecipeChangeHistory
 
 
 class MaterialFilter(django_filters.rest_framework.FilterSet):
@@ -54,3 +54,12 @@ class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
     class Meta:
         model = ProductProcess
         fields = ('equip', 'product_batching')
+
+
+class RecipeChangeHistoryFilter(django_filters.rest_framework.FilterSet):
+    st = django_filters.DateFilter(field_name='updated_time__date', lookup_expr='gte')
+    et = django_filters.DateFilter(field_name='updated_time__date', lookup_expr='lte')
+
+    class Meta:
+        model = RecipeChangeHistory
+        fields = ('recipe_no', 'equip_no', 'st', 'et', 'used_type')
