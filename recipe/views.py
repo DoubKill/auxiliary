@@ -454,7 +454,7 @@ class BatchingMaterials(APIView):
 
 @method_decorator([api_recorder], name="dispatch")
 class RecipeChangeHistoryViewSet(ModelViewSet):
-    queryset = RecipeChangeHistory.objects.all()
+    queryset = RecipeChangeHistory.objects.order_by('recipe_no')
     filter_backends = (DjangoFilterBackend,)
     filter_class = RecipeChangeHistoryFilter
     permission_classes = (IsAuthenticated,)
@@ -463,3 +463,16 @@ class RecipeChangeHistoryViewSet(ModelViewSet):
         if self.action == 'retrieve':
             return RecipeChangeHistoryRetrieveSerializer
         return RecipeChangeHistorySerializer
+
+    def list(self, request, *args, **kwargs):
+        used_types = self.request.query_params.get('used_types')
+        queryset = self.filter_queryset(self.get_queryset())
+        if used_types:
+            queryset = queryset.filter(used_type__in=used_types.split(','))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

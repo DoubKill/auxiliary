@@ -59,6 +59,7 @@ class ProcessStepsFilter(django_filters.rest_framework.FilterSet):
 class RecipeChangeHistoryFilter(django_filters.rest_framework.FilterSet):
     st = django_filters.DateFilter(field_name='updated_time__date', lookup_expr='gte')
     et = django_filters.DateFilter(field_name='updated_time__date', lookup_expr='lte')
+    recipe_no = django_filters.CharFilter(field_name='recipe_no', lookup_expr='icontains', help_text='胶料编码')
 
     class Meta:
         model = RecipeChangeHistory
