@@ -293,6 +293,7 @@ class RecipeChangeHistory(models.Model):
     created_username = models.CharField(max_length=64, help_text='创建人')
     updated_time = models.DateTimeField(verbose_name='修改时间', auto_now=True)
     updated_username = models.CharField(max_length=64, help_text='修改人')
+    origin = models.IntegerField(help_text='来源 1:群控 2:MES', default=1)
 
     class Meta:
         db_table = 'recipe_change_history'
