@@ -307,10 +307,10 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                        'equip_no': instance.equip.equip_no})
                 # 当前配方详情
                 current_batching_details = list(instance.batching_details.filter(
-                    delete_flag=False).values('material__material_no', 'actual_weight', 'type').order_by('type', 'id'))
-                current_batching_details_dict = {i['material__material_no']: i for i in current_batching_details}
+                    delete_flag=False).values('material__material_name', 'actual_weight', 'type').order_by('type', 'id'))
+                current_batching_details_dict = {i['material__material_name']: i for i in current_batching_details}
                 # 修改后配方详情
-                batching_details_dict = {i['material'].material_no: i for i in batching_details}
+                batching_details_dict = {i['material'].material_name: i for i in batching_details}
                 added_material = set(batching_details_dict.keys()) - set(current_batching_details_dict.keys())
                 deleted_material = set(current_batching_details_dict.keys()) - set(batching_details_dict.keys())
                 common_material = set(current_batching_details_dict.keys()) & set(batching_details_dict.keys())
