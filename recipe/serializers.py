@@ -319,14 +319,14 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                 # {1: [{'type': 1, 'material_no': "aaa", 'flag': 'add', 'pv': '12', 'cv': '13'}], 2: "", 3: ""}
                 # 比对配料
                 if added_material:
-                    desc.append('配方新增')
+                    desc.append('新增配料')
                     for i in added_material:
                         change_detail_data[1].append({'type': batching_details_dict[i]['type'],
                                                       'key': i,
                                                       'flag': '新增',
                                                       'cv': float(batching_details_dict[i]['actual_weight'])})
                 if deleted_material:
-                    desc.append('配方删除')
+                    desc.append('删除配料')
                     for i in deleted_material:
                         change_detail_data[1].append({'type': current_batching_details_dict[i]['type'],
                                                       'key': i,
@@ -336,7 +336,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                         cv = batching_details_dict[i]['actual_weight']
                         pv = current_batching_details_dict[i]['actual_weight']
                         if pv != cv:
-                            desc.append('配方修改')
+                            desc.append('配料修改')
                             change_detail_data[1].append({'type': batching_details_dict[i]['type'],
                                                           'key': i,
                                                           'flag': '修改',
@@ -461,6 +461,9 @@ class ProductBatchingPartialUpdateSerializer(BaseModelSerializer):
                 instance.reject_time = datetime.now()
         instance.last_updated_user = self.context['request'].user
         instance.save()
+        RecipeChangeHistory.objects.filter(recipe_no=instance.stage_product_batch_no,
+                                           equip_no=instance.equip.equip_no
+                                           ).update(used_type=instance.used_type)
         return instance
 
     class Meta:
@@ -480,15 +483,35 @@ class RecipeChangeHistorySerializer(serializers.ModelSerializer):
     change_desc = serializers.SerializerMethodField()
 
     def get_change_desc(self, obj):
-        return obj.change_details.order_by('id').values('desc', 'changed_time__date', 'changed_username')
+        return list(obj.change_details.order_by('id').values('desc', 'changed_time__date', 'changed_username'))
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        change_desc = ret['change_desc']
+        change_desc.insert(0, {'desc': '配方新增',
+                               'changed_time__date': ret['created_time'][:10],
+                               'changed_username': ret['created_username']})
+        return ret
 
     class Meta:
         model = RecipeChangeHistory
         fields = '__all__'
 
 
-class RecipeChangeHistoryRetrieveSerializer(RecipeChangeHistorySerializer):
-    change_details = serializers.SerializerMethodField()
+class RecipeChangeDetailRetrieveSerializer(serializers.ModelSerializer):
 
-    def get_change_details(self, obj):
-        return obj.change_details.order_by('id').values_list('details', flat=True)
+    class Meta:
+        model = RecipeChangeDetail
+        fields = ('details', 'changed_time', 'changed_username')
+
+
+class RecipeChangeHistoryRetrieveSerializer(RecipeChangeHistorySerializer):
+    change_details = RecipeChangeDetailRetrieveSerializer(many=True)
+
+    def to_representation(self, instance):
+        ret = super(RecipeChangeHistoryRetrieveSerializer, self).to_representation(instance)
+        change_details = ret['change_details']
+        change_details.insert(0, {'details': '',
+                                  'changed_time': ret['created_time'],
+                                  'changed_username': ret['created_username']})
+        return ret

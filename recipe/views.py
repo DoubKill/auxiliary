@@ -278,6 +278,9 @@ class ProductBatchingViewSet(ModelViewSet):
             instance.used_type = 4
         instance.last_updated_user = self.request.user
         instance.save()
+        RecipeChangeHistory.objects.filter(recipe_no=instance.stage_product_batch_no,
+                                           equip_no=instance.equip.equip_no
+                                           ).update(used_type=instance.used_type)
 
 
 @method_decorator([api_recorder], name="dispatch")
