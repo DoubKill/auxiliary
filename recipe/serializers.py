@@ -307,7 +307,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                        'equip_no': instance.equip.equip_no})
                 # 当前配方详情
                 current_batching_details = list(instance.batching_details.filter(
-                    delete_flag=False).values('material__material_name', 'actual_weight', 'type').order_by('type', 'id'))
+                    delete_flag=False).values('material__material_name', 'actual_weight', 'type', 'standard_error').order_by('type', 'id'))
                 current_batching_details_dict = {i['material__material_name']: i for i in current_batching_details}
                 # 修改后配方详情
                 batching_details_dict = {i['material'].material_name: i for i in batching_details}
@@ -315,7 +315,7 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                 deleted_material = set(current_batching_details_dict.keys()) - set(batching_details_dict.keys())
                 common_material = set(current_batching_details_dict.keys()) & set(batching_details_dict.keys())
                 desc = []
-                change_detail_data = {1: [], 2: [], 3: []}
+                change_detail_data = {1: [], 2: [], 3: [], 4: []}
                 # {1: [{'type': 1, 'material_no': "aaa", 'flag': 'add', 'pv': '12', 'cv': '13'}], 2: "", 3: ""}
                 # 比对配料
                 if added_material:
@@ -335,6 +335,9 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                     for i in common_material:
                         cv = batching_details_dict[i]['actual_weight']
                         pv = current_batching_details_dict[i]['actual_weight']
+
+                        cv2 = batching_details_dict[i]['standard_error']
+                        pv2 = current_batching_details_dict[i]['standard_error']
                         if pv != cv:
                             desc.append('配料修改')
                             change_detail_data[1].append({'type': batching_details_dict[i]['type'],
@@ -342,6 +345,13 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                                                           'flag': '修改',
                                                           'cv': float(cv),
                                                           'pv': float(pv)})
+                        if pv2 != cv2:
+                            desc.append('称量误差')
+                            change_detail_data[4].append({'type': batching_details_dict[i]['type'],
+                                                          'key': i,
+                                                          'flag': '修改',
+                                                          'cv': float(cv2),
+                                                          'pv': float(pv2)})
                 # 比对工艺参数
                 if processes and hasattr(instance, 'processes'):
                     current_processes = model_to_dict(instance.processes)
