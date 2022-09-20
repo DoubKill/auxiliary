@@ -488,7 +488,7 @@ class RecipeChangeHistorySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         change_desc = ret['change_desc']
-        change_desc.insert(0, {'desc': '配方新增',
+        change_desc.insert(0, {'desc': '群控新增' if ret['origin'] == 1 else 'MES下传新增',
                                'changed_time__date': ret['created_time'][:10],
                                'changed_username': ret['created_username']})
         return ret
