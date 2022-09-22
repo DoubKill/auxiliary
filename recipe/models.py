@@ -196,14 +196,14 @@ class ProductProcess(AbstractEntity):
     max_temp = models.PositiveIntegerField(help_text='进胶最高温度', default=0)
     over_time = models.PositiveIntegerField(help_text='炼胶超时时间', default=0)
     over_temp = models.PositiveIntegerField(help_text='超温温度', default=0)
-    reuse_flag = models.BooleanField(help_text='是否回收，（true:回收,false:不回收）', default=False)
+    reuse_flag = models.BooleanField(help_text='是否回收', default=False)  # （true:回收,false:不回收）
     zz_temp = models.PositiveIntegerField(help_text='转子水温', default=0)
     xlm_temp = models.PositiveIntegerField(help_text='卸料门水温', default=0)
     cb_temp = models.PositiveIntegerField(help_text='侧壁水温', default=0)
-    temp_use_flag = models.BooleanField(help_text='三区水温启用/停用，（true:启用,false:停用）', default=True)
-    use_flag = models.BooleanField(help_text='配方启用/弃用，（true:启用,false:弃用）', default=True)
+    temp_use_flag = models.BooleanField(help_text='三区水温启用/停用', default=True)  # （true:启用,false:停用）
+    use_flag = models.BooleanField(help_text='配方启用/停用', default=True)  # （true:启用,false:弃用）
     batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
-    sp_num = models.DecimalField(help_text='收皮', default=0, decimal_places=1, max_digits=3)
+    sp_num = models.DecimalField(help_text='收皮车次', default=0, decimal_places=1, max_digits=3)
     ch_time = models.PositiveIntegerField(help_text='成环时间', default=0)
     dj_time = models.PositiveIntegerField(help_text='捣胶时间', default=0)
     ld_time = models.PositiveIntegerField(help_text='拉断时间', default=0)
@@ -250,17 +250,6 @@ class ProductProcessDetail(AbstractEntity):
         verbose_name_plural = verbose_name = '胶料配料标准步序详情'
 
 
-class RecipeUpdateHistory(AbstractEntity):
-    product_no = models.CharField(max_length=64, help_text='胶料配方编码')
-    equip_no = models.CharField(max_length=64, help_text='机台号')
-    recipe_detail = models.TextField(max_length=1024, help_text='整个机台配方详情')
-    username = models.CharField(max_length=16, help_text='用户名称')
-
-    class Meta:
-        db_table = 'recipe_update_history'
-        verbose_name_plural = verbose_name = '配方详情历史记录'
-
-
 class ProductBatchingMixed(models.Model):
     product_batching = models.ForeignKey(ProductBatching, on_delete=models.CASCADE, help_text='配方id',
                                          related_name='product_batching_mixed')
@@ -294,3 +283,33 @@ class ProductBatchingDetailPlan(models.Model):
     class Meta:
         db_table = 'product_batching_detail_plan'
         verbose_name_plural = verbose_name = '下达计划时胶料配料标准详情'
+
+
+class RecipeChangeHistory(models.Model):
+    recipe_no = models.CharField(max_length=64, help_text='配方名称')
+    equip_no = models.CharField(max_length=64, help_text='机台')
+    dev_type = models.CharField(max_length=64, help_text='机型')
+    used_type = models.PositiveSmallIntegerField(help_text='使用状态')
+    created_time = models.DateTimeField(help_text='创建时间')
+    created_username = models.CharField(max_length=64, help_text='创建人')
+    updated_time = models.DateTimeField(verbose_name='修改时间', auto_now=True)
+    updated_username = models.CharField(max_length=64, help_text='修改人')
+    origin = models.IntegerField(help_text='来源 1:群控 2:MES', default=1)
+
+    class Meta:
+        db_table = 'recipe_change_history'
+        verbose_name_plural = verbose_name = '配方变更履历'
+
+
+class RecipeChangeDetail(models.Model):
+    change_history = models.ForeignKey(RecipeChangeHistory, help_text='修改履历', on_delete=models.CASCADE,
+                                       related_name='change_details')
+    details = models.CharField(max_length=4096, help_text='变更详情', blank=True, null=True)
+    # {1(配料): [{'type': 1(1：胶料 2：炭黑 3：油料), 'material_no': "aaa", 'flag': 'add', 'pv(修改前的值)': '12', 'cv(修改后的值)': '13'}], 2（工艺）: "", 3（步序）: ""}
+    changed_time = models.DateTimeField(verbose_name='修改时间', auto_now_add=True)
+    desc = models.TextField(help_text='描述信息', blank=True, null=True)
+    changed_username = models.CharField(max_length=64, help_text='修改人')
+
+    class Meta:
+        db_table = 'recipe_change_detail'
+        verbose_name_plural = verbose_name = '配方变更履历详情'

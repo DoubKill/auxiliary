@@ -20,14 +20,14 @@ from mes.permissions import PermissionClass, ProductBatchingPermissions
 from mes.settings import MES_URL
 from production.models import MaterialTankStatus, PlanStatus
 from recipe.filters import MaterialFilter, ProductInfoFilter, ProductBatchingFilter, \
-    MaterialAttributeFilter
+    MaterialAttributeFilter, RecipeChangeHistoryFilter
 from recipe.serializers import MaterialSerializer, ProductInfoSerializer, \
     ProductBatchingListSerializer, ProductBatchingCreateSerializer, MaterialAttributeSerializer, \
     ProductBatchingRetrieveSerializer, ProductBatchingUpdateSerializer, \
     ProductBatchingPartialUpdateSerializer, ProductBatchingDetailUploadSerializer, ProductProcessSerializer, \
-    ProductProcessDetailSerializer
+    ProductProcessDetailSerializer, RecipeChangeHistorySerializer, RecipeChangeHistoryRetrieveSerializer
 from recipe.models import Material, ProductInfo, ProductBatching, MaterialAttribute, \
-    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier
+    ProductBatchingDetail, BaseAction, BaseCondition, ProductProcessDetail, MaterialSupplier, RecipeChangeHistory
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -278,6 +278,9 @@ class ProductBatchingViewSet(ModelViewSet):
             instance.used_type = 4
         instance.last_updated_user = self.request.user
         instance.save()
+        RecipeChangeHistory.objects.filter(recipe_no=instance.stage_product_batch_no,
+                                           equip_no=instance.equip.equip_no
+                                           ).update(used_type=instance.used_type)
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -450,3 +453,29 @@ class BatchingMaterials(APIView):
         if product_no:
             query_set = query_set.filter(stage_product_batch_no__icontains=product_no)
         return Response(query_set.values('stage_product_batch_no').distinct())
+
+
+@method_decorator([api_recorder], name="dispatch")
+class RecipeChangeHistoryViewSet(ModelViewSet):
+    queryset = RecipeChangeHistory.objects.order_by('recipe_no')
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = RecipeChangeHistoryFilter
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return RecipeChangeHistoryRetrieveSerializer
+        return RecipeChangeHistorySerializer
+
+    def list(self, request, *args, **kwargs):
+        used_types = self.request.query_params.get('used_types')
+        queryset = self.filter_queryset(self.get_queryset())
+        if used_types:
+            queryset = queryset.filter(used_type__in=used_types.split(','))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

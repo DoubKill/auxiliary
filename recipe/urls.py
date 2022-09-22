@@ -5,7 +5,7 @@ from recipe.views import MaterialViewSet, ProductInfoViewSet, \
     ProductBatchingViewSet, MaterialAttributeViewSet, \
     ValidateProductVersionsView, ActionListView, ConditionListView, \
     RecipeObsoleteAPiView, BatchingEquip, TankMaterialVIew, MaterialSupplierView, ProductBatchingIssue, \
-    DevTypeProductBatching, ProductTechParams
+    DevTypeProductBatching, ProductTechParams, RecipeChangeHistoryViewSet
 
 router = DefaultRouter()
 
@@ -20,6 +20,8 @@ router.register(r'product-infos', ProductInfoViewSet)
 
 # 胶料配料
 router.register(r'product-batching', ProductBatchingViewSet)
+
+router.register(r'recipe-change-history', RecipeChangeHistoryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
