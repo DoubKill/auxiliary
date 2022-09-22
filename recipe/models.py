@@ -304,10 +304,10 @@ class RecipeChangeHistory(models.Model):
 class RecipeChangeDetail(models.Model):
     change_history = models.ForeignKey(RecipeChangeHistory, help_text='修改履历', on_delete=models.CASCADE,
                                        related_name='change_details')
-    details = models.CharField(max_length=4096, help_text='变更详情', blank=True, null=True)
+    details = models.TextField(help_text='变更详情', blank=True, null=True)
     # {1(配料): [{'type': 1(1：胶料 2：炭黑 3：油料), 'material_no': "aaa", 'flag': 'add', 'pv(修改前的值)': '12', 'cv(修改后的值)': '13'}], 2（工艺）: "", 3（步序）: ""}
     changed_time = models.DateTimeField(verbose_name='修改时间', auto_now_add=True)
-    desc = models.TextField(help_text='描述信息', blank=True, null=True)
+    desc = models.CharField(max_length=256, help_text='描述信息', blank=True, null=True)
     changed_username = models.CharField(max_length=64, help_text='修改人')
 
     class Meta:
