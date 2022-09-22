@@ -280,7 +280,6 @@ class ProductProcessCreateSerializer(serializers.ModelSerializer):
 
 class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
 
-    @atomic()
     def update(self, instance, validated_data):
         if instance.used_type not in (1, 4):
             raise serializers.ValidationError('操作无效！')
