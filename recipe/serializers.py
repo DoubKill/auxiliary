@@ -370,14 +370,40 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                                                           'pv': pv})
                 # 比对密炼步序
                 if process_details and instance.process_details.exists():
-                    p_pds = list(instance.process_details.filter(
-                        delete_flag=False).order_by('id').values_list('action_id', flat=True))
-                    v_pds = list(i['action'].id for i in process_details)
-                    if not operator.eq(p_pds, v_pds):
+                    ps_details = list(instance.process_details.filter(
+                        delete_flag=False
+                    ).order_by('id').values(
+                        'condition_id', 'time', 'temperature', 'energy', 'power', 'action_id', 'pressure', 'rpm'))
+                    cs_details = []
+                    for i in process_details:
+                        cs_details.append({
+                            'condition_id': None if not i['condition'] else i['condition'].id, 'time': i['time'],
+                            'temperature': i['temperature'], 'energy': i['energy'],
+                            'power': i['power'], 'action_id': None if not i['action'] else i['action'].id,
+                            'pressure': i['pressure'], 'rpm': i['rpm']
+                        })
+                    if not operator.eq(ps_details, cs_details):
                         desc.append('步序修改')
                         for i in process_details:
+                            des_str = []
+                            # if i['condition']:
+                            #     des_str.append(i['condition'].condition)
+                            if i['time']:
+                                des_str.append('{}"'.format(round(i['time'])))
+                            if i['temperature']:
+                                des_str.append('{}℃'.format(round(i['temperature'])))
+                            if i['energy']:
+                                des_str.append('{}J'.format(round(i['energy'])))
+                            if i['power']:
+                                des_str.append('{}KW'.format(round(i['power'])))
+                            if i['pressure']:
+                                des_str.append('{}bar'.format(round(i['pressure'])))
+                            if i['rpm']:
+                                des_str.append('{}rpm'.format(round(i['rpm'])))
                             change_detail_data[3].append({'type': None,
-                                                          'key': i['action'].action,
+                                                          'key': i['action'].action if not des_str else
+                                                          "{}:({})".format(i['action'].action,
+                                                                           ' & '.join(des_str)),
                                                           'flag': '修改',
                                                           'cv': None,
                                                           'pv': None})
