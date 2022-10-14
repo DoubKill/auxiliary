@@ -1380,11 +1380,18 @@ class MaterialReleaseView(FeedBack, APIView):
                     handle_materials.append(item)
             # 配方生产需要细料或者硫磺(1、细料; 2、硫磺;  3、机配+人工配)
             else:
-                res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
-                if isinstance(res, str):
+                err_msg = ''
+                try:
+                    res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+                except Exception as e:
+                    err_msg = '异常: 获取mes配方出现异常[尝试点击强制进料]'
+                else:
+                    if isinstance(json.loads(res.content), str):
+                        err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+                if err_msg:
                     if equip_no == 'Z04':
-                        send_msg_to_terminal('异常: 获取mes配方信息失败[联系工艺]')
-                    raise ValidationError('异常: 获取mes配方信息失败[联系工艺]')
+                        send_msg_to_terminal(err_msg)
+                    raise ValidationError(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
                 xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
@@ -1626,9 +1633,16 @@ class HandleFeedView(APIView):
             if not scan_info:
                 return Response({"success": False, "message": f"{other_material.material_name}未扫码"})
         # mes配方
-        res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
-        if isinstance(res, str):
-            return Response({"success": False, "message": '获取mes配方信息失败'})
+        err_msg = ''
+        try:
+            res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+        except Exception as e:
+            err_msg = '异常: 获取mes配方出现异常[尝试重试强制进料]'
+        else:
+            if isinstance(json.loads(res.content), str):
+                err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+        if err_msg:
+            return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
         xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
