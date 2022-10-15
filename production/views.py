@@ -1383,11 +1383,16 @@ class MaterialReleaseView(FeedBack, APIView):
                 err_msg = ''
                 try:
                     res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
-                except Exception as e:
-                    err_msg = '异常: 获取mes配方出现异常[尝试点击强制进料]'
+                except requests.ConnectionError as e:
+                    err_msg = '异常: 无法连接mes[检查网络]'
+                except requests.ReadTimeout as e:
+                    err_msg = '异常: mes返回配方信息超时[尝试点击强制进料]'
                 else:
-                    if isinstance(json.loads(res.content), str):
-                        err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+                    if res.status_code == 500:
+                        err_msg = '异常: 获取mes配方信息出现未知错误[联系国自]'
+                    else:
+                        if isinstance(json.loads(res.content), str):
+                            err_msg = '异常: 获取mes配方信息失败[联系工艺]'
                 if err_msg:
                     if equip_no == 'Z04':
                         send_msg_to_terminal(err_msg)
@@ -1636,11 +1641,16 @@ class HandleFeedView(APIView):
         err_msg = ''
         try:
             res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
-        except Exception as e:
-            err_msg = '异常: 获取mes配方出现异常[尝试重试强制进料]'
+        except requests.ConnectionError as e:
+            err_msg = '异常: 无法连接mes[检查网络]'
+        except requests.ReadTimeout as e:
+            err_msg = '异常: mes返回配方信息超时[尝试点击强制进料]'
         else:
-            if isinstance(json.loads(res.content), str):
-                err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+            if res.status_code == 500:
+                err_msg = '异常: 获取mes配方信息出现未知错误[联系国自]'
+            else:
+                if isinstance(json.loads(res.content), str):
+                    err_msg = '异常: 获取mes配方信息失败[联系工艺]'
         if err_msg:
             return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
