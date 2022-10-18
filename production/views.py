@@ -1461,6 +1461,9 @@ class MaterialReleaseView(FeedBack, APIView):
                                                    plan_weight=plan_weight,
                                                    actual_weight=actual_weight,
                                                    display_name=last_load_log.display_name,
+                                                   scan_material=last_load_log.scan_material,
+                                                   scan_material_type=last_load_log.scan_material_type,
+                                                   stage=last_load_log.stage,
                                                    created_username=last_load_log.created_username
                                                    )
                 else:
@@ -1556,6 +1559,7 @@ class CurrentWeighView(FeedBack, APIView):
         data_list = request.data
         details = data_list.get('attrs')
         created_username = data_list.get('created_username')
+        scan_material = data_list.get('scan_material')
         scan_material_type = data_list.get('scan_material_type')
         for data in details:
             material_status = data.get("status")  # 条码状态，正常或者异常
@@ -1578,6 +1582,8 @@ class CurrentWeighView(FeedBack, APIView):
             # 根据扫描的条码信息，记录一条数据。
             fml = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid, trains=int(feed_trains)).last()
             display_name = f'{scan_material_type}({material_name}...)' if scan_material_type in ['人工配', '机配'] else material_name
+            stage = pcp.product_batching.stage_product_batch_no.split('-')
+            s_stage = None if not stage else (stage[1] if len(stage) > 2 else stage[0])
             LoadMaterialLog.objects.get_or_create(
                 feed_log=fml,
                 material_no=material_no,
@@ -1585,7 +1591,10 @@ class CurrentWeighView(FeedBack, APIView):
                 bra_code=bra_code,
                 status=int(material_status),
                 created_username=created_username,
-                display_name=display_name
+                display_name=display_name,
+                scan_material=scan_material if scan_material else display_name,
+                scan_material_type=scan_material_type,
+                stage=s_stage
             )
         return Response('ok')
 
