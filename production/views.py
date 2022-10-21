@@ -1314,7 +1314,7 @@ class MaterialReleaseView(FeedBack, APIView):
         if not pcp:
             if equip_no == 'Z04':
                 send_msg_to_terminal(f'异常: 计划不存在或不是运行状态{plan_classes_uid}(联系中控)')
-            raise ValidationError(f"异常:计划不存在或不是运行状态{plan_classes_uid}(联系中控)")
+            return Response(f"异常: 计划不存在或不是运行状态:{plan_classes_uid}")
         plan_classes_uid = pcp.plan_classes_uid
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
@@ -1331,7 +1331,7 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response(f"异常: 车次{feed_trains}不存在[联系中控]")
         batching_details = ProductBatchingDetailPlan.objects.filter(plan_classes_uid=plan_classes_uid)
         if not batching_details:
-            raise ValidationError(f'异常: 未找到下计划时配方[{plan_classes_uid}](联系中控)')
+            return Response(f'异常: 未找到下计划时配方[{plan_classes_uid}](联系中控)')
         if equip_no != 'Z04':
             # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
             recipe_material_names = set(batching_details.values_list("material_name", flat=True))
@@ -1396,7 +1396,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 if err_msg:
                     if equip_no == 'Z04':
                         send_msg_to_terminal(err_msg)
-                    raise ValidationError(err_msg)
+                    return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
                 xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
@@ -1406,7 +1406,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     if not cnt_type_details:
                         if equip_no == 'Z04':
                             send_msg_to_terminal("异常:未找到mes配方[联系工艺]")
-                        raise ValidationError("异常:未找到mes配方[联系工艺]")
+                        return Response("异常:未找到mes配方[联系工艺]")
                 xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
                 recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:
