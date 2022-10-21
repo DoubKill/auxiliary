@@ -1314,7 +1314,7 @@ class MaterialReleaseView(FeedBack, APIView):
         if not pcp:
             if equip_no == 'Z04':
                 send_msg_to_terminal(f'异常: 计划不存在或不是运行状态{plan_classes_uid}(联系中控)')
-            raise ValidationError(f"异常:计划不存在或不是运行状态{plan_classes_uid}(联系中控)")
+            return Response(f"异常: 计划不存在或不是运行状态:{plan_classes_uid}")
         plan_classes_uid = pcp.plan_classes_uid
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
@@ -1331,7 +1331,7 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response(f"异常: 车次{feed_trains}不存在[联系中控]")
         batching_details = ProductBatchingDetailPlan.objects.filter(plan_classes_uid=plan_classes_uid)
         if not batching_details:
-            raise ValidationError(f'异常: 未找到下计划时配方[{plan_classes_uid}](联系中控)')
+            return Response(f'异常: 未找到下计划时配方[{plan_classes_uid}](联系中控)')
         if equip_no != 'Z04':
             # 先判断上辅机传过来的原材料是否与配方原材料一致，传送带只输送胶料信息。
             recipe_material_names = set(batching_details.values_list("material_name", flat=True))
@@ -1380,11 +1380,23 @@ class MaterialReleaseView(FeedBack, APIView):
                     handle_materials.append(item)
             # 配方生产需要细料或者硫磺(1、细料; 2、硫磺;  3、机配+人工配)
             else:
-                res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
-                if isinstance(res, str):
+                err_msg = ''
+                try:
+                    res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+                except requests.ConnectionError as e:
+                    err_msg = '异常: 无法连接mes[检查网络]'
+                except requests.ReadTimeout as e:
+                    err_msg = '异常: mes返回配方信息超时[尝试点击强制进料]'
+                else:
+                    if res.status_code == 500:
+                        err_msg = '异常: 获取mes配方信息出现未知错误[联系国自]'
+                    else:
+                        if isinstance(json.loads(res.content), str):
+                            err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+                if err_msg:
                     if equip_no == 'Z04':
-                        send_msg_to_terminal('异常: 获取mes配方信息失败[联系工艺]')
-                    raise ValidationError('异常: 获取mes配方信息失败[联系工艺]')
+                        send_msg_to_terminal(err_msg)
+                    return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
                 xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
@@ -1394,7 +1406,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     if not cnt_type_details:
                         if equip_no == 'Z04':
                             send_msg_to_terminal("异常:未找到mes配方[联系工艺]")
-                        raise ValidationError("异常:未找到mes配方[联系工艺]")
+                        return Response("异常:未找到mes配方[联系工艺]")
                 xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
                 recipe_info = [material_name] if not xl_details else [i['material__material_name'] for i in cnt_type_details]
                 for i in recipe_info:
@@ -1615,7 +1627,7 @@ class HandleFeedView(APIView):
         trains = data.get("trains")
         pcp = ProductClassesPlan.objects.filter(plan_classes_uid=plan_classes_uid, status='运行中').first()
         if not pcp:
-            raise ValidationError(f"计划不存在或不是运行状态:{plan_classes_uid}")
+            return Response({"success": False, "message": f"计划不存在或不是运行状态:{plan_classes_uid}"})
         # 掺料或者待处理料未扫码
         other_material = ProductBatchingDetailPlan.objects.filter(Q(material_name__icontains='掺料') |
                                                                   Q(material_name__icontains='待处理料'),
@@ -1626,9 +1638,21 @@ class HandleFeedView(APIView):
             if not scan_info:
                 return Response({"success": False, "message": f"{other_material.material_name}未扫码"})
         # mes配方
-        res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
-        if isinstance(res, str):
-            raise ValidationError('获取mes配方信息失败')
+        err_msg = ''
+        try:
+            res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+        except requests.ConnectionError as e:
+            err_msg = '异常: 无法连接mes[检查网络]'
+        except requests.ReadTimeout as e:
+            err_msg = '异常: mes返回配方信息超时[尝试点击强制进料]'
+        else:
+            if res.status_code == 500:
+                err_msg = '异常: 获取mes配方信息出现未知错误[联系国自]'
+            else:
+                if isinstance(json.loads(res.content), str):
+                    err_msg = '异常: 获取mes配方信息失败[联系工艺]'
+        if err_msg:
+            return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
         xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
