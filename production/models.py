@@ -420,6 +420,11 @@ class FeedingMaterialLog(models.Model):
     class Meta:
         db_table = 'feed_material_log'
         verbose_name_plural = verbose_name = '进料履历'
+        indexes = [
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['product_no']),
+            models.Index(fields=['trains']),
+        ]
 
 
 class LoadMaterialLog(models.Model):
@@ -444,6 +449,9 @@ class LoadMaterialLog(models.Model):
     class Meta:
         db_table = 'load_material_log'
         verbose_name_plural = verbose_name = '上料履历'
+        indexes = [
+            models.Index(fields=['bra_code'])
+        ]
 
 
 class LoadTankMaterialLog(AbstractEntity):
