@@ -423,7 +423,7 @@ class FeedingMaterialLog(models.Model):
         indexes = [
             models.Index(fields=['plan_classes_uid']),
             models.Index(fields=['product_no']),
-            models.Index(fields=['trains']),
+            models.Index(fields=['trains'])
         ]
 
 
