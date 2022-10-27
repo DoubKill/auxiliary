@@ -1382,7 +1382,7 @@ class MaterialReleaseView(FeedBack, APIView):
             else:
                 err_msg = ''
                 try:
-                    res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+                    res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
                 except requests.ConnectionError as e:
                     err_msg = '异常: 无法连接mes[检查网络]'
                 except requests.ReadTimeout as e:
@@ -1640,11 +1640,11 @@ class HandleFeedView(APIView):
         # mes配方
         err_msg = ''
         try:
-            res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=5)
+            res = requests.get(url=MES_URL + 'api/v1/terminal/material-details-aux/', params={"plan_classes_uid": plan_classes_uid}, timeout=10)
         except requests.ConnectionError as e:
             err_msg = '异常: 无法连接mes[检查网络]'
         except requests.ReadTimeout as e:
-            err_msg = '异常: mes返回配方信息超时[尝试点击强制进料]'
+            err_msg = '异常: mes返回配方信息超时[稍后继续尝试]'
         else:
             if res.status_code == 500:
                 err_msg = '异常: 获取mes配方信息出现未知错误[联系国自]'
