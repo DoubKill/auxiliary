@@ -442,6 +442,9 @@ class LoadMaterialLog(models.Model):
     status = models.PositiveIntegerField(help_text='状态', choices=STATUS_CHOICE, null=True)
     created_username = models.CharField(max_length=8, help_text='投入人', null=True, blank=True)
     display_name = models.CharField(max_length=64, help_text='履历展示名称', null=True, blank=True)
+    scan_material = models.CharField(max_length=64, help_text='扫码物料名称', null=True, blank=True)
+    scan_material_type = models.CharField(max_length=64, help_text='投料类别:胶皮、胶块..', null=True, blank=True)
+    stage = models.CharField(max_length=64, help_text='段次', null=True, blank=True)
 
     class Meta:
         db_table = 'load_material_log'
