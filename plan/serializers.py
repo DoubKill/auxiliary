@@ -273,28 +273,28 @@ class PalletFeedbacksPlanSerializer(BaseModelSerializer):
             return None
 
     def get_end_time(self, obj):
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').last()
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('actual_trains').last()
         if tfb_obj:
             return tfb_obj.end_time.strftime("%Y-%m-%d %H:%M:%S")
         else:
             return None
 
     def get_actual_trains(self, obj):
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('actual_trains').last()
         if tfb_obj:
             return tfb_obj.actual_trains
         else:
             return None
 
     def get_operation_user(self, obj):
-        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
+        tfb_obj = TrainsFeedbacks.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('actual_trains').last()
         if tfb_obj:
             return tfb_obj.operation_user
         else:
             return None
 
     def get_status(self, obj):
-        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('created_date').last()
+        plan_status = PlanStatus.objects.filter(plan_classes_uid=obj.plan_classes_uid).order_by('id').last()
         if plan_status:
             return plan_status.status
         else:
