@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from basics.models import PlanSchedule, Equip
+from basics.models import PlanSchedule, Equip, GlobalCodeType
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
@@ -34,7 +34,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains, \
-    OtherMaterialLog
+    OtherMaterialLog, BatchScanLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -1316,6 +1316,15 @@ class MaterialReleaseView(FeedBack, APIView):
                 send_msg_to_terminal(f'异常: 计划不存在或不是运行状态{plan_classes_uid}(联系中控)')
             return Response(f"异常: 计划不存在或不是运行状态:{plan_classes_uid}")
         plan_classes_uid = pcp.plan_classes_uid
+
+        # 判断是否存在异常扫码记录
+        switch_flag = GlobalCodeType.objects.using('mes').filter(use_flag=True, type_name='密炼扫码异常锁定开关')
+        if switch_flag:
+            m_ids = BatchScanLog.objects.filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bra_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.filter(id__in=m_ids, is_release=False)
+            if failed_scan:
+                failed_scan.update(aux_tag=True)
+                return Response(f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid[{feed_trains}]}")
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
