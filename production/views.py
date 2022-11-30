@@ -45,6 +45,7 @@ from production.utils import strtoint, send_msg_to_terminal
 from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan, ProductBatching
 
 logger = logging.getLogger('api_log')
+error_log = logging.getLogger('error_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1405,6 +1406,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 if err_msg:
                     if equip_no == 'Z04':
                         send_msg_to_terminal(err_msg)
+                    error_log.error(f'处理后进料失败[{plan_classes_uid}-{feed_trains}]: {err_msg}')
                     return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
@@ -1670,6 +1672,7 @@ class HandleFeedView(APIView):
                 if isinstance(json.loads(res.content), str):
                     err_msg = '异常: 获取mes配方信息失败[联系工艺]'
         if err_msg:
+            error_log.error(f'处理后进料失败[{plan_classes_uid}-{trains}]: {err_msg}')
             return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
