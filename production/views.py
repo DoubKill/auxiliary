@@ -1321,11 +1321,11 @@ class MaterialReleaseView(FeedBack, APIView):
         # 判断是否存在异常扫码记录
         switch_flag = GlobalCodeType.objects.using('mes').filter(use_flag=True, type_name='密炼扫码异常锁定开关')
         if switch_flag:
-            m_ids = BatchScanLog.objects.filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bra_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
-            failed_scan = BatchScanLog.objects.filter(id__in=m_ids, is_release=False)
+            m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bar_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
             if failed_scan:
                 failed_scan.update(aux_tag=True)
-                return Response(f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid[{feed_trains}]}")
+                return Response(f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid}[{feed_trains}]")
 
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
