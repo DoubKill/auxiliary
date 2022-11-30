@@ -313,7 +313,7 @@ class IssuedPlan(APIView):
             "oper": self.request.user.username,
             "recipe_code": actual_product_batching.stage_product_batch_no,
             "recipe_name": actual_product_batching.stage_product_batch_no,
-            "equip_code": actual_product_process.equip_code if actual_product_process.equip_code else 0.0,  # 锁定解锁
+            "equip_code": actual_product_process.batching_error if actual_product_process.batching_error else 0.0,  # 锁定解锁
             "reuse_time": actual_product_process.reuse_time,
             "mini_time": actual_product_process.mini_time,
             "max_time": actual_product_process.over_time,
@@ -514,7 +514,7 @@ class IssuedPlan(APIView):
         data["oper"] = self.request.user.username
         data["recipe_name"] = actual_product_batching.stage_product_batch_no
         data["recipe_code"] = actual_product_batching.stage_product_batch_no
-        data["equip_code"] = actual_product_process.equip_code  # 锁定解锁
+        data["equip_code"] = actual_product_process.batching_error  # 锁定解锁
         data["mini_time"] = actual_product_process.mini_time
         data["max_time"] = actual_product_process.over_time  # 炼胶超时时间
         data["mini_temp"] = actual_product_process.mini_temp
