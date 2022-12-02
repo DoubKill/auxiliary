@@ -1747,3 +1747,15 @@ class ManualInputTrainsView(APIView):
         instance_id = self.request.data.get('id')
         ManualInputTrains.objects.using('mes').filter(id=instance_id).delete()
         return Response('OK')
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductMaterials(APIView):
+
+    def get(self, request):
+        all_product_nos = set(ProductBatching.objects.filter(batching_type=1).values_list('stage_product_batch_no', flat=True))
+        used_recipes = set(ProductBatching.objects.filter(used_type=4, batching_type=1).order_by('-used_time').values_list('stage_product_batch_no', flat=True))
+        unused_products = all_product_nos - used_recipes
+        ret = [{'product_no': j, 'used': True} for j in used_recipes] + [{'product_no': i, 'used': False} for i in unused_products]
+        return Response(ret)
+
