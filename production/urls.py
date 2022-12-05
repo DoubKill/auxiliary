@@ -6,7 +6,7 @@ from production.views import TrainsFeedbacksViewSet, PalletFeedbacksViewSet, Equ
     ProductionRecordViewSet, PlanRealityViewSet, ProductActualViewSet, WeighParameterCarbonViewSet, \
     WeighParameterFuelViewSet, EquipStatusPlanList, EquipDetailedList, WeighInformationList, MixerInformationList, \
     CurveInformationList, TrainsFeedbacksAPIView, PalletDetailViewSet, TankWeighSyncView, AlarmLogList, \
-    MaterialReleaseView, CurrentWeighView, ForceFeedView, HandleFeedView, ManualInputTrainsView
+    MaterialReleaseView, CurrentWeighView, ForceFeedView, HandleFeedView, ManualInputTrainsView, ProductMaterials
 
 router = DefaultRouter()
 
@@ -77,4 +77,6 @@ urlpatterns = [
     path('handle_feed/', HandleFeedView.as_view()),
     # 手动录入车次信息
     path('manual-input-trains/', ManualInputTrainsView.as_view()),
+    # 胶料配方下拉框（标识启用）
+    path('product-materials/', ProductMaterials.as_view()),
 ]
