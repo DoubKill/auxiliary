@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from basics.models import PlanSchedule, Equip, GlobalCodeType
+from basics.models import PlanSchedule, Equip, GlobalCodeType, GlobalCode
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
@@ -1319,7 +1319,7 @@ class MaterialReleaseView(FeedBack, APIView):
         plan_classes_uid = pcp.plan_classes_uid
 
         # 判断是否存在异常扫码记录
-        switch_flag = GlobalCodeType.objects.using('mes').filter(use_flag=True, type_name='密炼扫码异常锁定开关')
+        switch_flag = GlobalCode.objects.using('mes').filter(global_type__use_flag=True, global_type__type_name='密炼扫码异常锁定开关', use_flag=True, global_name=equip_no)
         if switch_flag:
             m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bar_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
             failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
