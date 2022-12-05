@@ -202,7 +202,7 @@ class ProductProcess(AbstractEntity):
     cb_temp = models.PositiveIntegerField(help_text='侧壁水温', default=0)
     temp_use_flag = models.BooleanField(help_text='三区水温启用/停用', default=True)  # （true:启用,false:停用）
     use_flag = models.BooleanField(help_text='配方启用/停用', default=True)  # （true:启用,false:弃用）
-    batching_error = models.PositiveIntegerField(help_text='胶料总误差', default=0)
+    batching_error = models.FloatField(help_text='胶料总误差', default=0)
     sp_num = models.DecimalField(help_text='收皮车次', default=0, decimal_places=1, max_digits=3)
     ch_time = models.PositiveIntegerField(help_text='成环时间', default=0)
     dj_time = models.PositiveIntegerField(help_text='捣胶时间', default=0)
