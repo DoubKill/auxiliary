@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from basics.models import PlanSchedule, Equip
+from basics.models import PlanSchedule, Equip, GlobalCodeType, GlobalCode
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
@@ -34,7 +34,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains, \
-    OtherMaterialLog
+    OtherMaterialLog, BatchScanLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -45,6 +45,7 @@ from production.utils import strtoint, send_msg_to_terminal
 from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan, ProductBatching
 
 logger = logging.getLogger('api_log')
+error_log = logging.getLogger('error_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -1317,6 +1318,15 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response(f"异常: 计划不存在或不是运行状态:{plan_classes_uid}")
         plan_classes_uid = pcp.plan_classes_uid
 
+        # 判断是否存在异常扫码记录
+        switch_flag = GlobalCode.objects.using('mes').filter(global_type__use_flag=True, global_type__type_name='密炼扫码异常锁定开关', use_flag=True, global_name=equip_no)
+        if switch_flag:
+            m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bar_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
+            if failed_scan:
+                failed_scan.update(aux_tag=True)
+                return Response(f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid}[{feed_trains}]")
+
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
         if not base_train:
@@ -1396,6 +1406,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 if err_msg:
                     if equip_no == 'Z04':
                         send_msg_to_terminal(err_msg)
+                    error_log.error(f'处理后进料失败[{plan_classes_uid}-{feed_trains}]: {err_msg}')
                     return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
@@ -1661,6 +1672,7 @@ class HandleFeedView(APIView):
                 if isinstance(json.loads(res.content), str):
                     err_msg = '异常: 获取mes配方信息失败[联系工艺]'
         if err_msg:
+            error_log.error(f'处理后进料失败[{plan_classes_uid}-{trains}]: {err_msg}')
             return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
