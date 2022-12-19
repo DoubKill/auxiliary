@@ -673,7 +673,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
 @method_decorator([api_recorder], name="dispatch")
 class ProductionRecordViewSet(mixins.ListModelMixin,
                               GenericViewSet):
-    queryset = PalletFeedbacks.objects.filter()
+    queryset = PalletFeedbacks.objects.filter().order_by('-product_time')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ProductionRecordSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -1104,7 +1104,7 @@ class AlarmLogList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
-    queryset = TrainsFeedbacks.objects.all()
+    queryset = TrainsFeedbacks.objects.all().order_by('-plan_classes_uid', '-actual_trains')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = TrainsFeedbacksSerializer2
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -1141,7 +1141,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             if operation_user:
                 filter_dict['operation_user'] = operation_user
 
-            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
+            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).order_by('-plan_classes_uid', '-actual_trains').values()
             counts = tf_queryset.count()
             tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
             for tf_obj in tf_queryset:
