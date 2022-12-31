@@ -117,34 +117,39 @@ class ProductDayPlanSerializer(BaseModelSerializer):
                 continue
             classes = detail.pop('classes')
             # 这里是只允许创建当前排班和下一个排班的计划
-            try:
-                ps_obj = PlanSchedule.objects.filter(day_time=datetime.date.today(),
+            ps_obj = PlanSchedule.objects.filter(day_time=datetime.date.today(),
+                                                 work_schedule=instance.plan_schedule.work_schedule).first()
+            # 这里是判断当前日期可能已经没有这个排班了
+            if not ps_obj:
+                raise serializers.ValidationError('当前时间已经没有此排班了')
+            wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__lte=datetime.datetime.now(),
+                                                             end_time__gte=datetime.datetime.now()).first()
+            # 判断当前是不是今天的工厂排班，不是的话取昨天的
+            if not wsp_obj:
+                today = datetime.date.today()
+                oneday = datetime.timedelta(days=1)
+                yesterday = today - oneday
+                ps_obj = PlanSchedule.objects.filter(day_time=yesterday,
                                                      work_schedule=instance.plan_schedule.work_schedule).first()
                 wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__lte=datetime.datetime.now(),
                                                                  end_time__gte=datetime.datetime.now()).first()
-                # 判断当前是不是今天的工厂排班，不是的话取昨天的
-                if not wsp_obj:
-                    today = datetime.date.today()
-                    oneday = datetime.timedelta(days=1)
-                    yesterday = today - oneday
-                    ps_obj = PlanSchedule.objects.filter(day_time=yesterday,
-                                                         work_schedule=instance.plan_schedule.work_schedule).first()
-                    wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__lte=datetime.datetime.now(),
-                                                                     end_time__gte=datetime.datetime.now()).first()
-                # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time)
+
+            # 再一次判断是怕排班有间隔
+            if not wsp_obj:
+                raise serializers.ValidationError('当前时间不在排班时间内！！！')
+            # print(wsp_obj, wsp_obj.start_time, wsp_obj.end_time)
+            nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
+            # 这里就是判断当前的排班是不是最后一个班次 进而日期加1，来获取下一天的第一个班次
+            if not nest_wsp_obj:
+                today = wsp_obj.plan_schedule.day_time
+                # print(today)
+                oneday = datetime.timedelta(days=1)
+                tomorrow = today + oneday
+                ps_obj = PlanSchedule.objects.filter(day_time=tomorrow,
+                                                     work_schedule=instance.plan_schedule.work_schedule).first()
                 nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
-                # 这里就是判断当前的排班是不是最后一个班次 进而日期加1，来获取下一天的第一个班次
-                if not nest_wsp_obj:
-                    today = wsp_obj.plan_schedule.day_time
-                    # print(today)
-                    oneday = datetime.timedelta(days=1)
-                    tomorrow = today + oneday
-                    ps_obj = PlanSchedule.objects.filter(day_time=tomorrow,
-                                                         work_schedule=instance.plan_schedule.work_schedule).first()
-                    nest_wsp_obj = ps_obj.work_schedule_plan.all().filter(start_time__gte=wsp_obj.end_time).first()
-                # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time)
-            except Exception as e:
-                logger.error(str(e))
+            # print(nest_wsp_obj, nest_wsp_obj.start_time, nest_wsp_obj.end_time)
+
             work_schedule_plan = WorkSchedulePlan.objects.filter(classes=classes,
                                                                  plan_schedule=instance.plan_schedule).first()
             if work_schedule_plan not in [wsp_obj, nest_wsp_obj]:
