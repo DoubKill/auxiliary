@@ -389,17 +389,17 @@ class ProductBatchingUpdateSerializer(ProductBatchingRetrieveSerializer):
                             # if i['condition']:
                             #     des_str.append(i['condition'].condition)
                             if i['time']:
-                                des_str.append('{}"'.format(round(i['time'])))
+                                des_str.append('{}"'.format(float(i['time'])))
                             if i['temperature']:
-                                des_str.append('{}℃'.format(round(i['temperature'])))
+                                des_str.append('{}℃'.format(float(i['temperature'])))
                             if i['energy']:
-                                des_str.append('{}J'.format(round(i['energy'])))
+                                des_str.append('{}J'.format(float(i['energy'])))
                             if i['power']:
-                                des_str.append('{}KW'.format(round(i['power'])))
+                                des_str.append('{}KW'.format(float(i['power'])))
                             if i['pressure']:
-                                des_str.append('{}bar'.format(round(i['pressure'])))
+                                des_str.append('{}bar'.format(float(i['pressure'])))
                             if i['rpm']:
-                                des_str.append('{}rpm'.format(round(i['rpm'])))
+                                des_str.append('{}rpm'.format(float(i['rpm'])))
                             change_detail_data[3].append({'type': None,
                                                           'key': i['action'].action if not des_str else
                                                           "{}:({})".format(i['action'].action,
