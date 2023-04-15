@@ -190,7 +190,7 @@ class EquipViewSet(CommonDeleteMixin, ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         if self.request.query_params.get('all'):
             # 目前写死过滤密炼设备，后期如有更改则需前端修改参数
-            data = queryset.filter(use_flag=1, category__equip_type__global_name='密炼设备'
+            data = queryset.filter(use_flag=1, category__equip_type__global_name='密炼设备', equip_no__startswith='Z'
                                    ).values('id', 'equip_no', 'equip_name', 'category__category_name')
             for x in data:
                 x["version"] = VERSION_EQUIP.get(x['equip_no'])
