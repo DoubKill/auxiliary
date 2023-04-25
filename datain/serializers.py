@@ -499,7 +499,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                                            'standard_error': other_material.standard_error,
                                            'material': other_material.material}
                     other_material_weight = other_material.actual_weight
-                    xl = now_recipe.batching_details.filter(delete_flag=False, type=1, material__material_name__in=['细料', '硫磺']).last()
+                    xl = now_recipe.batching_details.filter(delete_flag=False, type=1, material__material_name__in=['细料', '硫磺', '细料(ZY)', '硫磺(ZY)']).last()
                     new_details = []
                     if xl:
                         point = 0
@@ -507,7 +507,7 @@ class RecipeReceiveSerializer(serializers.ModelSerializer):
                             if detail['type'] != 1:
                                 new_details.append(detail)
                                 continue
-                            if detail['material'].material_name in ['细料', '硫磺']:
+                            if detail['material'].material_name in ['细料', '硫磺', '细料(ZY)', '硫磺(ZY)']:
                                 point = detail['sn']
                                 if xl.sn > other_material.sn:  # 掺料或待处理料在料包前
                                     other_material_info['sn'] = point

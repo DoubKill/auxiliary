@@ -1376,7 +1376,7 @@ class MaterialReleaseView(FeedBack, APIView):
             if '掺料' in material_name or '待处理料' in material_name:
                 other_material_name = material_name
                 continue
-            if material_name not in ['细料', '硫磺']:
+            if material_name not in ['细料', '硫磺', '细料(ZY)', '硫磺(ZY)']:
                 # 增加对搭料
                 if mixed and material_name == mixed.origin_material_name:
                     for m_name, m_weight in mixed_info.items():
@@ -1410,7 +1410,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
-                xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺']]
+                xl = [i for i in material_name_weight if i['material__material_name'] in ['细料', '硫磺', '细料(ZY)', '硫磺(ZY)']]
                 if not xl:  # 通用料包码：扣重请求包含料包，但配方标准中没有则表示扫过通用条码
                     continue
                 else:
@@ -1679,7 +1679,7 @@ class HandleFeedView(APIView):
         xl_details = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_material_type__in=['机配', '人工配'], useup_time__year='1970')
         recipe_info = [i['material__material_name'] for i in material_name_weight]
         if xl_details:
-            recipe_info = [i['material__material_name'] for i in material_name_weight + cnt_type_details if i['material__material_name'] not in ['硫磺', '细料']]
+            recipe_info = [i['material__material_name'] for i in material_name_weight + cnt_type_details if i['material__material_name'] not in ['硫磺', '细料', '细料(ZY)', '硫磺(ZY)']]
         # 料框表信息
         load_info = LoadTankMaterialLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid,
                                                                     useup_time__year='1970') \
