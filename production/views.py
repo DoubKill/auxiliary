@@ -1657,6 +1657,15 @@ class HandleFeedView(APIView):
                                                                      other_type=other_material.material_name).last()
             if not scan_info:
                 return Response({"success": False, "message": f"{other_material.material_name}未扫码"})
+        # 判断是否存在异常扫码记录  2023-05-09 正常扣重阻料后强制进料，判断异常扫码记录 因为易控再次扣重出现错误时不会阻料
+        switch_flag = GlobalCode.objects.using('mes').filter(global_type__use_flag=True, global_type__type_name='密炼扫码异常锁定开关', use_flag=True,
+                                                             global_name=equip_no)
+        if switch_flag:
+            m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=trains).values('bar_code').annotate(
+                m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
+            if failed_scan:
+                return Response({"success": False, "message": f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid}[{trains}]"})
         # mes配方
         err_msg = ''
         try:
