@@ -262,7 +262,7 @@ DATABASES = {
         'NAME': os.getenv('MES_DATABASE_NAME', 'xe'),  # 数据库名称 SID
         'USER': os.getenv('MES_DATABASE_USERNAME', 'mes'),  # 用户名
         'PASSWORD': os.getenv('MES_DATABASE_PASSWORD', 'mes'),  # 密码
-        'HOST': os.getenv('MES_DATABASE_HOSTNAME', '10.10.120.40'),  # HOST
+        'HOST': os.getenv('MES_DATABASE_HOSTNAME', '10.10.130.58'),  # HOST
         'PORT': os.getenv('MES_MONOCLE_API_PORT', '1521'),  # 端口
     },
     # 'default': {
