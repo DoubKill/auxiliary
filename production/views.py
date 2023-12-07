@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from basics.models import PlanSchedule, Equip
+from basics.models import PlanSchedule, Equip, GlobalCodeType, GlobalCode
 from mes.common_code import CommonDeleteMixin, WebService
 from mes.conf import EQUIP_LIST, VERSION_EQUIP
 from mes.derorators import api_recorder
@@ -34,7 +34,7 @@ from production.filters import TrainsFeedbacksFilter, PalletFeedbacksFilter, Qua
 from production.models import TrainsFeedbacks, PalletFeedbacks, EquipStatus, PlanStatus, ExpendMaterial, OperationLog, \
     QualityControl, MaterialTankStatus, IfupReportBasisBackups, IfupReportWeightBackups, IfupReportMixBackups, \
     ProcessFeedback, AlarmLog, FeedingMaterialLog, LoadMaterialLog, LoadTankMaterialLog, ManualInputTrains, \
-    OtherMaterialLog
+    OtherMaterialLog, BatchScanLog
 from production.serializers import QualityControlSerializer, OperationLogSerializer, \
     PlanStatusSerializer, EquipStatusSerializer, PalletFeedbacksSerializer, TrainsFeedbacksSerializer, \
     ProductionRecordSerializer, MaterialTankStatusSerializer, \
@@ -45,6 +45,7 @@ from production.utils import strtoint, send_msg_to_terminal
 from recipe.models import ProductBatchingMixed, Material, ProductBatchingDetailPlan, ProductBatching
 
 logger = logging.getLogger('api_log')
+error_log = logging.getLogger('error_log')
 
 
 @method_decorator([api_recorder], name="dispatch")
@@ -672,7 +673,7 @@ class ProductActualViewSet(mixins.ListModelMixin,
 @method_decorator([api_recorder], name="dispatch")
 class ProductionRecordViewSet(mixins.ListModelMixin,
                               GenericViewSet):
-    queryset = PalletFeedbacks.objects.filter()
+    queryset = PalletFeedbacks.objects.filter().order_by('-product_time')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = ProductionRecordSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -1103,7 +1104,7 @@ class AlarmLogList(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 class TrainsFeedbacksAPIView(mixins.ListModelMixin,
                              GenericViewSet):
     """车次报表展示接口"""
-    queryset = TrainsFeedbacks.objects.all()
+    queryset = TrainsFeedbacks.objects.all().order_by('-plan_classes_uid', '-actual_trains')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = TrainsFeedbacksSerializer2
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -1140,7 +1141,7 @@ class TrainsFeedbacksAPIView(mixins.ListModelMixin,
             if operation_user:
                 filter_dict['operation_user'] = operation_user
 
-            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).values()
+            tf_queryset = TrainsFeedbacks.objects.filter(**filter_dict).order_by('-plan_classes_uid', '-actual_trains').values()
             counts = tf_queryset.count()
             tf_queryset = tf_queryset[(page - 1) * page_size:page_size * page]
             for tf_obj in tf_queryset:
@@ -1317,6 +1318,15 @@ class MaterialReleaseView(FeedBack, APIView):
             return Response(f"异常: 计划不存在或不是运行状态:{plan_classes_uid}")
         plan_classes_uid = pcp.plan_classes_uid
 
+        # 判断是否存在异常扫码记录
+        switch_flag = GlobalCode.objects.using('mes').filter(global_type__use_flag=True, global_type__type_name='密炼扫码异常锁定开关', use_flag=True, global_name=equip_no)
+        if switch_flag:
+            m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=feed_trains).values('bar_code').annotate(m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
+            if failed_scan:
+                failed_scan.update(aux_tag=True)
+                return Response(f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid}[{feed_trains}]")
+
         base_train = FeedingMaterialLog.objects.filter(plan_classes_uid=plan_classes_uid).aggregate(
             base_train=Max("trains"))['base_train']
         if not base_train:
@@ -1396,6 +1406,7 @@ class MaterialReleaseView(FeedBack, APIView):
                 if err_msg:
                     if equip_no == 'Z04':
                         send_msg_to_terminal(err_msg)
+                    error_log.error(f'处理后进料失败[{plan_classes_uid}-{feed_trains}]: {err_msg}')
                     return Response(err_msg)
                 content = json.loads(res.content)
                 material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
@@ -1646,6 +1657,15 @@ class HandleFeedView(APIView):
                                                                      other_type=other_material.material_name).last()
             if not scan_info:
                 return Response({"success": False, "message": f"{other_material.material_name}未扫码"})
+        # 判断是否存在异常扫码记录  2023-05-09 正常扣重阻料后强制进料，判断异常扫码记录 因为易控再次扣重出现错误时不会阻料
+        switch_flag = GlobalCode.objects.using('mes').filter(global_type__use_flag=True, global_type__type_name='密炼扫码异常锁定开关', use_flag=True,
+                                                             global_name=equip_no)
+        if switch_flag:
+            m_ids = BatchScanLog.objects.using('mes').filter(plan_classes_uid=plan_classes_uid, scan_train=trains).values('bar_code').annotate(
+                m_id=Max('id')).values_list('m_id', flat=True)
+            failed_scan = BatchScanLog.objects.using('mes').filter(id__in=m_ids, is_release=False)
+            if failed_scan:
+                return Response({"success": False, "message": f"异常: 该密炼车次存在未处理扫码失败记录:{plan_classes_uid}[{trains}]"})
         # mes配方
         err_msg = ''
         try:
@@ -1661,6 +1681,7 @@ class HandleFeedView(APIView):
                 if isinstance(json.loads(res.content), str):
                     err_msg = '异常: 获取mes配方信息失败[联系工艺]'
         if err_msg:
+            error_log.error(f'处理后进料失败[{plan_classes_uid}-{trains}]: {err_msg}')
             return Response({"success": False, "message": err_msg})
         content = json.loads(res.content)
         material_name_weight, cnt_type_details = content['material_name_weight'], content['cnt_type_details']
@@ -1747,3 +1768,15 @@ class ManualInputTrainsView(APIView):
         instance_id = self.request.data.get('id')
         ManualInputTrains.objects.using('mes').filter(id=instance_id).delete()
         return Response('OK')
+
+
+@method_decorator([api_recorder], name="dispatch")
+class ProductMaterials(APIView):
+
+    def get(self, request):
+        all_product_nos = set(ProductBatching.objects.filter(batching_type=1).values_list('stage_product_batch_no', flat=True))
+        used_recipes = set(ProductBatching.objects.filter(used_type=4, batching_type=1).order_by('-used_time').values_list('stage_product_batch_no', flat=True))
+        unused_products = all_product_nos - used_recipes
+        ret = [{'product_no': j, 'used': True} for j in used_recipes] + [{'product_no': i, 'used': False} for i in unused_products]
+        return Response(ret)
+
