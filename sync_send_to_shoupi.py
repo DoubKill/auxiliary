@@ -184,5 +184,6 @@ def send_to_yikong_stop():
 #
 
 if __name__ == "__main__":
-    send_to_yikong_run()
-    send_to_yikong_stop()
+    pass
+    # send_to_yikong_run()
+    # send_to_yikong_stop()

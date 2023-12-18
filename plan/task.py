@@ -116,6 +116,6 @@ class ProductClassesPlanDown(BaseDownloader):
 if __name__ == '__main__':
 
     for downloader in (
-            ProductBatchingDown, MaterialDown, ProductClassesPlanDown,
+            MaterialDown, ProductBatchingDown, ProductClassesPlanDown,
     ):
         downloader().download()
