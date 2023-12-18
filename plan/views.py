@@ -540,6 +540,13 @@ class IssuedPlan(APIView):
             data['smash_time'] = actual_product_process.dj_time
             data['snap_time'] = actual_product_process.ld_time
             data['usingif'] = int(actual_product_process.use_flag)
+        elif int(equip_no) == 4:
+            data['mix1_minspeed'] = actual_product_process.mix1_min_speed
+            data['mix1_maxspeed'] = actual_product_process.mix1_max_speed
+            data['mix2_minspeed'] = actual_product_process.mix2_min_speed
+            data['mix2_maxspeed'] = actual_product_process.mix2_max_speed
+            data['mix2_over_temp'] = actual_product_process.mix2_over_temp
+            data['mix2_max_time'] = actual_product_process.mix2_max_time
         return data
 
     def _map_cb(self, product_batching, product_batching_details, equip_no):
@@ -643,7 +650,7 @@ class IssuedPlan(APIView):
         ploy_data = self._map_ploy(product_batching, product_batching_details, equip_no)
         oil_data = self._map_oil(product_batching, product_batching_details, equip_no)
         cb_data = self._map_cb(product_batching, product_batching_details, equip_no)
-        if int(equip_no) == 7:
+        if int(equip_no) in (4, 7):
             line_1_data = list(filter(lambda x: x['mattype'] == 'O', oil_data))
             line_2_data = list(filter(lambda x: x['mattype'] == 'W', oil_data))
             if not oil_data:
@@ -697,7 +704,7 @@ class IssuedPlan(APIView):
             if not actual_product_process_details:
                 raise ValidationError("胶料配料步序详情为空，该计划不可用")
         datas = []
-        for ppd in actual_product_process_details:
+        for ppd in actual_product_process_details.order_by('sn'):
             data = OrderedDict()
             data["id"] = ppd.id
             data["recipe_name"] = actual_product_batching.stage_product_batch_no
@@ -712,16 +719,52 @@ class IssuedPlan(APIView):
             data["ID_step"] = ppd.sn
             data["machineno"] = int(equip_no)
             datas.append(data)
-        id_list = [x.get("id") for x in datas]
-        id_list.sort()
-        datas.sort(key=lambda x: x.get("ID_step"))
-        for x in datas:
-            index = datas.index(x)
-            x["id"] = id_list[index]
+        # id_list = [x.get("id") for x in datas]
+        # id_list.sort()
+        # datas.sort(key=lambda x: x.get("ID_step"))
+        # for x in datas:
+        #     index = datas.index(x)
+        #     x["id"] = id_list[index]
         # 12，13，14，15元嘉上辅机配方步序特殊需判断是否以配方结束结尾
         if int(equip_no) in [12,13,14,15]:
             if datas[-1].get("set_condition") != "配方结束":
                 raise ValidationError(f"Z{equip_no}#元嘉上辅机配方步序必须以配方结束结尾")
+        return datas
+
+    def _map_mix2(self, product_batching, product_process_details2, equip_no):
+        if product_batching.batching_type == 2:
+            actual_product_batching = ProductBatching.objects.exclude(used_type=6).filter(delete_flag=False,
+                                                                                          stage_product_batch_no=product_batching.stage_product_batch_no,
+                                                                                          equip__equip_no__icontains=equip_no,
+                                                                                          batching_type=1).first()
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            actual_product_process_details2 = actual_product_batching.process_details2.filter(delete_flag=False)
+            if not actual_product_process_details2:
+                raise ValidationError("胶料下密炼机步序详情为空，该计划不可用")
+        else:
+            actual_product_process_details2 = product_process_details2
+            actual_product_batching = product_batching
+            if not actual_product_batching:
+                raise ValidationError("当前计划未关联机台配方，请关联后重试")
+            if not actual_product_process_details2:
+                raise ValidationError("胶料下密炼机步序详情为空，该计划不可用")
+        datas = []
+        for ppd in actual_product_process_details2.order_by('sn'):
+            data = OrderedDict()
+            data["id"] = ppd.id
+            data["recipe_name"] = actual_product_batching.stage_product_batch_no
+            data["set_condition"] = ppd.condition.condition if ppd and ppd.condition else None  # ? 条件名称还是条件代码
+            data["set_time"] = int(ppd.time) if ppd.time else 0
+            data["set_temp"] = int(ppd.temperature) if ppd.temperature else 0
+            data["set_ener"] = ppd.energy
+            data["set_power"] = ppd.power
+            data["act_code"] = ppd.action.action
+            data["set_pres"] = ppd.pressure if ppd.pressure else 0.0
+            data["set_rota"] = int(ppd.rpm) if ppd.rpm else 0
+            data["ID_step"] = ppd.sn
+            data["machineno"] = int(equip_no)
+            datas.append(data)
         return datas
 
     def _map_plan(self, params, pcp_obj, equip_no):
@@ -750,76 +793,100 @@ class IssuedPlan(APIView):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
         try:
-            status, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(recipe, 'recipe_con', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except:
             raise ValidationError(f"{equip_no} 网络连接异常")
 
-        if not status:
+        if not state:
             raise ValidationError(f"主配方下达失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
         try:
-            status, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(weigh_data, 'recipe_weight', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方称量已存在于上辅机，请勿重复下达")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
-        if not status:
+        if not state:
             raise ValidationError(f"配方称量下达失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
         mix_data = {"json": json.dumps({"datas": mix}, cls=DecimalEncoder)}
         try:
-            status, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(mix_data, 'recipe_step', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方步序已存在于上辅机，请勿重复下达")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
-        if not status:
+        if not state:
             raise ValidationError(f"配方步序下达失败:{text}")
+
+        if int(ext_str) == 4:
+            mix2 = self._map_mix2(product_batching, product_batching.process_details2.all(), ext_str)
+            mix_data2 = {"json": json.dumps({"datas": mix2}, cls=DecimalEncoder)}
+            try:
+                state, text = WebService.issue(mix_data2, 'recipe_step2', equip_no=ext_str, equip_name="上辅机")
+            except APIException:
+                raise ValidationError("该配方下密炼机步序已存在于上辅机，请勿重复下达")
+            except Exception as e:
+                raise ValidationError(f"{equip_no} 网络连接异常: {e}")
+            if not state:
+                raise ValidationError(f"配方下密炼机步序下达失败:{text}")
+
         plan = self._map_plan(params, pcp_obj, ext_str)
         try:
-            status, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(plan, 'plan', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("计划下达失败，计划重复|配方不存在|计划下达错误")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
-        if not status:
+        if not state:
             raise ValidationError(f"计划下达失败:{text}")
 
     def _sync_update_interface(self, args, params=None, ext_str="", equip_no=""):
         product_batching, product_batching_details, product_process, product_process_details, pcp_obj = args
         recipe = self._map_recipe(pcp_obj, product_process, product_batching, ext_str)
         try:
-            status, text = WebService.issue(recipe, 'recipe_con_again', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(recipe, 'recipe_con_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方不存在于上辅机，请检查上辅机")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
 
-        if not status:
+        if not state:
             raise ValidationError(f"主配方重传失败:{text}")
         weigh = self._map_weigh(product_batching, product_batching_details, ext_str)
         weigh_data = {"json": json.dumps({"datas": weigh}, cls=DecimalEncoder)}  # 这是易控那边为获取批量数据约定的数据格式
         try:
-            status, text = WebService.issue(weigh_data, 'recipe_weight_again', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(weigh_data, 'recipe_weight_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方称量不存在于上辅机，请检查上辅机")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
-        if not status:
+        if not state:
             raise ValidationError(f"配方称量重传失败:{text}")
         mix = self._map_mix(product_batching, product_process_details, ext_str)
         mix_data = {"json": json.dumps({"datas": mix}, cls=DecimalEncoder)}
         try:
-            status, text = WebService.issue(mix_data, 'recipe_step_again', equip_no=ext_str, equip_name="上辅机")
+            state, text = WebService.issue(mix_data, 'recipe_step_again', equip_no=ext_str, equip_name="上辅机")
         except APIException:
             raise ValidationError("该配方步序不存在于上辅机，请检查上辅机")
         except Exception as e:
             raise ValidationError(f"{equip_no} 网络连接异常: {e}")
-        if not status:
+        if not state:
             raise ValidationError(f"配方步序重传失败:{text}")
+        if int(ext_str) == 4:
+            mix2 = self._map_mix2(product_batching, product_batching.process_details2.all(), ext_str)
+            mix_data2 = {"json": json.dumps({"datas": mix2}, cls=DecimalEncoder)}
+            try:
+                state, text = WebService.issue(mix_data2, 'recipe_step_again2', equip_no=ext_str, equip_name="上辅机")
+            except APIException:
+                raise ValidationError("该配方下密炼机步序不存在于上辅机，请检查上辅机")
+            except Exception as e:
+                raise ValidationError(f"{equip_no} 网络连接异常: {e}")
+            if not state:
+                raise ValidationError(f"配方下密炼机步序重传失败:{text}")
 
     # @atomic()
     def post(self, request):
