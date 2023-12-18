@@ -125,6 +125,33 @@ class EquipStatus(AbstractEntity):
             models.Index(fields=['current_trains']), ]
 
 
+class EquipStatusZ04(AbstractEntity):
+    """Z04下密炼机机台状况反馈"""
+    plan_classes_uid = models.CharField(help_text='班次计划唯一码', verbose_name='班次计划唯一码', max_length=64)
+    equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
+    temperature = models.DecimalField(decimal_places=2, max_digits=8, help_text='温度', verbose_name='温度')
+    rpm = models.DecimalField(decimal_places=2, max_digits=8, help_text='转速', verbose_name='转速')
+    energy = models.DecimalField(decimal_places=2, max_digits=8, help_text='能量', verbose_name='能量')
+    power = models.DecimalField(decimal_places=2, max_digits=8, help_text='功率', verbose_name='功率')
+    pressure = models.DecimalField(decimal_places=2, max_digits=8, help_text='压力', verbose_name='压力')
+    status = models.CharField(max_length=64, help_text='状态：运行中、等待、故障', verbose_name='状态',
+                              choices=(('运行中', '运行中'), ('等待', '等待'), ('故障', '故障')), default="运行中")
+    current_trains = models.IntegerField(help_text='当前车次', verbose_name='当前车次')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', null=True)
+
+    def __str__(self):
+        return f"{self.plan_classes_uid}|{self.equip_no}"
+
+    class Meta:
+        db_table = 'equip_status2'
+        verbose_name_plural = verbose_name = 'Z04机台状况反馈'
+        indexes = [
+            models.Index(fields=['equip_no']),
+            models.Index(fields=['plan_classes_uid']),
+            models.Index(fields=['product_time']),
+            models.Index(fields=['current_trains']), ]
+
+
 class PlanStatus(AbstractEntity):
     """计划状态变更"""
 
@@ -199,6 +226,31 @@ class ProcessFeedback(AbstractEntity):
     class Meta:
         db_table = 'process_feedback'
         verbose_name_plural = verbose_name = '步序反馈报表'
+
+
+class ProcessFeedbackZ04(AbstractEntity):
+    """Z04下密炼机步序反馈表"""
+    sn = models.PositiveIntegerField(help_text='序号/步骤号')
+    condition = models.CharField(max_length=20, help_text='条件', blank=True, null=True)
+    time = models.PositiveIntegerField(help_text='时间(秒)', blank=True, null=True)
+    temperature = models.PositiveIntegerField(help_text='温度', blank=True, null=True)
+    power = models.DecimalField(help_text='功率', decimal_places=1, max_digits=5, blank=True, null=True, )
+    energy = models.DecimalField(help_text='能量', decimal_places=1, max_digits=5, blank=True, null=True)
+    action = models.CharField(max_length=20, help_text='基本动作', blank=True, null=True)
+    rpm = models.PositiveIntegerField(help_text='转速', blank=True, null=True)
+    pressure = models.DecimalField(help_text='压力', blank=True, null=True, decimal_places=1, max_digits=5)
+    plan_classes_uid = models.CharField(help_text='班次计划唯一码', verbose_name='班次计划唯一码', max_length=64)
+    product_no = models.CharField(max_length=64, help_text='产出胶料', verbose_name='产出胶料')
+    product_time = models.DateTimeField(help_text='工作站生产报表时间/存盘时间', verbose_name='工作站生产报表时间/存盘时间', blank=True, null=True)
+    equip_no = models.CharField(max_length=64, help_text="机台号", verbose_name='机台号')
+    current_trains = models.PositiveIntegerField(help_text='当前车次')
+
+    def __str__(self):
+        return f"{self.plan_classes_uid}|{self.equip_no}|{self.product_no}"
+
+    class Meta:
+        db_table = 'process_feedback2'
+        verbose_name_plural = verbose_name = 'Z04步序反馈报表'
 
 
 class OperationLog(AbstractEntity):
