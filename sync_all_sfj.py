@@ -305,16 +305,17 @@ def sync_product_feedback(db):
 
 
 if __name__ == '__main__':
-    for db in DATABASES:
-        if not db.startswith("Z"):
-            continue
-        else:
-            try:
-                sync_recipe(db)
-            except Exception as e:
-                logger.error(db, e)
-        try:
-            sync_product_feedback(db)
-        except Exception as e:
-            logger.error(e)
-            print(e)
+    # for db in DATABASES:
+    #     if not db.startswith("Z"):
+    #         continue
+    #     else:
+    #         try:
+    #             sync_recipe(db)
+    #         except Exception as e:
+    #             logger.error(db, e)
+    #     try:
+    #         sync_product_feedback(db)
+    #     except Exception as e:
+    #         logger.error(e)
+    #         print(e)
+    pass

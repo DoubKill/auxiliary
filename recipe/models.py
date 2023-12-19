@@ -207,6 +207,12 @@ class ProductProcess(AbstractEntity):
     ch_time = models.PositiveIntegerField(help_text='成环时间', default=0)
     dj_time = models.PositiveIntegerField(help_text='捣胶时间', default=0)
     ld_time = models.PositiveIntegerField(help_text='拉断时间', default=0)
+    mix1_min_speed = models.PositiveIntegerField(help_text='上密炼最低转速', default=0)
+    mix1_max_speed = models.PositiveIntegerField(help_text='上密炼最高转速', default=0)
+    mix2_min_speed = models.PositiveIntegerField(help_text='下密炼最低转速', default=0)
+    mix2_max_speed = models.PositiveIntegerField(help_text='下密炼最高转速', default=0)
+    mix2_over_temp = models.PositiveIntegerField(help_text='下密炼超温排胶温度', default=0)
+    mix2_max_time = models.PositiveIntegerField(help_text='下密炼超时排胶时间', default=0)
 
     class Meta:
         db_table = 'product_process'
@@ -248,6 +254,26 @@ class ProductProcessDetail(AbstractEntity):
     class Meta:
         db_table = 'product_process_detail'
         verbose_name_plural = verbose_name = '胶料配料标准步序详情'
+
+
+class ProductProcessDetail2(AbstractEntity):
+    """4号机下密炼机步序"""
+    product_batching = models.ForeignKey(ProductBatching, help_text='配方id', on_delete=models.DO_NOTHING,
+                                         related_name='process_details2')
+    sn = models.PositiveIntegerField(help_text='序号')
+    temperature = models.PositiveIntegerField(help_text='温度', default=0)
+    rpm = models.DecimalField(help_text='转速', default=0, decimal_places=1, max_digits=8)
+    energy = models.DecimalField(help_text='能量', default=0, decimal_places=1, max_digits=8)
+    power = models.DecimalField(help_text='功率', default=0, decimal_places=1, max_digits=8)
+    pressure = models.DecimalField(help_text='压力', default=0, decimal_places=1, max_digits=8)
+    condition = models.ForeignKey(BaseCondition, help_text='条件id', blank=True, null=True, on_delete=models.DO_NOTHING)
+    time = models.PositiveIntegerField(help_text='时间(分钟)', default=0)
+    action = models.ForeignKey(BaseAction, help_text='基本动作id', blank=True, null=True, on_delete=models.DO_NOTHING)
+    time_unit = models.CharField(max_length=4, help_text='时间单位', default='秒')
+
+    class Meta:
+        db_table = 'product_process_detail2'
+        verbose_name_plural = verbose_name = 'Z04胶料配料标准步序详情'
 
 
 class ProductBatchingMixed(models.Model):
