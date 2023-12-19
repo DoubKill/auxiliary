@@ -1454,7 +1454,7 @@ class MaterialReleaseView(FeedBack, APIView):
                     adjust_left_weight = 0
                 else:
                     # 存在历史物料
-                    if history_materials.last().bra_code.startswith('MC'):
+                    if history_materials and history_materials.last().bra_code.startswith('MC'):
                         plan_weight = history_materials.last().single_need
                         item['plan_weight'] = plan_weight
                         item.update({'plan_weight': plan_weight, 'actual_weight': plan_weight})
